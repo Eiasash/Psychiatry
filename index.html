@@ -131,6 +131,10 @@ h2.sec{font-size:14px;color:var(--muted);font-weight:600;margin:22px 4px 10px;te
 .opt.wrong{border-color:var(--bad);background:var(--bad-bg)}
 .opt.wrong .k{background:var(--bad);color:#3d0a14}
 .opt.dim{opacity:.55}
+.opt.sel{border-color:var(--accent);background:#222c52}
+.opt.sel .k{background:var(--accent);color:#fff}
+.exam-banner{font-size:12px;color:var(--muted);margin:-4px 0 12px;display:flex;gap:10px;flex-wrap:wrap}
+.exam-banner b{color:var(--accent2)}
 .opt[disabled]{cursor:default}
 
 .fb{margin-top:14px;border-radius:13px;padding:13px 15px;font-size:14px;display:none}
@@ -1021,17 +1025,73 @@ function renderQuiz(){
   card.append(opts);
   const fb=el("div","fb");fb.id="grading-feedback";fb.setAttribute("role","status");fb.setAttribute("aria-live","polite");fb.setAttribute("aria-atomic","true");fb.tabIndex=-1;card.append(fb);
   const foot=el("div","qfoot");
-  const skip=el("button","btn",`דלג`);skip.setAttribute("aria-label","דלג לשאלה הבאה");skip.onclick=()=>skipQ();
-  foot.append(skip);card.append(foot);
-  v.append(card);
-  if(session.answered&&session.lastAnswer&&session.lastAnswer.id===q.id){
-    showAnswer(q,session.lastAnswer.k,opts,fb,card,false);
+  if(session.mode==="exam"){
+    // STRICT exam: record selection silently, allow navigation + answer changes, grade only on submit.
+    const prevA=(session.answers||[]).find(a=>a.index===session.i);
+    if(prevA&&Number.isInteger(prevA.k))opts.children[prevA.k]?.classList.add("sel");
+    const answered=new Set((session.answers||[]).filter(a=>Number.isInteger(a.k)).map(a=>a.index)).size;
+    const banner=el("div","exam-banner",`<span>נענו <b>${answered}</b> / ${session.queue.length}</span><span>במצב מבחן התשובות וההסברים מוצגים רק בהגשה</span>`);
+    card.insertBefore(banner,opts);
+    const isLast=session.i+1>=session.queue.length;
+    const prev=el("button","btn","→ הקודם");prev.setAttribute("aria-label","שאלה קודמת");prev.disabled=session.i===0;prev.onclick=()=>prevQ();
+    const next=el("button","btn examnext",isLast?"לסיום":"הבא ←");next.setAttribute("aria-label",isLast?"מעבר לסיום":"שאלה הבאה");next.setAttribute("aria-keyshortcuts","Enter");next.onclick=()=>{isLast?confirmSubmit():nextQ();};
+    const sub=el("button","btn primary","סיום והגשה");sub.setAttribute("aria-label","סיום והגשת המבחן");sub.onclick=()=>confirmSubmit();
+    foot.append(prev,next,sub);card.append(foot);
+    v.append(card);
+  }else{
+    const skip=el("button","btn",`דלג`);skip.setAttribute("aria-label","דלג לשאלה הבאה");skip.onclick=()=>skipQ();
+    foot.append(skip);card.append(foot);
+    v.append(card);
+    if(session.answered&&session.lastAnswer&&session.lastAnswer.id===q.id){
+      showAnswer(q,session.lastAnswer.k,opts,fb,card,false);
+    }
   }
   startTimer();
 }
 async function answer(q,k,opts,fb,card){
+  if(session.mode==="exam"){selectExam(q,k,opts);return;}
   if(session.answered)return;
   showAnswer(q,k,opts,fb,card,true);
+}
+function selectExam(q,k,opts){
+  [...opts.children].forEach((b,idx)=>b.classList.toggle("sel",idx===k));
+  session.answers=(session.answers||[]).filter(a=>a.index!==session.i);
+  session.answers.push({index:session.i,id:q.id,k,skipped:false,at:Date.now()});
+  saveSession();
+  const banner=$("#view-quiz .exam-banner b");
+  if(banner)banner.textContent=String(new Set(session.answers.filter(a=>Number.isInteger(a.k)).map(a=>a.index)).size);
+}
+function prevQ(){
+  if(!session||session.i<=0)return;
+  session.i--;session.answered=false;session.lastAnswer=null;
+  saveSession();renderQuiz();window.scrollTo({top:0,behavior:"auto"});
+}
+function confirmSubmit(){
+  if(!session)return;
+  const answered=new Set((session.answers||[]).filter(a=>Number.isInteger(a.k)).map(a=>a.index)).size;
+  const un=session.queue.length-answered;
+  if(un>0&&!confirm(`נותרו ${un} שאלות ללא מענה. להגיש את המבחן בכל זאת?`))return;
+  submitExam();
+}
+function submitExam(){
+  if(!session)return;
+  stopTimer();
+  const byIndex=new Map((session.answers||[]).map(a=>[a.index,a]));
+  session.correct=0;session.wrong=0;
+  const graded=[];
+  session.queue.forEach((id,idx)=>{
+    const q=qById(id);if(!q)return;
+    const a=byIndex.get(idx);
+    const k=a&&Number.isInteger(a.k)?a.k:null;
+    const ok=k!=null&&acceptedIndices(q).includes(k);
+    if(ok)session.correct++;else session.wrong++;
+    grade(id,ok);
+    graded.push({index:idx,id,k,ok,skipped:k==null,at:Date.now()});
+  });
+  session.answers=graded;
+  session.i=session.queue.length;
+  saveSession();
+  renderSessionEnd();
 }
 function showAnswer(q,k,opts,fb,card,record){
   session.answered=true;
@@ -1123,7 +1183,7 @@ function updateTimer(){
   if(!session||session.mode!=="exam"){stopTimer();return;}
   const left=timeLeft();
   const node=$("#timer"); if(node)node.textContent=timerText(left);
-  if(left<=0){toast("הזמן הסתיים");session.i=session.queue.length;saveSession();go("quiz");renderSessionEnd();}
+  if(left<=0){toast("הזמן הסתיים");go("quiz");submitExam();}
 }
 function renderSessionEnd(){
   stopTimer();
@@ -1384,7 +1444,10 @@ document.addEventListener("keydown",e=>{
   if(nav!=="quiz"||!session)return;
   const key = e.key && /^[1-4]$/.test(e.key) ? e.key : (e.code&&/^Digit[1-4]$/.test(e.code) ? e.code.slice(-1) : "");
   if(key){const opts=$("#view-quiz .opts");if(opts&&!session.answered){e.preventDefault();opts.children[+key-1]?.click();}}
-  if(e.key==="Enter"&&session.answered){const nx=$("#view-quiz .qfoot .primary");if(nx){e.preventDefault();nx.click();}}
+  if(e.key==="Enter"){
+    if(session.mode==="exam"){const nb=$("#view-quiz .qfoot .examnext");if(nb){e.preventDefault();nb.click();}}
+    else if(session.answered){const nx=$("#view-quiz .qfoot .primary");if(nx){e.preventDefault();nx.click();}}
+  }
 });
 boot();
 </script>
