@@ -23,6 +23,9 @@ expect(/class="qcount" dir="ltr"/, "quiz counter needs an LTR boundary inside th
 expect(/\.ai-box\{[^}]*background:var\(--card2\)/s, "AI Tutor panel needs a neutral card background");
 expect(/\.ai-output h4/, "AI Tutor Markdown headings need compact panel styling");
 expect(/\.ai-citations/, "AI Tutor citations need semantic styling");
+expect(/\.ai-answer\{[^}]*direction:rtl/s, "AI Tutor answer body should be anchored in RTL");
+expect(/\.ai-table/, "AI Tutor Markdown tables need mobile-safe styling");
+expect(/\.ai-quote/, "AI Tutor blockquotes need semantic styling");
 expect(/\.fb\{[^}]*text-align:right/s, "quiz feedback should keep readable RTL text alignment");
 expect(/\.expl\{[^}]*text-align:right/s, "quiz explanations should keep readable RTL text alignment");
 expect(/\.ai-box\{[^}]*overflow-wrap:anywhere/s, "AI Tutor panel should prevent mobile overflow");
@@ -31,6 +34,8 @@ expect(/@media\(max-width:560px\)\{[\s\S]*?\.wrap\{[^}]*padding-inline:10px/, "m
 expect(/@media\(max-width:560px\)\{[\s\S]*?\.card\{[^}]*padding:14px/, "mobile cards need reduced padding");
 expect(/@media\(max-width:560px\)\{[\s\S]*?\.fb\.show\{[^}]*margin-inline:-4px/, "mobile feedback should reclaim card width");
 expect(/@media\(max-width:560px\)\{[\s\S]*?\.ai-box\{[^}]*padding:10px/, "mobile AI Tutor panel needs compact padding");
+expect(/@media\(max-width:560px\)\{[\s\S]*?\.ai-box\{[^}]*margin-inline:-2px/, "mobile AI Tutor panel should reclaim horizontal room");
+expect(/@media\(max-width:560px\)\{[\s\S]*?\.ai-box\{[^}]*border-left:0/, "mobile AI Tutor panel should reduce nested side borders");
 expect(/@media\(max-width:560px\)\{[\s\S]*?\.ai-output\{[^}]*font-size:14px/, "mobile AI Tutor output needs controlled text sizing");
 expectMissing(/out\.innerHTML=`\$\{escapeHtml\(data\.answer\|\|/s, "AI Tutor still appends escaped raw Markdown as text");
 
@@ -66,7 +71,7 @@ function extractFunction(name) {
   return "";
 }
 
-const rendererSource = ["escapeHtml", "aiInlineMarkdown", "renderAiMarkdown", "renderAiAnswer"].map(extractFunction).join("\n");
+const rendererSource = ["escapeHtml", "aiInlineMarkdown", "aiTableCells", "aiTableDivider", "renderAiTable", "renderAiMarkdown", "renderAiAnswer"].map(extractFunction).join("\n");
 const aiCardSource = ["escapeHtml", "weakestTopicIndex", "aiQuestionAvailable", "aiQuestionHtml"].map(extractFunction).join("\n");
 if (aiCardSource.trim()) {
   try {
@@ -106,13 +111,23 @@ if (rendererSource.trim()) {
       "",
       "### הסבר קצר",
       "- נקודה אחת",
-      "- נקודה שתיים"
+      "- נקודה שתיים",
+      "",
+      "| הפרעה | שלב שינה | זיכרון |",
+      "|---|---|---|",
+      "| Nightmare | REM | זוכר |",
+      "| Sleepwalking | NREM | לא זוכר |",
+      "",
+      "> REM = זוכר + מפחיד"
     ].join("\n"))})`, context);
     if (!rendered.includes("<h4>תשובה</h4>")) failures.push("AI Markdown renderer does not convert level-2 headings");
     if (!rendered.includes("<strong>התשובה הנכונה: א. Olanzapine</strong>")) failures.push("AI Markdown renderer does not convert bold emphasis");
     if (!rendered.includes('<hr class="ai-rule">')) failures.push("AI Markdown renderer does not convert separators");
     if (!rendered.includes("<ul>") || !rendered.includes("<li>נקודה אחת</li>")) failures.push("AI Markdown renderer does not convert bullets");
-    if (/(^|>)\s*(#{2,3}|---|\*\*)/.test(rendered)) failures.push("AI Markdown renderer leaves raw Markdown markers visible");
+    if (!rendered.includes('<table class="ai-table">')) failures.push("AI Markdown renderer does not convert pipe tables");
+    if (!rendered.includes("<th>הפרעה</th>") || !rendered.includes("<td>Nightmare</td>")) failures.push("AI Markdown renderer loses table cells");
+    if (!rendered.includes('<blockquote class="ai-quote">REM = זוכר + מפחיד</blockquote>')) failures.push("AI Markdown renderer does not convert blockquotes");
+    if (/(^|>)\s*(#{2,3}|---|\*\*|\|---|\|[^<]*\|)/.test(rendered)) failures.push("AI Markdown renderer leaves raw Markdown markers visible");
 
     const answerHtml = vm.runInContext(`
       const out = { innerHTML: "" };
