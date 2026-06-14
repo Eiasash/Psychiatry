@@ -25,6 +25,7 @@ expect(/\.ai-loading/, "AI Tutor loading state needs explicit styling");
 expect(/\.ai-error/, "AI Tutor error state needs explicit styling");
 expect(/\.ai-status/, "AI Tutor status rows need explicit styling");
 expect(/\.ai-output h4/, "AI Tutor Markdown headings need compact panel styling");
+expect(/\.ai-section\{[^}]*background:rgba\(11,16,32,\s*\.18\)/s, "AI Tutor answer sections need scannable mobile cards");
 expect(/\.ai-citations/, "AI Tutor citations need semantic styling");
 expect(/\.ai-answer\{[^}]*direction:rtl/s, "AI Tutor answer body should be anchored in RTL");
 expect(/\.ai-table/, "AI Tutor Markdown tables need mobile-safe styling");
@@ -40,6 +41,7 @@ expect(/@media\(max-width:560px\)\{[\s\S]*?\.ai-box\{[^}]*padding:10px/, "mobile
 expect(/@media\(max-width:560px\)\{[\s\S]*?\.ai-box\{[^}]*margin-inline:-2px/, "mobile AI Tutor panel should reclaim horizontal room");
 expect(/@media\(max-width:560px\)\{[\s\S]*?\.ai-box\{[^}]*border-left:0/, "mobile AI Tutor panel should reduce nested side borders");
 expect(/@media\(max-width:560px\)\{[\s\S]*?\.ai-output\{[^}]*font-size:14px/, "mobile AI Tutor output needs controlled text sizing");
+expect(/@media\(max-width:560px\)\{[\s\S]*?\.ai-section\{[^}]*padding:10px/, "mobile AI Tutor sections need compact padding");
 expect(/AI_TIMEOUT_MS/, "AI Tutor client needs a timeout guard");
 expect(/AbortController/, "AI Tutor client needs abortable requests");
 expect(/renderAiError\(/, "AI Tutor client needs a retryable error renderer");
@@ -61,6 +63,8 @@ expect(/home-catalog card/, "home practice entry points should be grouped in a c
 expect(/ai-drill-card card/, "AI syllabus drill card is missing");
 expect(/function aiQuestionHtml\(/, "AI syllabus question renderer is missing");
 expect(/async function generateAiQuestion\(/, "AI syllabus question generator is missing");
+expect(/function aiSourceContractHtml\(/, "AI generated questions need visible source-contract metadata");
+expect(/aiSourceContractHtml\(q\)/, "AI generated question renderer should show the source contract");
 expect(/\/api\/ai-question/, "AI syllabus question endpoint is not wired into the UI");
 expect(/const AI_QUESTION_APP_URL = "https:\/\/psychiatry-szmc\.netlify\.app\/"/, "AI syllabus drill needs a canonical Netlify app URL");
 expect(/function aiQuestionAvailable\(/, "AI syllabus drill needs an availability check");
@@ -134,7 +138,7 @@ if (rendererSource.trim()) {
       "> REM = זוכר + מפחיד",
       "< נקודת מפתח: Trazodone אינו מפחית Slow-wave sleep"
     ].join("\n"))})`, context);
-    if (!rendered.includes("<h4>תשובה</h4>")) failures.push("AI Markdown renderer does not convert level-2 headings");
+    if (!rendered.includes('<section class="ai-section"><h4>תשובה</h4>')) failures.push("AI Markdown renderer does not group headings into scannable sections");
     if (!rendered.includes("<strong>התשובה הנכונה: א. Olanzapine</strong>")) failures.push("AI Markdown renderer does not convert bold emphasis");
     if (!rendered.includes('<hr class="ai-rule">')) failures.push("AI Markdown renderer does not convert separators");
     if (!rendered.includes("<ul>") || !rendered.includes("<li>נקודה אחת</li>")) failures.push("AI Markdown renderer does not convert bullets");

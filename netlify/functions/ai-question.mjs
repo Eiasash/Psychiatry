@@ -39,6 +39,23 @@ function parseJsonBlock(text) {
   throw new Error("AI response was not valid JSON");
 }
 
+function sourceScopedCitations(candidate, request) {
+  const sourceLabel = compact(request.sourceLabel, 180).trim();
+  const raw = Array.isArray(candidate?.citations)
+    ? candidate.citations.map(c => compact(c, 180).trim()).filter(Boolean)
+    : [];
+  const scoped = raw
+    .map(c => c
+      .replace(/\b(?:p|pp)\.?\s*\d+(?:[-–]\d+)?\b/gi, "")
+      .replace(/עמ(?:'|וד)?\s*\d+(?:[-–]\d+)?/g, "")
+      .replace(/\s{2,}/g, " ")
+      .replace(/[·,:;,-]\s*$/, "")
+      .trim())
+    .filter(c => c && sourceLabel && (c === sourceLabel || c.includes(sourceLabel)));
+  const out = [sourceLabel, ...scoped].filter(Boolean);
+  return [...new Set(out)].slice(0, 4);
+}
+
 function normalizeQuestion(candidate, request) {
   const stem = compact(candidate?.stem, 1600).trim();
   const options = Array.isArray(candidate?.options) ? candidate.options.map(o => compact(o, 600).trim()).filter(Boolean).slice(0, 4) : [];
@@ -47,10 +64,7 @@ function normalizeQuestion(candidate, request) {
   if (!stem || options.length !== 4 || !Number.isInteger(correctIndex) || correctIndex < 0 || correctIndex > 3 || !explanation) {
     throw new Error("AI response did not include a complete MCQ");
   }
-  const citations = Array.isArray(candidate?.citations)
-    ? candidate.citations.map(c => compact(c, 180).trim()).filter(Boolean).slice(0, 4)
-    : [];
-  if (!citations.length) citations.push(request.sourceLabel);
+  const citations = sourceScopedCitations(candidate, request);
   return {
     stem,
     options,
@@ -60,6 +74,12 @@ function normalizeQuestion(candidate, request) {
     source: request.source,
     sourceLabel: request.sourceLabel,
     citations,
+    sourceContract: {
+      source: request.source,
+      sourceLabel: request.sourceLabel,
+      scope: "Generated from the selected syllabus source scope only.",
+      limit: "AI-generated practice; not part of the verified 900-question bank or official answer key."
+    },
     generated: true
   };
 }
@@ -81,6 +101,8 @@ Known weak areas from this user's local progress: ${compact(weak, 900)}
 
 Rules:
 - The question must be original and must not claim to be from a real exam.
+- It is not part of the verified 900-question bank or the official answer key.
+- Stay inside the selected syllabus source scope. Do not invent page numbers, direct quotes, or exact source locators.
 - Use Hebrew for the stem, options, and explanation, while preserving standard English drug/test names when useful.
 - Provide four plausible options.
 - Exactly one option is best.
@@ -96,7 +118,7 @@ Rules:
 `.trim();
 }
 
-const SYSTEM_PROMPT = "You generate source-scoped psychiatry board-study questions. Return only valid JSON. Do not provide patient-care advice.";
+const SYSTEM_PROMPT = "You generate source-grounded, source-scoped psychiatry board-study questions. Return only valid JSON. Do not provide patient-care advice. Do not invent page numbers or exact source locators.";
 
 export default async function handler(req) {
   if (req.method === "OPTIONS") return new Response(null, { status: 204, headers: JSON_HEADERS });

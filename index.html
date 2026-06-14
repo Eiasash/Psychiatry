@@ -185,6 +185,10 @@ h2.sec{font-size:14px;color:var(--muted);font-weight:600;margin:22px 4px 10px;te
 .ai-answer{direction:rtl;text-align:right;unicode-bidi:isolate}
 .ai-output p{margin:0 0 10px}
 .ai-output p:last-child{margin-bottom:0}
+.ai-section{margin:10px 0;padding:11px 12px;border:1px solid var(--line);border-radius:11px;background:rgba(11,16,32,.18)}
+.ai-section:first-child{margin-top:0}
+.ai-section:last-child{margin-bottom:0}
+.ai-section>:last-child{margin-bottom:0}
 .ai-output h4{font-size:14px;line-height:1.45;margin:14px 0 6px;color:var(--accent2);font-weight:800;letter-spacing:0}
 .ai-output h4:first-child{margin-top:0}
 .ai-output strong{color:#fff;font-weight:800}
@@ -212,6 +216,7 @@ h2.sec{font-size:14px;color:var(--muted);font-weight:600;margin:22px 4px 10px;te
   .ai-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px}
   .ai-actions .btn{width:100%;min-height:44px;padding:8px 10px;font-size:13px}
   .ai-output{font-size:14px;line-height:1.72}
+  .ai-section{padding:10px;margin:8px 0;border-radius:10px}
   .ai-output h4{font-size:14px;margin:12px 0 6px}
   .ai-table{display:block;font-size:13px}
   .ai-table thead{display:none}
@@ -221,6 +226,7 @@ h2.sec{font-size:14px;color:var(--muted);font-weight:600;margin:22px 4px 10px;te
   .ai-table td::before{content:attr(data-label);display:block;margin-bottom:1px;color:var(--accent2);font-size:11px;font-weight:800}
   .ai-quote{padding:8px 9px}
   .ai-citations{display:grid;gap:4px}
+  .ai-source-contract{padding:8px 9px}
 }
 
 /* ---- bottom nav ---- */
@@ -288,6 +294,8 @@ nav.bar button.on{color:var(--accent2)}
 .ai-q-meta{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px}
 .ai-q-feedback{margin-top:10px;min-height:24px;font-size:13.5px;color:var(--muted)}
 .ai-q-feedback b{color:var(--accent2)}
+.ai-source-contract{display:grid;gap:4px;margin:10px 0;padding:9px 10px;border:1px solid rgba(34,211,183,.28);border-radius:10px;background:rgba(11,16,32,.22);font-size:12.5px;color:var(--muted);line-height:1.55}
+.ai-source-contract b{color:var(--accent2)}
 .ai-generated-note{font-size:12px;color:var(--warn);margin-top:9px}
 @media(max-width:720px){
   .brief-head{display:grid}
@@ -1193,6 +1201,7 @@ function renderGeneratedAiQuestion(out,q){
   const citations=Array.isArray(q.citations)?q.citations.filter(Boolean).slice(0,4):[];
   out.innerHTML=`<div class="ai-question">
     <div class="ai-q-meta"><span class="tag acc">AI</span><span class="tag">${escapeHtml(q.topic||"")}</span><span class="tag" dir="ltr">${escapeHtml(q.sourceLabel||"Syllabus")}</span></div>
+    ${aiSourceContractHtml(q)}
     <div class="qtext">${escapeHtml(q.stem)}</div>
     <div class="opts">${opts.map((opt,k)=>`<button type="button" class="opt ai-q-option" data-ai-q-option="${k}" aria-label="אפשרות ${LETTERS[k]}: ${escapeHtml(opt)}"><span class="k">${LETTERS[k]}</span><span class="ot">${escapeHtml(opt)}</span></button>`).join("")}</div>
     <div class="ai-q-feedback" role="status" aria-live="polite"></div>
@@ -1200,6 +1209,13 @@ function renderGeneratedAiQuestion(out,q){
     <div class="ai-generated-note">שאלה זו נוצרה לתרגול בלבד ואינה חלק מהמפתח הרשמי.</div>
   </div>`;
   out.querySelectorAll("[data-ai-q-option]").forEach(b=>b.onclick=()=>gradeGeneratedAiQuestion(out,Number(b.dataset.aiQOption)));
+}
+function aiSourceContractHtml(q){
+  const contract=q?.sourceContract||{};
+  const label=contract.sourceLabel||q?.sourceLabel||"Syllabus";
+  const scope=contract.scope||"שאלה מקורית לפי מקור הסילבוס שנבחר.";
+  const limit=contract.limit||"תרגול AI בלבד; לא חלק מבנק 900 השאלות המאומתות.";
+  return `<div class="ai-source-contract" aria-label="מסגרת מקור לשאלת AI"><b>מקור נבחר</b><span dir="ltr">${escapeHtml(label)}</span><span>${escapeHtml(scope)}</span><span>${escapeHtml(limit)}</span></div>`;
 }
 function gradeGeneratedAiQuestion(out,k){
   const q=out.__aiQuestion||{};
@@ -1634,7 +1650,9 @@ function renderAiMarkdown(text){
   const html=[];
   let para=[];
   let inList=false;
+  let inSection=false;
   const closeList=()=>{if(inList){html.push("</ul>");inList=false;}};
+  const closeSection=()=>{if(inSection){closeList();html.push("</section>");inSection=false;}};
   const flushPara=()=>{
     if(!para.length)return;
     html.push(`<p>${para.map(aiInlineMarkdown).join("<br>")}</p>`);
@@ -1665,7 +1683,7 @@ function renderAiMarkdown(text){
     const quote=line.match(/^[><]\s*(.+)$/);
     if(quote){flushPara();closeList();html.push(`<blockquote class="ai-quote">${aiInlineMarkdown(quote[1])}</blockquote>`);continue;}
     const heading=line.match(/^(#{1,4})\s+(.+)$/);
-    if(heading){flushPara();closeList();html.push(`<h4>${aiInlineMarkdown(heading[2])}</h4>`);continue;}
+    if(heading){flushPara();closeSection();html.push(`<section class="ai-section"><h4>${aiInlineMarkdown(heading[2])}</h4>`);inSection=true;continue;}
     const bullet=line.match(/^[-*]\s+(.+)$/);
     if(bullet){
       flushPara();
@@ -1678,6 +1696,7 @@ function renderAiMarkdown(text){
   }
   flushPara();
   closeList();
+  closeSection();
   return html.join("")||"<p>אין תשובה זמינה.</p>";
 }
 function renderAiAnswer(out,data){
