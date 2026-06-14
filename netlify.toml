@@ -1,4 +1,8 @@
+# Zero-build site: serve the repo root as-is. The empty command stops Netlify
+# from attempting an auto-detected build when the GitHub repo is linked for
+# continuous deployment.
 [build]
+  command = ""
   publish = "."
 
 [functions]

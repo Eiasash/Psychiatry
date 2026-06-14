@@ -52,14 +52,18 @@ export default async function handler(req) {
   if (req.method === "OPTIONS") return new Response(null, { status: 204, headers: JSON_HEADERS });
   if (req.method !== "POST") return json({ error: "Method not allowed" }, 405);
 
-  const auth = await requireSupabaseUser(req);
+  // Require a real authenticated Supabase user — the AI tutor is only available on the
+  // authenticated deploy, and we forward this user's session JWT to the proxy below.
+  const auth = await requireSupabaseUser(req, { allowDisabled: false });
   if (!auth.ok) return auth.response;
 
-  // AI tutor routes through the shared Toranot Claude proxy (Anthropic messages API),
-  // authenticated with a shared x-api-secret matching Toranot's API_SECRET env.
+  // AI tutor routes through the shared Toranot Claude proxy (Anthropic messages API). The
+  // proxy authenticates EITHER an x-api-secret OR a Supabase session JWT validated against
+  // the same shared Supabase project. We forward the authenticated user's JWT, so no shared
+  // proxy secret needs to be stored on this site. CLAUDE_PROXY_SECRET, when set, is sent as
+  // an explicit override (e.g. if this app is ever pointed at a non-Supabase proxy).
   const proxyUrl = env("CLAUDE_PROXY_URL") || "https://toranot.netlify.app/api/claude";
   const proxySecret = env("CLAUDE_PROXY_SECRET");
-  if (!proxySecret) return json({ error: "AI tutor is not configured" }, 501);
 
   let body;
   try {
@@ -73,14 +77,15 @@ export default async function handler(req) {
   }
 
   const model = env("CLAUDE_MODEL") || "claude-sonnet-4-6";
+  const proxyHeaders = { "Content-Type": "application/json" };
+  if (proxySecret) proxyHeaders["x-api-secret"] = proxySecret;
+  else if (auth.token) proxyHeaders["Authorization"] = `Bearer ${auth.token}`;
+
   let response, data;
   try {
     response = await fetch(proxyUrl, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "x-api-secret": proxySecret
-      },
+      headers: proxyHeaders,
       body: JSON.stringify({
         model,
         max_tokens: 700,
