@@ -1,0 +1,483 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<meta name="theme-color" content="#0b1020" />
+<meta name="description" content="בנק שאלות שלב א' בפסיכיאטריה — מבחני המועצה המדעית / הר\"י, 2020–2024. תרגול MCQ עם חזרה מרווחת." />
+<link rel="manifest" href="manifest.json" />
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🧠</text></svg>" />
+<link rel="apple-touch-icon" href="icons/icon-192.png" />
+<title>שלב א' פסיכיאטריה — בנק שאלות</title>
+<style>
+:root{
+  --bg:#0b1020; --bg2:#11172e; --card:#161d38; --card2:#1c2547;
+  --line:#28315a; --txt:#e8ecfb; --muted:#9aa6d4; --faint:#6b76a8;
+  --accent:#7c6cff; --accent2:#22d3b7; --accent-d:#5b4bd6;
+  --good:#34d399; --good-bg:#0f3d33; --bad:#fb7185; --bad-bg:#3d1622;
+  --warn:#fbbf24; --chip:#222c52; --shadow:0 10px 40px rgba(0,0,0,.45);
+  --r:16px;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;padding:0}
+body{
+  font-family:"Segoe UI",Rubik,Arial,system-ui,sans-serif;
+  background:radial-gradient(1200px 700px at 80% -10%,#1a2348 0,transparent 60%),
+             radial-gradient(900px 600px at -10% 10%,#10243a 0,transparent 55%),var(--bg);
+  color:var(--txt);min-height:100vh;line-height:1.6;
+  -webkit-font-smoothing:antialiased;
+}
+.wrap{max-width:880px;margin:0 auto;padding:14px 14px 96px}
+a{color:var(--accent2)}
+button{font-family:inherit}
+.hidden{display:none!important}
+
+/* ---- header ---- */
+header.app{
+  display:flex;align-items:center;gap:12px;padding:10px 4px 16px;
+}
+.logo{
+  width:46px;height:46px;border-radius:13px;flex:0 0 auto;
+  background:linear-gradient(135deg,var(--accent),var(--accent2));
+  display:grid;place-items:center;font-size:26px;box-shadow:var(--shadow);
+}
+.htxt h1{font-size:19px;margin:0;font-weight:700;letter-spacing:.2px}
+.htxt p{margin:1px 0 0;font-size:12.5px;color:var(--muted)}
+
+/* ---- cards / grid ---- */
+.card{background:linear-gradient(180deg,var(--card),var(--bg2));border:1px solid var(--line);
+  border-radius:var(--r);padding:18px;box-shadow:var(--shadow)}
+.grid{display:grid;gap:12px}
+.g2{grid-template-columns:1fr 1fr}
+.g3{grid-template-columns:repeat(3,1fr)}
+@media(max-width:560px){.g3{grid-template-columns:1fr 1fr}}
+
+.stat{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px;text-align:center}
+.stat .n{font-size:26px;font-weight:800;background:linear-gradient(135deg,var(--accent2),var(--accent));-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+.stat .l{font-size:12px;color:var(--muted);margin-top:2px}
+
+h2.sec{font-size:14px;color:var(--muted);font-weight:600;margin:22px 4px 10px;text-transform:uppercase;letter-spacing:1px}
+
+/* ---- buttons ---- */
+.btn{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;
+  border:1px solid var(--line);background:var(--card2);color:var(--txt);
+  padding:14px 16px;border-radius:14px;font-size:15px;font-weight:600;cursor:pointer;
+  transition:.15s transform,.15s background,.15s border-color}
+.btn:hover{background:#222c52;border-color:var(--accent)}
+.btn:active{transform:scale(.98)}
+.btn.primary{background:linear-gradient(135deg,var(--accent-d),var(--accent));border:none}
+.btn.primary:hover{filter:brightness(1.08)}
+.btn .ic{font-size:19px}
+.btn .sub{font-size:11.5px;color:var(--muted);font-weight:500}
+.btn.col{flex-direction:column;gap:3px;text-align:center}
+
+/* ---- chips ---- */
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{background:var(--chip);border:1px solid var(--line);border-radius:999px;
+  padding:7px 13px;font-size:13px;cursor:pointer;color:var(--txt);transition:.15s;display:flex;gap:7px;align-items:center}
+.chip:hover{border-color:var(--accent)}
+.chip .c{color:var(--faint);font-size:12px}
+.chip.on{background:var(--accent);border-color:var(--accent);color:#fff}
+.chip.on .c{color:#e3deff}
+
+/* ---- quiz ---- */
+.qhead{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:8px;font-size:12.5px;color:var(--muted)}
+.qmeta{display:flex;gap:6px;flex-wrap:wrap}
+.tag{background:var(--chip);border:1px solid var(--line);border-radius:8px;padding:2px 9px;font-size:11.5px;color:var(--muted)}
+.tag.acc{color:var(--accent2);border-color:var(--accent2)}
+.progbar{height:6px;background:var(--card2);border-radius:6px;overflow:hidden;margin:4px 0 14px}
+.progbar>i{display:block;height:100%;background:linear-gradient(90deg,var(--accent),var(--accent2));transition:.3s width}
+.qtext{font-size:18px;font-weight:600;line-height:1.7;margin:6px 0 16px}
+.opts{display:grid;gap:10px}
+.opt{display:flex;gap:12px;align-items:flex-start;background:var(--card2);border:1.5px solid var(--line);
+  border-radius:13px;padding:13px 14px;cursor:pointer;font-size:15.5px;transition:.13s;text-align:right;width:100%;color:var(--txt)}
+.opt:hover{border-color:var(--accent)}
+.opt .k{flex:0 0 auto;width:26px;height:26px;border-radius:8px;background:var(--chip);
+  display:grid;place-items:center;font-weight:700;font-size:14px;color:var(--muted)}
+.opt .ot{flex:1;padding-top:1px;unicode-bidi:plaintext}
+.opt.correct{border-color:var(--good);background:var(--good-bg)}
+.opt.correct .k{background:var(--good);color:#04231a}
+.opt.wrong{border-color:var(--bad);background:var(--bad-bg)}
+.opt.wrong .k{background:var(--bad);color:#3d0a14}
+.opt.dim{opacity:.55}
+.opt[disabled]{cursor:default}
+
+.fb{margin-top:14px;border-radius:13px;padding:13px 15px;font-size:14px;display:none}
+.fb.show{display:block}
+.fb.ok{background:var(--good-bg);border:1px solid var(--good)}
+.fb.no{background:var(--bad-bg);border:1px solid var(--bad)}
+.fb .ref{margin-top:7px;font-size:13px;color:var(--muted)}
+.fb .ref b{color:var(--accent2);font-weight:600}
+.fb .note{margin-top:6px;font-size:12.5px;color:var(--warn)}
+
+.qfoot{display:flex;gap:10px;margin-top:16px}
+.qfoot .btn{flex:1}
+
+/* ---- browse / search ---- */
+.search{width:100%;background:var(--card2);border:1px solid var(--line);border-radius:12px;
+  color:var(--txt);padding:13px 15px;font-size:15px;font-family:inherit}
+.search:focus{outline:none;border-color:var(--accent)}
+.qitem{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:13px 15px;margin-bottom:10px}
+.qitem .qq{font-weight:600;margin-bottom:8px}
+.qitem .oo{font-size:14px;color:var(--muted);padding:3px 0;unicode-bidi:plaintext}
+.qitem .oo.c{color:var(--good);font-weight:600}
+.qitem .meta{font-size:11.5px;color:var(--faint);margin-top:8px;display:flex;gap:8px;flex-wrap:wrap}
+
+/* ---- bottom nav ---- */
+nav.bar{position:fixed;bottom:0;left:0;right:0;background:rgba(11,16,32,.92);
+  backdrop-filter:blur(12px);border-top:1px solid var(--line);display:flex;z-index:20;
+  padding-bottom:env(safe-area-inset-bottom)}
+nav.bar button{flex:1;background:none;border:none;color:var(--faint);padding:9px 4px 8px;
+  font-size:11px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:3px;font-weight:600}
+nav.bar button .ni{font-size:20px}
+nav.bar button.on{color:var(--accent2)}
+
+/* progress ring */
+.ring{position:relative;width:120px;height:120px;margin:0 auto}
+.ring svg{transform:rotate(-90deg)}
+.ring .mid{position:absolute;inset:0;display:grid;place-items:center;text-align:center}
+.ring .mid b{font-size:24px;font-weight:800}
+.ring .mid span{font-size:11px;color:var(--muted)}
+.muted{color:var(--muted)} .small{font-size:12.5px}
+.kbd{font-size:11px;color:var(--faint);background:var(--chip);border:1px solid var(--line);border-radius:5px;padding:1px 6px}
+.toast{position:fixed;bottom:78px;right:50%;transform:translateX(50%);background:var(--card2);
+  border:1px solid var(--accent);border-radius:10px;padding:9px 16px;font-size:13px;z-index:40;
+  opacity:0;transition:.25s;pointer-events:none}
+.toast.show{opacity:1}
+.banner{background:linear-gradient(135deg,#2a1d52,#19234a);border:1px solid var(--line);border-radius:14px;padding:13px 16px;font-size:13px;color:var(--muted);margin-bottom:14px}
+.banner b{color:var(--txt)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="app">
+    <div class="logo">🧠</div>
+    <div class="htxt">
+      <h1>שלב א' פסיכיאטריה</h1>
+      <p>בנק מבחני המועצה המדעית · הר"י · 2020–2024</p>
+    </div>
+  </header>
+
+  <!-- DASHBOARD -->
+  <section id="view-home"></section>
+  <!-- QUIZ -->
+  <section id="view-quiz" class="hidden"></section>
+  <!-- BROWSE -->
+  <section id="view-browse" class="hidden"></section>
+  <!-- STATS -->
+  <section id="view-stats" class="hidden"></section>
+</div>
+
+<nav class="bar">
+  <button data-nav="home" class="on"><span class="ni">🏠</span>בית</button>
+  <button data-nav="quiz"><span class="ni">✍️</span>תרגול</button>
+  <button data-nav="browse"><span class="ni">🔎</span>עיון</button>
+  <button data-nav="stats"><span class="ni">📊</span>נתונים</button>
+</nav>
+<div class="toast" id="toast"></div>
+
+<script>
+"use strict";
+const LETTERS = ["א","ב","ג","ד"];
+const PROG_KEY = "psych_shlava_progress_v1";
+let QUESTIONS = [], TOPICS = [], PROG = {};
+const $ = (s,r=document)=>r.querySelector(s);
+const el = (t,c,h)=>{const e=document.createElement(t);if(c)e.className=c;if(h!=null)e.innerHTML=h;return e;};
+
+/* ---------- progress (Leitner spaced repetition) ---------- */
+function loadProg(){ try{PROG=JSON.parse(localStorage.getItem(PROG_KEY))||{};}catch(e){PROG={};} }
+function saveProg(){ try{localStorage.setItem(PROG_KEY,JSON.stringify(PROG));}catch(e){} }
+const BOX_DAYS=[0,1,3,7,16,40];
+function rec(id){ return PROG[id]||(PROG[id]={box:0,seen:0,correct:0,wrong:0,due:0,last:0}); }
+function grade(id,ok){
+  const r=rec(id); r.seen++; r.last=Date.now();
+  if(ok){ r.correct++; r.box=Math.min(r.box+1,5); }
+  else { r.wrong++; r.box=Math.max(r.box-1,0); }
+  r.due = Date.now()+BOX_DAYS[r.box]*864e5;
+  saveProg();
+}
+const isDue = id => { const r=PROG[id]; return !r || r.seen===0 || (r.due||0)<=Date.now(); };
+const isSeen = id => { const r=PROG[id]; return r && r.seen>0; };
+const isWrongPile = id => { const r=PROG[id]; return r && r.wrong>0 && r.box<=1; };
+
+/* ---------- state ---------- */
+let nav="home";
+let session=null; // {queue:[ids], i, correct, wrong}
+
+/* ---------- data ---------- */
+async function boot(){
+  loadProg();
+  try{
+    const [q,t]=await Promise.all([
+      fetch("data/questions.json").then(r=>r.json()),
+      fetch("data/topics.json").then(r=>r.json())
+    ]);
+    QUESTIONS=q; TOPICS=t.topics||[];
+  }catch(e){
+    $("#view-home").innerHTML='<div class="card">שגיאה בטעינת השאלות. נסה לרענן.</div>';
+    return;
+  }
+  renderHome();
+  if("serviceWorker" in navigator){ navigator.serviceWorker.register("sw.js").catch(()=>{}); }
+}
+
+/* ---------- helpers ---------- */
+const byYear = ()=>{const m={};QUESTIONS.forEach(q=>m[q.t]=(m[q.t]||0)+1);return m;};
+const byTopic= ()=>{const m={};QUESTIONS.forEach(q=>m[q.ti]=(m[q.ti]||0)+1);return m;};
+function yearLabel(t){return t.replace("-Jun"," · יוני").replace("-Sep"," · ספטמבר");}
+function toast(msg){const t=$("#toast");t.textContent=msg;t.classList.add("show");setTimeout(()=>t.classList.remove("show"),1600);}
+
+/* ---------- navigation ---------- */
+function go(v){
+  nav=v;
+  ["home","quiz","browse","stats"].forEach(x=>$("#view-"+x).classList.toggle("hidden",x!==v));
+  document.querySelectorAll("nav.bar button").forEach(b=>b.classList.toggle("on",b.dataset.nav===v));
+  if(v==="home")renderHome();
+  if(v==="browse")renderBrowse();
+  if(v==="stats")renderStats();
+  if(v==="quiz"&&!session)renderHome(),go("home"); // no active session -> home
+  window.scrollTo(0,0);
+}
+document.querySelectorAll("nav.bar button").forEach(b=>b.onclick=()=>{
+  if(b.dataset.nav==="quiz"&&!session){ startSession(QUESTIONS.map(q=>q.id),"תרגול חופשי",true); return; }
+  go(b.dataset.nav);
+});
+
+/* ---------- HOME ---------- */
+function renderHome(){
+  const total=QUESTIONS.length, seen=QUESTIONS.filter(q=>isSeen(q.id)).length;
+  const due=QUESTIONS.filter(q=>isSeen(q.id)&&isDue(q.id)).length;
+  const wrong=QUESTIONS.filter(q=>isWrongPile(q.id)).length;
+  const acc = (()=>{let c=0,s=0;QUESTIONS.forEach(q=>{const r=PROG[q.id];if(r){c+=r.correct;s+=r.correct+r.wrong;}});return s?Math.round(c/s*100):0;})();
+  const pct = total?Math.round(seen/total*100):0;
+  const C=2*Math.PI*52, off=C*(1-pct/100);
+  const yrs=byYear(), tps=byTopic();
+  const v=$("#view-home"); v.innerHTML="";
+
+  v.append(el("div","banner",`בנק עם <b>${total}</b> שאלות מבחן אמיתיות (שלב א' פסיכיאטריה, המועצה המדעית/הר"י). תשובות לאחר ערעור · מראי מקום (Kaplan &amp; Sadock / DSM). חזרה מרווחת אוטומטית.`));
+
+  const ring=el("div","card");
+  ring.style.textAlign="center";
+  ring.innerHTML=`
+    <div class="ring">
+      <svg width="120" height="120"><circle cx="60" cy="60" r="52" stroke="#222c52" stroke-width="12" fill="none"/>
+      <circle cx="60" cy="60" r="52" stroke="url(#g)" stroke-width="12" fill="none" stroke-linecap="round"
+        stroke-dasharray="${C.toFixed(1)}" stroke-dashoffset="${off.toFixed(1)}"/>
+      <defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#7c6cff"/><stop offset="1" stop-color="#22d3b7"/></linearGradient></defs></svg>
+      <div class="mid"><b>${pct}%</b><span>נלמדו</span></div>
+    </div>
+    <div class="grid g3" style="margin-top:14px">
+      <div class="stat"><div class="n">${seen}/${total}</div><div class="l">שאלות שנראו</div></div>
+      <div class="stat"><div class="n">${acc}%</div><div class="l">דיוק כולל</div></div>
+      <div class="stat"><div class="n">${due}</div><div class="l">לחזרה היום</div></div>
+    </div>`;
+  v.append(ring);
+
+  v.append(el("h2","sec","התחל תרגול"));
+  const acts=el("div","grid g2");
+  const mk=(ic,t,sub,fn,cls="")=>{const b=el("button","btn col "+cls,`<span class="ic">${ic}</span><span>${t}</span><span class="sub">${sub}</span>`);b.onclick=fn;return b;};
+  acts.append(
+    mk("🎯","חזרה חכמה",due?`${due} שאלות שהגיע זמנן`:"הכל מעודכן ✓",()=>{
+      const q=QUESTIONS.filter(x=>isSeen(x.id)&&isDue(x.id)).map(x=>x.id);
+      if(!q.length)return toast("אין שאלות לחזרה כעת 🎉");
+      startSession(q,"חזרה מרווחת");
+    },"primary"),
+    mk("✨","שאלות חדשות","שלא נראו עדיין",()=>{
+      const q=QUESTIONS.filter(x=>!isSeen(x.id)).map(x=>x.id);
+      if(!q.length)return toast("נראו כל השאלות! 🏆");
+      startSession(q,"שאלות חדשות");
+    }),
+    mk("🔀","אקראי","ערבוב מלא",()=>startSession(QUESTIONS.map(q=>q.id),"תרגול אקראי",true)),
+    mk("❌","טעויות",wrong?`${wrong} שאלות לשיפור`:"אין טעויות 👌",()=>{
+      const q=QUESTIONS.filter(x=>isWrongPile(x.id)).map(x=>x.id);
+      if(!q.length)return toast("אין שאלות בערימת הטעויות");
+      startSession(q,"חזרה על טעויות");
+    })
+  );
+  v.append(acts);
+
+  v.append(el("h2","sec","לפי מועד"));
+  const yc=el("div","chips");
+  Object.keys(yrs).sort().forEach(t=>{
+    const c=el("button","chip",`${yearLabel(t)} <span class="c">${yrs[t]}</span>`);
+    c.onclick=()=>startSession(QUESTIONS.filter(q=>q.t===t).map(q=>q.id),"מועד "+yearLabel(t),true);
+    yc.append(c);
+  });
+  v.append(yc);
+
+  v.append(el("h2","sec","לפי נושא"));
+  const tc=el("div","chips");
+  Object.keys(tps).map(Number).sort((a,b)=>tps[b]-tps[a]).forEach(ti=>{
+    const c=el("button","chip",`${TOPICS[ti]} <span class="c">${tps[ti]}</span>`);
+    c.onclick=()=>startSession(QUESTIONS.filter(q=>q.ti===ti).map(q=>q.id),TOPICS[ti],true);
+    tc.append(c);
+  });
+  v.append(tc);
+}
+
+/* ---------- QUIZ ---------- */
+function shuffle(a){a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
+function startSession(ids,title,doShuffle){
+  if(!ids.length){toast("אין שאלות");return;}
+  // prioritize due then unseen unless shuffling everything
+  let queue = doShuffle ? shuffle(ids) : ids.slice();
+  session={queue,i:0,correct:0,wrong:0,title,answered:false};
+  go("quiz"); renderQuiz();
+}
+function qById(id){return QUESTIONS.find(q=>q.id===id);}
+function renderQuiz(){
+  const v=$("#view-quiz");
+  if(!session||session.i>=session.queue.length){return renderSessionEnd();}
+  const q=qById(session.queue[session.i]);
+  session.answered=false;
+  v.innerHTML="";
+  const card=el("div","card");
+  const pct=Math.round(session.i/session.queue.length*100);
+  card.append(el("div","qhead",
+    `<div class="qmeta"><span class="tag">${session.title}</span><span class="tag">${yearLabel(q.t)}</span><span class="tag acc">${TOPICS[q.ti]||""}</span></div>
+     <div>${session.i+1} / ${session.queue.length}</div>`));
+  const pb=el("div","progbar",`<i style="width:${pct}%"></i>`);card.append(pb);
+  card.append(el("div","qtext",escapeHtml(q.q)));
+  const opts=el("div","opts");
+  q.o.forEach((o,k)=>{
+    const b=el("button","opt",`<span class="k">${LETTERS[k]}</span><span class="ot">${escapeHtml(o)}</span>`);
+    b.onclick=()=>answer(q,k,opts,fb,card);
+    opts.append(b);
+  });
+  card.append(opts);
+  const fb=el("div","fb");card.append(fb);
+  const foot=el("div","qfoot");
+  const skip=el("button","btn",`דלג`);skip.onclick=()=>nextQ();
+  foot.append(skip);card.append(foot);
+  v.append(card);
+  card._fb=fb;
+}
+function answer(q,k,opts,fb,card){
+  if(session.answered)return;
+  session.answered=true;
+  const accept=q.c_accept&&q.c_accept.length?q.c_accept:[q.c];
+  const ok=accept.includes(k);
+  [...opts.children].forEach((b,idx)=>{
+    b.disabled=true;
+    if(accept.includes(idx))b.classList.add("correct");
+    else if(idx===k)b.classList.add("wrong");
+    else b.classList.add("dim");
+  });
+  if(ok)session.correct++;else session.wrong++;
+  grade(q.id,ok);
+  fb.className="fb show "+(ok?"ok":"no");
+  let h = ok?"✅ נכון!":"❌ לא נכון";
+  if(q.all_accepted) h+=' <span class="note">— כל התשובות התקבלו (שאלה שבוטלה לאחר ערעור)</span>';
+  else if(accept.length>1) h+=` <span class="note">— מתקבלות גם: ${accept.map(i=>LETTERS[i]).join(", ")}</span>`;
+  if(q.ref) h+=`<div class="ref">מקור: <b>${escapeHtml(q.ref)}</b></div>`;
+  fb.innerHTML=h;
+  // turn skip into next
+  const foot=card.querySelector(".qfoot");foot.innerHTML="";
+  const nx=el("button","btn primary",`הבא ←`);nx.onclick=()=>nextQ();foot.append(nx);
+  nx.focus();
+}
+function nextQ(){ if(!session)return; session.i++; renderQuiz(); window.scrollTo(0,0); }
+function renderSessionEnd(){
+  const v=$("#view-quiz");const tot=session.correct+session.wrong;
+  const acc=tot?Math.round(session.correct/tot*100):0;
+  v.innerHTML="";
+  const c=el("div","card");c.style.textAlign="center";
+  c.innerHTML=`<div style="font-size:46px">${acc>=80?"🏆":acc>=60?"👍":"💪"}</div>
+   <h2 style="margin:6px 0">סיימת!</h2>
+   <div class="grid g3" style="margin:14px 0">
+     <div class="stat"><div class="n">${session.correct}</div><div class="l">נכון</div></div>
+     <div class="stat"><div class="n">${session.wrong}</div><div class="l">טעות</div></div>
+     <div class="stat"><div class="n">${acc}%</div><div class="l">דיוק</div></div>
+   </div>`;
+  const b=el("button","btn primary","חזרה לבית");b.onclick=()=>{session=null;go("home");};
+  c.append(b);
+  if(session.wrong>0){
+    const w=el("button","btn","חזור על הטעויות מהסבב");w.style.marginTop="10px";
+    const wrongIds=session.queue.slice(0,session.i).filter(id=>{const r=PROG[id];return r&&r.wrong>0&&r.last>Date.now()-36e5;});
+    w.onclick=()=>{const ids=session.queue.filter(id=>{const r=PROG[id];return r&&r.box<=1;});startSession(ids.length?ids:session.queue,"חזרה על טעויות");};
+    c.append(w);
+  }
+  v.append(c);
+  session=null;
+}
+
+/* ---------- BROWSE ---------- */
+let browseState={q:"",ti:-1,t:""};
+function renderBrowse(){
+  const v=$("#view-browse");v.innerHTML="";
+  const s=el("input","search");s.placeholder="חיפוש בשאלות, תשובות, מקורות…";s.value=browseState.q;
+  s.oninput=()=>{browseState.q=s.value;drawList();};
+  v.append(s);
+  // topic filter chips
+  const tc=el("div","chips");tc.style.margin="12px 0";
+  const all=el("button","chip"+(browseState.ti<0?" on":""),"הכל");all.onclick=()=>{browseState.ti=-1;renderBrowse();};
+  tc.append(all);
+  const tps=byTopic();
+  Object.keys(tps).map(Number).sort((a,b)=>tps[b]-tps[a]).forEach(ti=>{
+    const c=el("button","chip"+(browseState.ti===ti?" on":""),`${TOPICS[ti]} <span class="c">${tps[ti]}</span>`);
+    c.onclick=()=>{browseState.ti=ti;renderBrowse();};tc.append(c);
+  });
+  v.append(tc);
+  const list=el("div");list.id="blist";v.append(list);
+  drawList();
+}
+function drawList(){
+  const list=$("#blist");if(!list)return;
+  const term=browseState.q.trim();
+  let res=QUESTIONS;
+  if(browseState.ti>=0)res=res.filter(q=>q.ti===browseState.ti);
+  if(term)res=res.filter(q=>(q.q+" "+q.o.join(" ")+" "+(q.ref||"")).includes(term));
+  list.innerHTML=`<div class="muted small" style="margin:4px 0 10px">${res.length} שאלות</div>`;
+  res.slice(0,300).forEach(q=>{
+    const it=el("div","qitem");
+    it.append(el("div","qq",escapeHtml(q.q)));
+    const accept=q.c_accept&&q.c_accept.length?q.c_accept:[q.c];
+    q.o.forEach((o,k)=>it.append(el("div","oo"+(accept.includes(k)?" c":""),`${LETTERS[k]}. ${escapeHtml(o)}`)));
+    it.append(el("div","meta",`<span>${yearLabel(q.t)}</span><span>${TOPICS[q.ti]||""}</span>${q.ref?`<span>${escapeHtml(q.ref)}</span>`:""}${q.all_accepted?`<span style="color:var(--warn)">בוטלה בערעור</span>`:""}`));
+    list.append(it);
+  });
+  if(res.length>300)list.append(el("div","muted small","מוצגות 300 הראשונות — צמצם בחיפוש."));
+}
+
+/* ---------- STATS ---------- */
+function renderStats(){
+  const v=$("#view-stats");v.innerHTML="";
+  const seen=QUESTIONS.filter(q=>isSeen(q.id)).length;
+  let c=0,s=0;QUESTIONS.forEach(q=>{const r=PROG[q.id];if(r){c+=r.correct;s+=r.correct+r.wrong;}});
+  const acc=s?Math.round(c/s*100):0;
+  const head=el("div","card");
+  head.innerHTML=`<div class="grid g3">
+    <div class="stat"><div class="n">${seen}</div><div class="l">שאלות שנראו</div></div>
+    <div class="stat"><div class="n">${s}</div><div class="l">תשובות</div></div>
+    <div class="stat"><div class="n">${acc}%</div><div class="l">דיוק</div></div></div>`;
+  v.append(head);
+  // per-topic accuracy
+  v.append(el("h2","sec","דיוק לפי נושא"));
+  const tp={};QUESTIONS.forEach(q=>{const r=PROG[q.id];if(r&&r.seen){(tp[q.ti]=tp[q.ti]||{c:0,t:0});tp[q.ti].c+=r.correct;tp[q.ti].t+=r.correct+r.wrong;}});
+  const card=el("div","card");
+  const keys=Object.keys(tp).map(Number).sort((a,b)=>(tp[b].t?tp[b].c/tp[b].t:0)-(tp[a].t?tp[a].c/tp[a].t:0));
+  if(!keys.length)card.innerHTML='<div class="muted">עדיין אין נתונים — התחל לתרגל!</div>';
+  keys.forEach(ti=>{
+    const a=tp[ti].t?Math.round(tp[ti].c/tp[ti].t*100):0;
+    const row=el("div");row.style.margin="9px 0";
+    row.innerHTML=`<div style="display:flex;justify-content:space-between;font-size:13.5px"><span>${TOPICS[ti]}</span><span class="muted">${a}% · ${tp[ti].t}</span></div>
+      <div class="progbar" style="margin:4px 0 0"><i style="width:${a}%"></i></div>`;
+    card.append(row);
+  });
+  v.append(card);
+  const reset=el("button","btn","איפוס התקדמות");reset.style.marginTop="16px";
+  reset.onclick=()=>{if(confirm("לאפס את כל ההתקדמות והנתונים?")){PROG={};saveProg();toast("אופס");go("home");}};
+  v.append(reset);
+}
+
+/* ---------- util ---------- */
+function escapeHtml(s){return String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));}
+document.addEventListener("keydown",e=>{
+  if(nav!=="quiz"||!session)return;
+  if(["1","2","3","4"].includes(e.key)){const opts=$("#view-quiz .opts");if(opts&&!session.answered)opts.children[+e.key-1]?.click();}
+  if(e.key==="Enter"&&session.answered){const nx=$("#view-quiz .qfoot .primary");nx&&nx.click();}
+});
+boot();
+</script>
+</body>
+</html>
