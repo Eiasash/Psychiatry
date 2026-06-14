@@ -30,6 +30,10 @@ expect(/ai-drill-card card/, "AI syllabus drill card is missing");
 expect(/function aiQuestionHtml\(/, "AI syllabus question renderer is missing");
 expect(/async function generateAiQuestion\(/, "AI syllabus question generator is missing");
 expect(/\/api\/ai-question/, "AI syllabus question endpoint is not wired into the UI");
+expect(/const AI_QUESTION_APP_URL = "https:\/\/psychiatry-szmc\.netlify\.app\/"/, "AI syllabus drill needs a canonical Netlify app URL");
+expect(/function aiQuestionAvailable\(/, "AI syllabus drill needs an availability check");
+expect(/id="ai-open-netlify"/, "AI syllabus drill needs a real Netlify handoff link when functions are unavailable");
+expectMissing(/id="ai-open-netlify"[^>]*aria-disabled="true"/, "AI syllabus Netlify handoff link must not be exposed as disabled");
 expect(/dir="ltr">Kaplan &amp; Sadock/, "mixed Hebrew/English source names need an LTR boundary");
 expectMissing(/v\.append\(el\("div","banner",`בנק עם/, "old dense home banner is still present");
 expectMissing(/v\.append\(aiQuestionHtml\(tps\)\)/, "AI syllabus card HTML is appended as text instead of rendered DOM");
@@ -49,6 +53,31 @@ function extractFunction(name) {
 }
 
 const rendererSource = ["escapeHtml", "aiInlineMarkdown", "renderAiMarkdown", "renderAiAnswer"].map(extractFunction).join("\n");
+const aiCardSource = ["escapeHtml", "weakestTopicIndex", "aiQuestionAvailable", "aiQuestionHtml"].map(extractFunction).join("\n");
+if (aiCardSource.trim()) {
+  try {
+    const context = {
+      AUTH: { required: false, user: null },
+      TOPICS: ["Mood Disorders"],
+      AI_SYLLABUS_SOURCES: [{ value: "synopsis", label: "Kaplan & Sadock Synopsis", hint: "סיכום ליבה לבחינה" }],
+      AI_QUESTION_APP_URL: "https://psychiatry-szmc.netlify.app/",
+      QUESTIONS: [],
+      PROG: {},
+    };
+    vm.createContext(context);
+    vm.runInContext(aiCardSource, context);
+    const renderedAiCard = vm.runInContext("aiQuestionHtml({0: 1})", context);
+    if (!renderedAiCard.includes('id="ai-open-netlify" href="https://psychiatry-szmc.netlify.app/"')) failures.push("AI syllabus Netlify handoff href does not render to the canonical URL");
+    if (renderedAiCard.includes("${AI_QUESTION_APP_URL}")) failures.push("AI syllabus Netlify handoff leaks a template placeholder");
+    const renderedAuthedAiCard = vm.runInContext("AUTH.required = true; AUTH.user = { id: 'test-user' }; aiQuestionHtml({0: 1})", context);
+    if (!renderedAuthedAiCard.includes('id="ai-generate"')) failures.push("AI syllabus authenticated card does not render the generate button");
+    if (renderedAuthedAiCard.includes('id="ai-open-netlify"')) failures.push("AI syllabus authenticated card still renders the Netlify handoff");
+    if (/id="ai-topic" disabled/.test(renderedAuthedAiCard)) failures.push("AI syllabus authenticated card leaves controls disabled");
+  } catch (err) {
+    failures.push(`AI syllabus card regression threw: ${err.message}`);
+  }
+}
+
 if (rendererSource.trim()) {
   try {
     const context = {};
