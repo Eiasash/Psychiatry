@@ -4,3 +4,22 @@
 [functions]
   directory = "netlify/functions"
   node_bundler = "esbuild"
+  included_files = ["data/questions.json", "data/explanations.json", "docs/answer_key_doubts.json"]
+
+[[redirects]]
+  from = "/data/questions.json"
+  to = "/api/protected-asset?path=data/questions.json"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/data/explanations.json"
+  to = "/api/protected-asset?path=data/explanations.json"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/docs/answer_key_doubts.json"
+  to = "/api/protected-asset?path=docs/answer_key_doubts.json"
+  status = 200
+  force = true

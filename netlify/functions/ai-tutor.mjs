@@ -1,4 +1,4 @@
-import { requireAuth } from "./lib/auth.mjs";
+import { requireSupabaseUser } from "./lib/supabase.mjs";
 
 const JSON_HEADERS = {
   "Content-Type": "application/json; charset=utf-8",
@@ -63,7 +63,7 @@ export default async function handler(req) {
   if (req.method === "OPTIONS") return new Response(null, { status: 204, headers: JSON_HEADERS });
   if (req.method !== "POST") return json({ error: "Method not allowed" }, 405);
 
-  const auth = requireAuth(req);
+  const auth = await requireSupabaseUser(req);
   if (!auth.ok) return auth.response;
 
   const apiKey = env("OPENAI_API_KEY");
