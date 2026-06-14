@@ -1,12 +1,13 @@
 {
   "name": "psychiatry-shlav-aleph",
-  "version": "1.5.4",
+  "version": "1.5.5",
   "private": true,
   "description": "Israeli Psychiatry Shlav Aleph board-prep PWA",
   "scripts": {
     "dev": "python -m http.server 8123",
     "audit:a11y": "node scripts/a11y-audit.mjs",
-    "check:syntax": "node scripts/check-index-script.mjs && node --check scripts/verify.mjs && node --check scripts/a11y-audit.mjs && node --check netlify/functions/lib/supabase.mjs && node --check netlify/functions/supabase-config.mjs && node --check netlify/functions/protected-asset.mjs && node --check netlify/functions/ai-tutor.mjs",
-    "verify": "npm run check:syntax && node scripts/verify.mjs && npm run audit:a11y"
+    "audit:ui": "node scripts/ui-regression.mjs",
+    "check:syntax": "node scripts/check-index-script.mjs && node --check scripts/verify.mjs && node --check scripts/a11y-audit.mjs && node --check scripts/ui-regression.mjs && node --check netlify/functions/lib/supabase.mjs && node --check netlify/functions/supabase-config.mjs && node --check netlify/functions/protected-asset.mjs && node --check netlify/functions/ai-tutor.mjs",
+    "verify": "npm run check:syntax && node scripts/verify.mjs && npm run audit:a11y && npm run audit:ui"
   }
 }
