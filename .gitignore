@@ -4,3 +4,4 @@ node_modules/
 .work/
 .playwright-mcp/
 supabase/.temp/
+.netlify/
