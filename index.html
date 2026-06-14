@@ -166,10 +166,21 @@ h2.sec{font-size:14px;color:var(--muted);font-weight:600;margin:22px 4px 10px;te
 .review-row{background:var(--card2);border:1px solid var(--line);border-radius:12px;padding:12px}
 .review-row.ok{border-color:var(--good)}
 .review-row.no{border-color:var(--bad)}
-.ai-box{margin-top:10px;padding:12px;border:1px solid var(--line);border-radius:12px;background:rgba(34,211,183,.08)}
+.ai-box{margin-top:10px;padding:12px;border:1px solid rgba(34,211,183,.35);border-radius:12px;background:var(--card2);box-shadow:inset -3px 0 0 rgba(34,211,183,.55)}
 .ai-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
 .ai-actions .btn{width:auto;min-height:44px;padding:9px 12px;font-size:13px}
-.ai-output{margin-top:10px;white-space:pre-wrap;unicode-bidi:plaintext}
+.ai-output{margin-top:10px;unicode-bidi:plaintext;line-height:1.75;color:var(--txt)}
+.ai-output p{margin:0 0 10px}
+.ai-output p:last-child{margin-bottom:0}
+.ai-output h4{font-size:14px;line-height:1.45;margin:14px 0 6px;color:var(--accent2);font-weight:800;letter-spacing:0}
+.ai-output h4:first-child{margin-top:0}
+.ai-output strong{color:#fff;font-weight:800}
+.ai-output code{direction:ltr;unicode-bidi:isolate;background:var(--chip);border:1px solid var(--line);border-radius:6px;padding:1px 5px}
+.ai-output ul{margin:0 0 10px;padding:0 18px 0 0}
+.ai-output li{margin:4px 0}
+.ai-rule{border:0;border-top:1px solid var(--line);margin:12px 0}
+.ai-citations{display:flex;gap:6px;flex-wrap:wrap;margin-top:12px;padding-top:10px;border-top:1px solid var(--line);font-size:12px;color:var(--muted)}
+.ai-citations span:first-child{font-weight:800;color:var(--accent2)}
 
 /* ---- bottom nav ---- */
 nav.bar{position:fixed;bottom:0;left:0;right:0;background:rgba(11,16,32,.92);
@@ -881,7 +892,7 @@ function renderHome(){
   if(session){
     const q=qById(session.queue[session.i]);
     const resume=el("div","card");
-    resume.innerHTML=`<div class="qhead"><div><b>סבב פתוח</b><div class="muted small">${escapeHtml(session.title)} · ${session.i+1}/${session.queue.length}${q?` · ${escapeHtml(topicName(q))}`:""}</div></div></div>`;
+    resume.innerHTML=`<div class="qhead"><div><b>סבב פתוח</b><div class="muted small">${escapeHtml(session.title)} · <span dir="ltr">${session.i+1}/${session.queue.length}</span>${q?` · ${escapeHtml(topicName(q))}`:""}</div></div></div>`;
     const row=el("div","toolbar");
     const cont=el("button","btn primary","המשך");cont.onclick=()=>{go("quiz");renderQuiz();};
     const drop=el("button","btn","סגור סבב");drop.onclick=()=>{clearActiveSession();renderHome();};
@@ -1015,7 +1026,7 @@ function renderQuiz(){
   const doubt=KEY_DOUBTS[q.id]?'<span class="tag" style="color:var(--warn);border-color:var(--warn)">דגל מפתח</span>':"";
   const qhead=el("div","qhead",
     `<div class="qmeta"><span class="tag">${escapeHtml(session.title)}</span><span class="tag">${escapeHtml(yearLabel(q.t))}</span><span class="tag acc">${escapeHtml(topicName(q))}</span>${q.vision?'<span class="tag" style="color:var(--warn);border-color:var(--warn)" title="תמלול אוטומטי מהמקור — ודא מול ה-PDF">OCR</span>':""}${doubt}</div>
-     <div class="toolbar">${timer}<span>${session.i+1} / ${session.queue.length}</span></div>`);
+     <div class="toolbar">${timer}<span class="qcount" dir="ltr">${session.i+1} / ${session.queue.length}</span></div>`);
   qhead.querySelector(".toolbar").prepend(starButton(q.id,()=>renderQuiz()));
   card.append(qhead);
   const pb=el("div","progbar",`<i style="width:${pct}%"></i>`);pb.setAttribute("role","progressbar");pb.setAttribute("aria-label","התקדמות בסבב");pb.setAttribute("aria-valuemin","0");pb.setAttribute("aria-valuemax","100");pb.setAttribute("aria-valuenow",String(pct));card.append(pb);
@@ -1375,6 +1386,48 @@ function aiTutorHtml(){
 function wireAiButtons(root,q,k){
   root.querySelectorAll("[data-ai-mode]").forEach(b=>b.onclick=()=>askAi(b.dataset.aiMode,q,k,root.querySelector(".ai-output")));
 }
+function aiInlineMarkdown(s){
+  return escapeHtml(s)
+    .replace(/`([^`]+)`/g,"<code>$1</code>")
+    .replace(/\*\*([^*]+)\*\*/g,"<strong>$1</strong>");
+}
+function renderAiMarkdown(text){
+  const lines=String(text||"").replace(/\r\n?/g,"\n").split("\n");
+  const html=[];
+  let para=[];
+  let inList=false;
+  const closeList=()=>{if(inList){html.push("</ul>");inList=false;}};
+  const flushPara=()=>{
+    if(!para.length)return;
+    html.push(`<p>${para.map(aiInlineMarkdown).join("<br>")}</p>`);
+    para=[];
+  };
+  for(const raw of lines){
+    const line=raw.trim();
+    if(!line){flushPara();closeList();continue;}
+    if(/^[-*_]{3,}$/.test(line)){flushPara();closeList();html.push('<hr class="ai-rule">');continue;}
+    const heading=line.match(/^(#{1,4})\s+(.+)$/);
+    if(heading){flushPara();closeList();html.push(`<h4>${aiInlineMarkdown(heading[2])}</h4>`);continue;}
+    const bullet=line.match(/^[-*]\s+(.+)$/);
+    if(bullet){
+      flushPara();
+      if(!inList){html.push("<ul>");inList=true;}
+      html.push(`<li>${aiInlineMarkdown(bullet[1])}</li>`);
+      continue;
+    }
+    closeList();
+    para.push(line);
+  }
+  flushPara();
+  closeList();
+  return html.join("")||"<p>אין תשובה זמינה.</p>";
+}
+function renderAiAnswer(out,data){
+  const answer=renderAiMarkdown(data?.answer||"אין תשובה זמינה.");
+  const citations=Array.isArray(data?.citations)?data.citations.filter(c=>typeof c==="string"&&c.trim()).slice(0,6):[];
+  const citationHtml=citations.length?`<div class="ai-citations"><span>מקורות:</span>${citations.map(c=>`<span>${escapeHtml(c)}</span>`).join("")}</div>`:"";
+  out.innerHTML=`<div class="ai-answer">${answer}${citationHtml}</div>`;
+}
 function progressSummary(){
   const topics={};
   QUESTIONS.forEach(q=>{const r=PROG[q.id];if(r&&r.seen){const t=topicName(q);topics[t]=topics[t]||{seen:0,correct:0,total:0};topics[t].seen++;topics[t].correct+=r.correct;topics[t].total+=r.correct+r.wrong;}});
@@ -1395,7 +1448,7 @@ async function askAi(mode,q,k,out){
       return;
     }
     const data=await res.json();
-    out.innerHTML=`${escapeHtml(data.answer||"אין תשובה זמינה.")}${Array.isArray(data.citations)&&data.citations.length?`\n\nמקורות: ${data.citations.map(escapeHtml).join(" · ")}`:""}`;
+    renderAiAnswer(out,data);
   }catch(e){
     out.textContent="AI Tutor אינו זמין כרגע. התרגול המקומי ממשיך לעבוד כרגיל.";
   }
