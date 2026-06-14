@@ -1,0 +1,62 @@
+[
+ {
+  "id": "psych-2020-q088",
+  "keyed": "ב",
+  "keyed_text": "להמשיך מתדון ,תוך הפחתת המינון בטרימסטר השלישי",
+  "issue": "Keyed primary letter ב (reduce methadone dose in 3rd trimester) contradicts Synopsis p.199 — methadone is metabolized FASTER in the 3rd trimester and may require a HIGHER dose; explanation is correct because it supports the also-accepted, textbook-consistent letter ג and explicitly flags the conflict."
+ },
+ {
+  "id": "psych-2022-q071",
+  "keyed": "א",
+  "keyed_text": "Capgras",
+  "issue": "Explanation correctly defends the keyed answer (Capgras) and accurately defines Capgras vs Fregoli. However the vignette (staff are imposters who 'switch faces' and are identified AS familiar people - the nurse is his mother, the manager his deceased uncle) describes perceiving strangers as familiar persons in disguise, which is the Fregoli phenomenon; the official key (Capgras) is arguable. Flagged as keydoubt."
+ },
+ {
+  "id": "psych-2022-q121",
+  "keyed": "ד",
+  "keyed_text": "הימנעות ממתן תרופות בערב יש לבחור בתשובה אחת בלבד עבור כל שאלה 26",
+  "issue": "Garbled options; key ד respected but distractor ב ('3-4 equal divided doses') better fits 'NOT a geriatric principle' (simplify regimen) - possible key issue, explanation handles it correctly"
+ },
+ {
+  "id": "psych-2023-q037",
+  "keyed": "ג",
+  "keyed_text": "אין לשחרר את המטופל לחופשה, אלא באישור הפסיכיאטר המחוזי",
+  "issue": "Explanation misstates the statute: section 31 of the Israeli Mental Health Law applies a relative's/patient's objection only to DISCHARGE (שחרור), not to furlough (חופשה), and section 30 places furlough authority with the hospital director, not the district psychiatrist. The keyed answer (ג) is itself doubtful — by the literal text of sections 30-31 the precise statement is option א (a relative can object only to discharge, not to furlough). Keying ג is defensible only on the narrower reading that an administrative hospitalization order (הוראת אשפוז) keeps the patient under the district psychiatrist's authority. Corrected explanation supports the keyed answer ג via that rationale and removes the misquotation of section 31; flagged as keydoubt."
+ },
+ {
+  "id": "psych-2023-q071",
+  "keyed": "א",
+  "keyed_text": "Escitalopram",
+  "issue": "Official key (escitalopram as MOST likely to cause manic switch) is medically backwards: TCAs/amitriptyline carry the highest switch risk and SSRIs the lowest. The explanation correctly supports the dual-accepted answer set and flags this honestly; key is the suspect element, not the explanation."
+ },
+ {
+  "id": "psych-2024-09-q046",
+  "keyed": "א",
+  "keyed_text": "דיכוי נשימתי",
+  "issue": "Explanation correctly teaches sympathomimetic toxidrome and is consistent with accepted_letters (a,c,d). Flagging keydoubt: original single key 'a' (respiratory depression) is an opioid feature, not a stimulant complication; exam appeal already broadened acceptance."
+ },
+ {
+  "id": "psych-2024-09-q051",
+  "keyed": "ג",
+  "keyed_text": "לאחר שנה וחצי של רמיסיה",
+  "issue": "Standard K&S/APA teaching for a first major depressive episode is 6-12 months of continuation therapy, not matching continuation to the full 1.5-yr episode length; the keyed answer (1.5 yr) is non-standard. The explanation correctly supports the key and honestly flags the convention, so no fix needed to the explanation itself."
+ },
+ {
+  "id": "psych-2024-09-q070",
+  "keyed": "א",
+  "keyed_text": "מגדר- אישה",
+  "issue": "Official key marks female gender as a positive prognostic factor in depression; this is not a classic K&S good-prognosis feature (good prognosis = mild illness, no psychosis, no comorbid substance/anxiety, stable social functioning). Answer is defensible only by elimination since options ב/ג/ד are all clearly negative prognostic factors. Explanation already supports the keyed answer correctly; flagging key."
+ },
+ {
+  "id": "psych-2024-09-q080",
+  "keyed": "א",
+  "keyed_text": "הסכמה מפורשת בכתב של המטופל",
+  "issue": "Keyed primary correct_text 'explicit written consent' (letter א) is clinically wrong for an emergency involuntary sedation of a dangerous, decisionally-incapable psychotic patient — written consent is unobtainable and not required. The clinically correct answer is physician's judgment under the emergency exception of Patient Rights Law §15(3); accepted_letters fortunately also include ב and ד, and the explanation correctly explains the emergency exception, so it is medically sound. Flagging key as suspect."
+ },
+ {
+  "id": "psych-2024-09-q094",
+  "keyed": "ג",
+  "keyed_text": "Naltrexone",
+  "issue": "Explanation sets answer_consistent=false and argues against the keyed answer (naltrexone) instead of supporting it. Per instructions, write the best explanation of the keyed answer and flag the key doubt separately. Keyed answer naltrexone is clinically debatable given the emphasized significant hepatic impairment (naltrexone carries a hepatotoxicity warning; renally-cleared acamprosate is usually preferred in liver disease) - so id added to keydoubts, but the explanation must still support the official key."
+ }
+]
