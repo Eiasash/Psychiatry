@@ -125,9 +125,19 @@ if (rendererSource.trim()) {
     if (!rendered.includes('<hr class="ai-rule">')) failures.push("AI Markdown renderer does not convert separators");
     if (!rendered.includes("<ul>") || !rendered.includes("<li>נקודה אחת</li>")) failures.push("AI Markdown renderer does not convert bullets");
     if (!rendered.includes('<table class="ai-table">')) failures.push("AI Markdown renderer does not convert pipe tables");
-    if (!rendered.includes("<th>הפרעה</th>") || !rendered.includes("<td>Nightmare</td>")) failures.push("AI Markdown renderer loses table cells");
+    if (!rendered.includes("<th>הפרעה</th>") || !rendered.includes('data-label="הפרעה">Nightmare</td>')) failures.push("AI Markdown renderer loses table cells");
+    if (!rendered.includes('data-label="הפרעה"')) failures.push("AI Markdown renderer does not label mobile table cells");
     if (!rendered.includes('<blockquote class="ai-quote">REM = זוכר + מפחיד</blockquote>')) failures.push("AI Markdown renderer does not convert blockquotes");
     if (/(^|>)\s*(#{2,3}|---|\*\*|\|---|\|[^<]*\|)/.test(rendered)) failures.push("AI Markdown renderer leaves raw Markdown markers visible");
+
+    const looseTable = vm.runInContext(`renderAiMarkdown(${JSON.stringify([
+      "### ניתוח האפשרויות",
+      "| תרופה | מינון מוצע | הערה |",
+      "| Fluoxetine 20 mg | נמוך מדי | טווח יעיל: 20-60 מ\"ג |",
+      "| Sertraline 200 mg | מינון מקסימלי-יעיל | תשובה נכונה |"
+    ].join("\n"))})`, context);
+    if (!looseTable.includes('<table class="ai-table">')) failures.push("AI Markdown renderer does not convert loose pipe-row tables");
+    if (/\|\s*תרופה\s*\||\|\s*Fluoxetine 20 mg\s*\|/.test(looseTable)) failures.push("AI Markdown renderer leaves loose pipe rows visible");
 
     const answerHtml = vm.runInContext(`
       const out = { innerHTML: "" };

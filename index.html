@@ -210,7 +210,8 @@ h2.sec{font-size:14px;color:var(--muted);font-weight:600;margin:22px 4px 10px;te
   .ai-table thead{display:none}
   .ai-table tbody,.ai-table tr,.ai-table td{display:block;width:100%}
   .ai-table tr{border:1px solid var(--line);border-radius:10px;margin:8px 0;padding:6px;background:rgba(11,16,32,.18)}
-  .ai-table td{border:0;padding:3px 4px}
+  .ai-table td{border:0;padding:4px 4px}
+  .ai-table td::before{content:attr(data-label);display:block;margin-bottom:1px;color:var(--accent2);font-size:11px;font-weight:800}
   .ai-quote{padding:8px 9px}
   .ai-citations{display:grid;gap:4px}
 }
@@ -1606,7 +1607,7 @@ function aiTableDivider(line){
 }
 function renderAiTable(headers,rows){
   const head=headers.map(c=>`<th>${aiInlineMarkdown(c)}</th>`).join("");
-  const body=rows.map(row=>`<tr>${row.map(c=>`<td>${aiInlineMarkdown(c)}</td>`).join("")}</tr>`).join("");
+  const body=rows.map(row=>`<tr>${row.map((c,i)=>`<td data-label="${escapeHtml(headers[i]||"")}">${aiInlineMarkdown(c)}</td>`).join("")}</tr>`).join("");
   return `<table class="ai-table"><thead><tr>${head}</tr></thead><tbody>${body}</tbody></table>`;
 }
 function renderAiMarkdown(text){
@@ -1625,9 +1626,12 @@ function renderAiMarkdown(text){
     const line=raw.trim();
     if(!line){flushPara();closeList();continue;}
     const tableHeaders=aiTableCells(line);
-    if(tableHeaders&&aiTableDivider(lines[idx+1]||"")){
+    const nextLine=lines[idx+1]||"";
+    const nextCells=aiTableCells(nextLine);
+    const hasTableDivider=aiTableDivider(nextLine);
+    if(tableHeaders&&(hasTableDivider||nextCells)){
       flushPara();closeList();
-      idx++;
+      if(hasTableDivider)idx++;
       const rows=[];
       while(idx+1<lines.length){
         const cells=aiTableCells(lines[idx+1]);
