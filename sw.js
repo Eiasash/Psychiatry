@@ -1,5 +1,5 @@
 /* Psychiatry Shlav Aleph — service worker (offline cache) */
-const CACHE = "psych-shlava-v1.5.8";
+const CACHE = "psych-shlava-v1.5.9";
 const ASSETS = [
   "./",
   "./index.html",
@@ -8,6 +8,11 @@ const ASSETS = [
   "./icons/icon-192.png",
   "./icons/icon-512.png"
 ];
+const APP_SHELL = new Set(["/", "/index.html", "/Psychiatry/", "/Psychiatry/index.html"]);
+
+function isAppShell(url) {
+  return APP_SHELL.has(url.pathname) || url.pathname.endsWith("/");
+}
 
 self.addEventListener("install", e => {
   e.waitUntil(caches.open(CACHE).then(c => c.addAll(ASSETS)));
@@ -31,12 +36,28 @@ self.addEventListener("message", e => {
   }
 });
 
-// network-first for data (fresh questions), cache-first for shell
+// network-first for data and app shell, cache-first for static assets
 self.addEventListener("fetch", e => {
   if (e.request.method !== "GET") return;
   const url = new URL(e.request.url);
   const isData = url.pathname.endsWith(".json");
   const isAuthorized = e.request.headers.has("Authorization");
+  const shellRequest = e.request.mode === "navigate" || isAppShell(url);
+  if (shellRequest) {
+    e.respondWith(
+      caches.open(CACHE).then(cache =>
+        fetch(e.request).then(r => {
+          if (!r || !r.ok) return caches.match(e.request).then(cached => cached || caches.match("./index.html").then(shell => shell || r));
+          if (r && r.ok) {
+            cache.put(e.request, r.clone());
+            cache.put("./index.html", r.clone());
+            return r;
+          }
+        }).catch(() => caches.match(e.request).then(r => r || caches.match("./index.html")))
+      )
+    );
+    return;
+  }
   if (isData) {
     e.respondWith(
       fetch(e.request).then(r => {
@@ -47,6 +68,7 @@ self.addEventListener("fetch", e => {
       }).catch(() => caches.match(e.request))
     );
   } else {
+    // cache-first for static assets
     e.respondWith(caches.match(e.request).then(r => r || fetch(e.request)));
   }
 });

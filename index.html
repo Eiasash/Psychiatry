@@ -175,6 +175,13 @@ h2.sec{font-size:14px;color:var(--muted);font-weight:600;margin:22px 4px 10px;te
 .ai-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
 .ai-actions .btn{width:auto;min-height:44px;padding:9px 12px;font-size:13px}
 .ai-output{margin-top:10px;direction:rtl;unicode-bidi:isolate;line-height:1.75;color:var(--txt);text-align:right;overflow-wrap:anywhere}
+.ai-output[aria-busy="true"]{min-height:74px}
+.ai-status{display:grid;gap:4px;margin-top:10px;padding:10px;border-radius:10px;background:rgba(11,16,32,.24)}
+.ai-status b{color:var(--accent2)}
+.ai-status span{color:var(--muted);font-size:13px}
+.ai-loading{border:1px solid var(--line);box-shadow:inset -2px 0 0 rgba(34,211,183,.45)}
+.ai-error{border:1px solid var(--bad);background:rgba(61,22,34,.38);box-shadow:inset -2px 0 0 rgba(251,113,133,.55)}
+.ai-error .btn{width:auto;margin-top:8px;min-height:40px;padding:8px 12px}
 .ai-answer{direction:rtl;text-align:right;unicode-bidi:isolate}
 .ai-output p{margin:0 0 10px}
 .ai-output p:last-child{margin-bottom:0}
@@ -245,9 +252,11 @@ nav.bar button.on{color:var(--accent2)}
   color:var(--txt);min-height:48px;padding:12px 14px;font-size:15px}
 .input:focus{border-color:var(--accent)}
 .auth-msg{min-height:22px;color:var(--warn);font-size:13px}
-.update-banner{position:fixed;left:12px;right:12px;bottom:78px;z-index:45;background:var(--card);
+.update-banner{position:fixed;left:12px;right:12px;bottom:78px;z-index:45;max-width:720px;margin:auto;background:var(--card);
   border:1px solid var(--accent2);border-radius:14px;box-shadow:var(--shadow);padding:10px 12px;
   display:flex;align-items:center;justify-content:space-between;gap:10px}
+.update-banner b{display:block;color:var(--txt);font-size:13.5px}
+.update-banner small{display:block;color:var(--muted);font-size:12px}
 .update-banner .btn{width:auto;min-height:44px;padding:8px 14px}
 .home-brief{background:linear-gradient(180deg,var(--card),var(--bg2));border:1px solid var(--line);border-radius:14px;padding:14px 16px;margin-bottom:14px}
 .brief-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
@@ -283,6 +292,9 @@ nav.bar button.on{color:var(--accent2)}
 @media(max-width:720px){
   .brief-head{display:grid}
   .brief-grid,.ai-drill-controls{grid-template-columns:1fr}
+  .update-banner{display:grid;gap:8px}
+  .update-banner .toolbar{justify-content:stretch}
+  .update-banner .toolbar .btn{flex:1}
 }
 @media (prefers-reduced-motion: reduce){
   *,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;scroll-behavior:auto!important;transition-duration:.01ms!important}
@@ -325,9 +337,12 @@ nav.bar button.on{color:var(--accent2)}
   <button type="button" data-nav="stats" aria-label="נתונים"><span class="ni" aria-hidden="true">📊</span>נתונים</button>
 </nav>
 <div class="toast" id="toast" role="status" aria-live="polite" aria-atomic="true"></div>
-<div class="update-banner hidden" id="update-banner" role="status" aria-live="polite" aria-atomic="true">
-  <span>גרסה חדשה זמינה</span>
-  <button type="button" class="btn primary" id="reload-update">רענן</button>
+<div class="update-banner hidden" id="update-banner" role="alert" aria-live="assertive" aria-atomic="true">
+  <span id="update-copy"><b>גרסה חדשה זמינה</b><small>רענון קצר יטען את התיקונים האחרונים וימנע תצוגה ישנה מהמטמון.</small></span>
+  <span class="toolbar">
+    <button type="button" class="btn" id="dismiss-update">מאוחר יותר</button>
+    <button type="button" class="btn primary" id="reload-update">עדכן עכשיו</button>
+  </span>
 </div>
 
 <script>
@@ -1578,6 +1593,10 @@ function renderStats(){
 }
 
 /* ---------- AI tutor ---------- */
+const AI_TIMEOUT_MS=25000;
+function aiModeLabel(mode){
+  return mode==="wrong"?"ניתוח טעות":mode==="plan"?"תכנית חיזוק":"הסבר קצר";
+}
 function aiTutorHtml(){
   return `<div class="ai-box"><div class="expl-h">AI Tutor</div>
     <div class="ai-actions">
@@ -1588,7 +1607,7 @@ function aiTutorHtml(){
     <div class="ai-output" role="status" aria-live="polite" aria-atomic="true"></div></div>`;
 }
 function wireAiButtons(root,q,k){
-  root.querySelectorAll("[data-ai-mode]").forEach(b=>b.onclick=()=>askAi(b.dataset.aiMode,q,k,root.querySelector(".ai-output")));
+  root.querySelectorAll("[data-ai-mode]").forEach(b=>b.onclick=()=>askAi(b.dataset.aiMode,q,k,root.querySelector(".ai-output"),b));
 }
 function aiInlineMarkdown(s){
   return escapeHtml(s)
@@ -1662,10 +1681,24 @@ function renderAiMarkdown(text){
   return html.join("")||"<p>אין תשובה זמינה.</p>";
 }
 function renderAiAnswer(out,data){
+  out.removeAttribute("aria-busy");
   const answer=renderAiMarkdown(data?.answer||"אין תשובה זמינה.");
   const citations=Array.isArray(data?.citations)?data.citations.filter(c=>typeof c==="string"&&c.trim()).slice(0,6):[];
   const citationHtml=citations.length?`<div class="ai-citations"><span>מקורות:</span>${citations.map(c=>`<span>${escapeHtml(c)}</span>`).join("")}</div>`:"";
   out.innerHTML=`<div class="ai-answer">${answer}${citationHtml}</div>`;
+}
+function setAiButtons(root,disabled){
+  root?.querySelectorAll("[data-ai-mode]").forEach(b=>{b.disabled=disabled;b.setAttribute("aria-disabled",disabled?"true":"false");});
+}
+function renderAiLoading(out,mode){
+  out.setAttribute("aria-busy","true");
+  out.innerHTML=`<div class="ai-status ai-loading"><b>טוען ${escapeHtml(aiModeLabel(mode))}...</b><span>אם החיבור איטי, הבקשה תיעצר אוטומטית ואפשר יהיה לנסות שוב.</span></div>`;
+}
+function renderAiError(out,message,onRetry){
+  out.removeAttribute("aria-busy");
+  out.innerHTML=`<div class="ai-status ai-error" role="alert"><b>${escapeHtml(message)}</b><span>התרגול המקומי ממשיך לעבוד כרגיל.</span><button type="button" class="btn" data-ai-retry>נסה שוב</button></div>`;
+  const retry=out.querySelector("[data-ai-retry]");
+  if(retry)retry.onclick=onRetry;
 }
 function progressSummary(){
   const topics={};
@@ -1673,23 +1706,33 @@ function progressSummary(){
   const weak=Object.entries(topics).map(([topic,v])=>({topic,accuracy:v.total?Math.round(v.correct/v.total*100):0,seen:v.seen})).sort((a,b)=>a.accuracy-b.accuracy).slice(0,3);
   return {seen:QUESTIONS.filter(q=>isSeen(q.id)).length,starred:STARS.size,weak};
 }
-async function askAi(mode,q,k,out){
-  out.textContent="טוען תשובת AI...";
+async function askAi(mode,q,k,out,triggerBtn=null){
+  const root=out?.closest(".ai-box");
+  const controller=new AbortController();
+  const timeout=setTimeout(()=>controller.abort(),AI_TIMEOUT_MS);
+  renderAiLoading(out,mode);
+  setAiButtons(root,true);
   try{
     if(!EXP[q.id])await loadExplanations();
     const res=await authFetch("/api/ai-tutor",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({
       mode,selectedIndex:k,selectedLetter:Number.isInteger(k)?LETTERS[k]:null,
       question:{id:q.id,stem:q.q,options:q.o,acceptedIndices:acceptedIndices(q),acceptedLetters:acceptedIndices(q).map(i=>LETTERS[i]),allAccepted:!!q.all_accepted,ref:q.ref||"",topic:topicName(q),sitting:q.t,vision:!!q.vision},
       explanation:EXP[q.id]||"",keyDoubt:KEY_DOUBTS[q.id]||null,progressSummary:progressSummary()
-    })});
+    }),signal:controller.signal});
     if(!res.ok){
-      out.textContent=res.status===401?"יש להתחבר מחדש כדי להשתמש ב-AI Tutor.":[404,405,501].includes(res.status)?"AI Tutor אינו פעיל בפריסה הזו.":`שגיאת AI (${res.status}).`;
+      const msg=res.status===401?"יש להתחבר מחדש כדי להשתמש ב-AI Tutor.":[404,405,501].includes(res.status)?"AI Tutor אינו פעיל בפריסה הזו.":`שגיאת AI (${res.status}).`;
+      renderAiError(out,msg,()=>askAi(mode,q,k,out,triggerBtn));
       return;
     }
     const data=await res.json();
     renderAiAnswer(out,data);
   }catch(e){
-    out.textContent="AI Tutor אינו זמין כרגע. התרגול המקומי ממשיך לעבוד כרגיל.";
+    const msg=e?.name==="AbortError"?"AI Tutor לקח יותר מדי זמן, הבקשה נעצרה.":"AI Tutor אינו זמין כרגע.";
+    renderAiError(out,msg,()=>askAi(mode,q,k,out,triggerBtn));
+  }finally{
+    clearTimeout(timeout);
+    setAiButtons(root,false);
+    triggerBtn?.focus?.({preventScroll:true});
   }
 }
 
@@ -1727,6 +1770,9 @@ function registerServiceWorker(){
         if(worker.state==="installed"&&navigator.serviceWorker.controller)showUpdate(worker);
       });
     });
+    document.addEventListener("visibilitychange",()=>{
+      if(document.visibilityState==="visible")reg.update().catch(()=>{});
+    });
   }).catch(()=>{});
   let refreshing=false;
   navigator.serviceWorker.addEventListener("controllerchange",()=>{
@@ -1734,8 +1780,19 @@ function registerServiceWorker(){
   });
 }
 function showUpdate(worker){
-  const banner=$("#update-banner");banner.classList.remove("hidden");
-  $("#reload-update").onclick=()=>worker.postMessage({type:"SKIP_WAITING"});
+  const banner=$("#update-banner");
+  const reload=$("#reload-update");
+  const dismiss=$("#dismiss-update");
+  banner.classList.remove("hidden");
+  banner.hidden=false;
+  reload.disabled=false;
+  reload.textContent="עדכן עכשיו";
+  dismiss.onclick=()=>{banner.classList.add("hidden");banner.hidden=true;};
+  reload.onclick=()=>{
+    reload.disabled=true;
+    reload.textContent="מעדכן...";
+    worker.postMessage({type:"SKIP_WAITING"});
+  };
 }
 
 document.addEventListener("keydown",e=>{

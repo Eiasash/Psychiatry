@@ -21,6 +21,9 @@ expect(/function renderAiAnswer\(/, "AI Tutor answer renderer wrapper is missing
 expect(/renderAiAnswer\(out,\s*data\)/, "AI Tutor response is not rendered through renderAiAnswer");
 expect(/class="qcount" dir="ltr"/, "quiz counter needs an LTR boundary inside the RTL toolbar");
 expect(/\.ai-box\{[^}]*background:var\(--card2\)/s, "AI Tutor panel needs a neutral card background");
+expect(/\.ai-loading/, "AI Tutor loading state needs explicit styling");
+expect(/\.ai-error/, "AI Tutor error state needs explicit styling");
+expect(/\.ai-status/, "AI Tutor status rows need explicit styling");
 expect(/\.ai-output h4/, "AI Tutor Markdown headings need compact panel styling");
 expect(/\.ai-citations/, "AI Tutor citations need semantic styling");
 expect(/\.ai-answer\{[^}]*direction:rtl/s, "AI Tutor answer body should be anchored in RTL");
@@ -37,6 +40,16 @@ expect(/@media\(max-width:560px\)\{[\s\S]*?\.ai-box\{[^}]*padding:10px/, "mobile
 expect(/@media\(max-width:560px\)\{[\s\S]*?\.ai-box\{[^}]*margin-inline:-2px/, "mobile AI Tutor panel should reclaim horizontal room");
 expect(/@media\(max-width:560px\)\{[\s\S]*?\.ai-box\{[^}]*border-left:0/, "mobile AI Tutor panel should reduce nested side borders");
 expect(/@media\(max-width:560px\)\{[\s\S]*?\.ai-output\{[^}]*font-size:14px/, "mobile AI Tutor output needs controlled text sizing");
+expect(/AI_TIMEOUT_MS/, "AI Tutor client needs a timeout guard");
+expect(/AbortController/, "AI Tutor client needs abortable requests");
+expect(/renderAiError\(/, "AI Tutor client needs a retryable error renderer");
+expect(/aria-busy/, "AI Tutor output should expose busy state to assistive tech");
+expect(/id="dismiss-update"/, "update banner needs a dismiss control");
+expect(/id="update-copy"/, "update banner needs descriptive copy");
+expect(/role="alert"[^>]*id="update-banner"|id="update-banner"[^>]*role="alert"/, "update banner should be announced as an alert");
+expect(/dismiss\.onclick=\(\)=>\{[^}]*banner\.classList\.add\("hidden"\)[^}]*banner\.hidden=true/s, "update banner dismiss should hide it semantically");
+expect(/reload\.disabled=false/, "update banner should reset the update button enabled state when shown");
+expect(/reload\.textContent="עדכן עכשיו"/, "update banner should reset the update button label when shown");
 expectMissing(/out\.innerHTML=`\$\{escapeHtml\(data\.answer\|\|/s, "AI Tutor still appends escaped raw Markdown as text");
 
 const mobile560Index = html.lastIndexOf("@media(max-width:560px)");
@@ -142,7 +155,7 @@ if (rendererSource.trim()) {
     if (/\|\s*תרופה\s*\||\|\s*Fluoxetine 20 mg\s*\|/.test(looseTable)) failures.push("AI Markdown renderer leaves loose pipe rows visible");
 
     const answerHtml = vm.runInContext(`
-      const out = { innerHTML: "" };
+      const out = { innerHTML: "", removeAttribute(){} };
       renderAiAnswer(out, { answer: "## מקור", citations: ["<unsafe>", "Lancet"] });
       out.innerHTML;
     `, context);
