@@ -36,7 +36,17 @@ A single-file, installable PWA for drilling the Israeli **Shlav Aleph (שלב א
 
 ## Tech
 
-Zero-build single-file app (`index.html`) + `data/questions.json`. Service worker (`sw.js`) caches for offline. Hosted on GitHub Pages.
+Zero-build single-file app (`index.html`) + JSON data files. Service worker (`sw.js`) caches for offline. Hosted on GitHub Pages.
+
+## Verification
+
+Run the repository gate before shipping changes:
+
+```bash
+npm run verify
+```
+
+This validates question integrity, explanation coverage, official sitting counts, and the WCAG-oriented static accessibility audit (computed color-contrast pairs plus keyboard/focus/live-region checks).
 
 ## Provenance & use
 
