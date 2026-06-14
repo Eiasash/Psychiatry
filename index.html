@@ -108,6 +108,8 @@ h2.sec{font-size:14px;color:var(--muted);font-weight:600;margin:22px 4px 10px;te
 .fb.no{background:var(--bad-bg);border:1px solid var(--bad)}
 .fb .ref{margin-top:7px;font-size:13px;color:var(--muted)}
 .fb .ref b{color:var(--accent2);font-weight:600}
+.expl{margin-top:10px;padding:11px 13px;background:rgba(124,108,255,.10);border:1px solid var(--line);border-radius:11px;font-size:14px;line-height:1.75;unicode-bidi:plaintext}
+.expl-h{font-size:11px;font-weight:700;letter-spacing:1px;color:var(--accent);margin-bottom:5px}
 .fb .note{margin-top:6px;font-size:12.5px;color:var(--warn)}
 
 .qfoot{display:flex;gap:10px;margin-top:16px}
@@ -180,7 +182,7 @@ nav.bar button.on{color:var(--accent2)}
 "use strict";
 const LETTERS = ["א","ב","ג","ד"];
 const PROG_KEY = "psych_shlava_progress_v1";
-let QUESTIONS = [], TOPICS = [], PROG = {};
+let QUESTIONS = [], TOPICS = [], PROG = {}, EXP = {};
 const $ = (s,r=document)=>r.querySelector(s);
 const el = (t,c,h)=>{const e=document.createElement(t);if(c)e.className=c;if(h!=null)e.innerHTML=h;return e;};
 
@@ -213,6 +215,8 @@ async function boot(){
       fetch("data/topics.json").then(r=>r.json())
     ]);
     QUESTIONS=q; TOPICS=t.topics||[];
+    // explanations are optional + larger — load in the background, don't block boot
+    fetch("data/explanations.json").then(r=>r.ok?r.json():{}).then(e=>{EXP=e||{};}).catch(()=>{});
   }catch(e){
     $("#view-home").innerHTML='<div class="card">שגיאה בטעינת השאלות. נסה לרענן.</div>';
     return;
@@ -370,8 +374,10 @@ function answer(q,k,opts,fb,card){
   let h = ok?"✅ נכון!":"❌ לא נכון";
   if(q.all_accepted) h+=' <span class="note">— כל התשובות התקבלו (שאלה שבוטלה לאחר ערעור)</span>';
   else if(accept.length>1) h+=` <span class="note">— מתקבלות גם: ${accept.map(i=>LETTERS[i]).join(", ")}</span>`;
-  if(q.ref) h+=`<div class="ref">מקור: <b>${escapeHtml(q.ref)}</b></div>`;
-  if(q.vision) h+='<div class="note">⚠ נוסח השאלה תומלל אוטומטית (מועד 2025 פגום במקור) — התשובות והמפתח מהימנים; ודא ניסוח מול ה-PDF</div>';
+  const exp=EXP[q.id];
+  if(exp) h+=`<div class="expl"><div class="expl-h">הסבר</div>${escapeHtml(exp)}</div>`;
+  if(q.ref) h+=`<div class="ref">מקור: <b>${escapeHtml(q.ref)}</b> · Kaplan &amp; Sadock Synopsis</div>`;
+  if(q.vision) h+='<div class="note">⚠ נוסח השאלה תומלל אוטומטית (מועד 2025 פגום במקור) — התשובות, המפתח וההסבר מהימנים; ודא ניסוח מול ה-PDF</div>';
   fb.innerHTML=h;
   // turn skip into next
   const foot=card.querySelector(".qfoot");foot.innerHTML="";
@@ -435,6 +441,8 @@ function drawList(){
     it.append(el("div","qq",escapeHtml(q.q)));
     const accept=q.c_accept&&q.c_accept.length?q.c_accept:[q.c];
     q.o.forEach((o,k)=>it.append(el("div","oo"+(accept.includes(k)?" c":""),`${LETTERS[k]}. ${escapeHtml(o)}`)));
+    const ex=EXP[q.id];
+    if(ex)it.append(el("div","expl",`<div class="expl-h">הסבר</div>${escapeHtml(ex)}`));
     it.append(el("div","meta",`<span>${yearLabel(q.t)}</span><span>${TOPICS[q.ti]||""}</span>${q.ref?`<span>${escapeHtml(q.ref)}</span>`:""}${q.all_accepted?`<span style="color:var(--warn)">בוטלה בערעור</span>`:""}${q.vision?`<span style="color:var(--warn)">OCR</span>`:""}`));
     list.append(it);
   });
