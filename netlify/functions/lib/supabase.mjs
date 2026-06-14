@@ -8,7 +8,7 @@ export function json(data, status = 200, headers = {}) {
 }
 
 export function env(name) {
-  return globalThis.Netlify?.env?.get(name) || process.env?.[name] || "";
+  return globalThis.Netlify?.env?.get(name) || "";
 }
 
 export function supabaseConfig() {

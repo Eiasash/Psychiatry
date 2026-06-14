@@ -1,23 +1,10 @@
-import { requireSupabaseUser } from "./lib/supabase.mjs";
-
-const JSON_HEADERS = {
-  "Content-Type": "application/json; charset=utf-8",
-  "Cache-Control": "no-store"
-};
+import { env, json, JSON_HEADERS, requireSupabaseUser } from "./lib/supabase.mjs";
 
 const MODE_LABELS = {
   explain: "הסבר קצר ומדויק",
   wrong: "ניתוח הטעות של המשתמש",
   plan: "תכנית חיזוק קצרה"
 };
-
-function json(data, status = 200) {
-  return new Response(JSON.stringify(data), { status, headers: JSON_HEADERS });
-}
-
-function env(name) {
-  return globalThis.Netlify?.env?.get(name) || process.env?.[name] || "";
-}
 
 function compact(value, max = 12000) {
   return String(value || "").slice(0, max);
