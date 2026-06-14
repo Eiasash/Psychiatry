@@ -314,6 +314,7 @@ const DB_NAME = "psych_shlava_local_v1";
 const DB_STORE = "kv";
 const PAGE_SIZE = 100;
 const EXAM_SECONDS_PER_Q = 72;
+const AI_QUESTION_APP_URL = "https://psychiatry-szmc.netlify.app/";
 const AI_SYLLABUS_SOURCES = [
   {value:"synopsis",label:"Kaplan & Sadock Synopsis",hint:"סיכום ליבה לבחינה"},
   {value:"dsm",label:"DSM diagnostic criteria",hint:"קריטריונים ואבחנה מבדלת"},
@@ -1078,33 +1079,38 @@ function weakestTopicIndex(tps){
 function aiSourceLabel(value){
   return AI_SYLLABUS_SOURCES.find(s=>s.value===value)?.label || AI_SYLLABUS_SOURCES[0].label;
 }
+function aiQuestionAvailable(){
+  return AUTH.required && !!AUTH.user;
+}
 function aiQuestionHtml(tps){
   const defaultTi=weakestTopicIndex(tps);
+  const available=aiQuestionAvailable();
   const topicOptions=TOPICS.map((topic,ti)=>`<option value="${ti}"${ti===defaultTi?" selected":""}>${escapeHtml(topic)} (${tps[ti]||0})</option>`).join("");
   const sourceOptions=AI_SYLLABUS_SOURCES.map(s=>`<option value="${escapeHtml(s.value)}">${escapeHtml(s.label)} · ${escapeHtml(s.hint)}</option>`).join("");
+  const actionHtml=available?'<button type="button" class="btn primary" id="ai-generate">צור שאלה</button>':`<a class="btn primary" id="ai-open-netlify" href="${AI_QUESTION_APP_URL}">פתח ב-Netlify</a>`;
   return `<div class="ai-drill-card card">
     <div class="ai-drill-head">
-      <div><b>שאלת AI לפי הסילבוס</b><br><span>תרגול נוסף שמסומן כ-AI ואינו משנה את בנק 900 השאלות המאומתות.</span></div>
-      <span class="tag acc">חדש</span>
+      <div><b>שאלת AI לפי הסילבוס</b><br><span>${available?"תרגול נוסף שמסומן כ-AI ואינו משנה את בנק 900 השאלות המאומתות.":"זמין באפליקציית Netlify המחוברת לחשבון, כדי להפעיל את פונקציות ה-AI."}</span></div>
+      <span class="tag acc">${available?"חדש":"Netlify"}</span>
     </div>
     <div class="ai-drill-controls">
-      <label class="field"><span>נושא</span><select class="input" id="ai-topic">${topicOptions}</select></label>
-      <label class="field"><span>מקור סילבוס</span><select class="input" id="ai-source">${sourceOptions}</select></label>
-      <label class="field"><span>רמה</span><select class="input" id="ai-level">
+      <label class="field"><span>נושא</span><select class="input" id="ai-topic"${available?"":" disabled"}>${topicOptions}</select></label>
+      <label class="field"><span>מקור סילבוס</span><select class="input" id="ai-source"${available?"":" disabled"}>${sourceOptions}</select></label>
+      <label class="field"><span>רמה</span><select class="input" id="ai-level"${available?"":" disabled"}>
         <option value="board">שלב א'</option>
         <option value="hard">קשה</option>
         <option value="review">חזרה מהירה</option>
       </select></label>
-      <button type="button" class="btn primary" id="ai-generate">צור שאלה</button>
+      ${actionHtml}
     </div>
-    <div class="ai-drill-output" role="status" aria-live="polite" aria-atomic="true"></div>
+    <div class="ai-drill-output" role="status" aria-live="polite" aria-atomic="true">${available?"":`<span class="muted small">הבנק המאומת ממשיך לעבוד כאן. יצירת שאלות AI דורשת את הפריסה המאובטחת: <span dir="ltr">${AI_QUESTION_APP_URL}</span></span>`}</div>
   </div>`;
 }
 function wireAiQuestionCard(root){
   const card=root.querySelector(".ai-drill-card");
   if(!card)return;
   const btn=card.querySelector("#ai-generate");
-  btn.onclick=()=>generateAiQuestion(card);
+  if(btn)btn.onclick=()=>generateAiQuestion(card);
 }
 async function generateAiQuestion(card){
   const out=card.querySelector(".ai-drill-output");
