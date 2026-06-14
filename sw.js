@@ -50,8 +50,9 @@ self.addEventListener("fetch", e => {
           if (r && r.ok) {
             cache.put(e.request, r.clone());
             cache.put("./index.html", r.clone());
+            return r;
           }
-          return r;
+          return caches.match(e.request).then(cached => cached || caches.match("./index.html") || r);
         }).catch(() => caches.match(e.request).then(r => r || caches.match("./index.html")))
       )
     );

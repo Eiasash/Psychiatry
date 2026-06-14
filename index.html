@@ -1785,7 +1785,9 @@ function showUpdate(worker){
   const dismiss=$("#dismiss-update");
   banner.classList.remove("hidden");
   banner.hidden=false;
-  dismiss.onclick=()=>banner.classList.add("hidden");
+  reload.disabled=false;
+  reload.textContent="עדכן עכשיו";
+  dismiss.onclick=()=>{banner.classList.add("hidden");banner.hidden=true;};
   reload.onclick=()=>{
     reload.disabled=true;
     reload.textContent="מעדכן...";
