@@ -28,15 +28,36 @@ A single-file, installable PWA for drilling the Israeli **Shlav Aleph (שלב א
 
 - MCQ drilling with instant grading (respects multi-accept keys).
 - **Spaced repetition** (Leitner boxes) — "smart review" surfaces questions when due.
+- Resumable quiz sessions after refresh/close.
+- Starred questions with a dedicated saved-question practice mode.
+- Exam simulation by sitting, including timer, final review, and wrong-answer retry.
 - Filters by **sitting** and **topic**; "new", "random", and "mistakes" modes.
-- Browse + full-text search across stems, options, and references.
+- Browse + full-text search across stems, options, references, and study flags; includes filters for OCR, all-accepted, multi-accepted, weak, saved, and key-doubt questions.
 - Per-topic accuracy stats.
+- Quick timed random blocks of 25, 50, or 100 questions.
+- Progress export/import as local JSON.
+- IndexedDB-first local persistence with a persistent-storage request when study state is saved.
+- Optional username/password login gate on Netlify, backed by a hashed password and signed session token.
+- Optional AI Tutor via Netlify Function (`/api/ai-tutor`) when deployed with `OPENAI_API_KEY`.
 - Hebrew RTL, dark theme, **offline-capable**, installable to home screen.
-- All progress stored locally in your browser (`localStorage`) — nothing leaves the device.
+- All progress stored locally in your browser — nothing leaves the device unless you explicitly use the optional AI Tutor.
 
 ## Tech
 
-Zero-build single-file app (`index.html`) + JSON data files. Service worker (`sw.js`) caches for offline. Hosted on GitHub Pages.
+Zero-build single-file app (`index.html`) + JSON data files. Service worker (`sw.js`) caches for offline. Hosted on GitHub Pages; Netlify Functions add optional login and AI features when deployed there.
+
+The optional AI Tutor is implemented as a Netlify Function in `netlify/functions/ai-tutor.mjs`. Configure `OPENAI_API_KEY` in Netlify environment variables; optionally set `OPENAI_MODEL` to override the default model. The GitHub Pages version keeps working without this endpoint and shows a graceful unavailable message.
+
+## Netlify login
+
+Password login is enabled only when these Netlify environment variables are set:
+
+- `APP_AUTH_USERNAME` — the login username.
+- `APP_AUTH_PASSWORD_HASH` — generated with `npm run auth:hash -- "your password"`.
+- `APP_AUTH_SESSION_SECRET` — a random signing secret, at least 32 bytes.
+- `APP_AUTH_SESSION_HOURS` — optional session lifetime, default `168`.
+
+When enabled, the app shows the login screen before loading the question bank, and `/api/ai-tutor` requires the signed session token. Do not commit raw passwords or secrets.
 
 ## Verification
 
@@ -46,7 +67,7 @@ Run the repository gate before shipping changes:
 npm run verify
 ```
 
-This validates question integrity, explanation coverage, official sitting counts, and the WCAG-oriented static accessibility audit (computed color-contrast pairs plus keyboard/focus/live-region checks).
+This validates JavaScript syntax, Netlify auth/tutor functions, question integrity, explanation coverage, key-doubt mappings, official sitting counts, local-durability hooks, PWA metadata/cache alignment, and the WCAG-oriented static accessibility audit (computed color-contrast pairs plus keyboard/focus/live-region checks).
 
 ## Provenance & use
 

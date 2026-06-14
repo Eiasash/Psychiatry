@@ -45,7 +45,7 @@ a{color:var(--accent2)}
 button,input{font-family:inherit}
 button{touch-action:manipulation}
 button:focus{outline:none}
-button:focus-visible,input:focus-visible,.fb:focus-visible{
+button:focus-visible,input:focus-visible,.fb:focus-visible,.ai-output:focus-visible{
   outline:3px solid var(--focus);
   outline-offset:3px;
   box-shadow:0 0 0 6px rgba(34,211,183,.28);
@@ -67,6 +67,7 @@ header.app{
 }
 .htxt h1{font-size:19px;margin:0;font-weight:700;letter-spacing:.2px}
 .htxt p{margin:1px 0 0;font-size:12.5px;color:var(--muted)}
+.htxt{flex:1;min-width:0}
 
 /* ---- cards / grid ---- */
 .card{background:linear-gradient(180deg,var(--card),var(--bg2));border:1px solid var(--line);
@@ -91,9 +92,15 @@ h2.sec{font-size:14px;color:var(--muted);font-weight:600;margin:22px 4px 10px;te
 .btn:active{transform:scale(.98)}
 .btn.primary{background:linear-gradient(135deg,var(--accent-d),var(--accent));border:none}
 .btn.primary:hover{filter:brightness(1.08)}
+.btn.warn{border-color:var(--warn);color:var(--warn)}
 .btn .ic{font-size:19px}
 .btn .sub{font-size:11.5px;color:var(--muted);font-weight:500}
 .btn.col{flex-direction:column;gap:3px;text-align:center}
+.toolbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.iconbtn{width:44px;min-width:44px;height:44px;border-radius:12px;border:1px solid var(--line);
+  background:var(--card2);color:var(--txt);display:grid;place-items:center;cursor:pointer;font-size:18px}
+.iconbtn.on{background:rgba(251,191,36,.18);border-color:var(--warn);color:var(--warn)}
+.timer{font-variant-numeric:tabular-nums;color:var(--warn);font-weight:800}
 
 /* ---- chips ---- */
 .chips{display:flex;flex-wrap:wrap;gap:8px}
@@ -148,6 +155,17 @@ h2.sec{font-size:14px;color:var(--muted);font-weight:600;margin:22px 4px 10px;te
 .qitem .oo{font-size:14px;color:var(--muted);padding:3px 0;unicode-bidi:plaintext}
 .qitem .oo.c{color:var(--good);font-weight:600}
 .qitem .meta{font-size:11.5px;color:var(--faint);margin-top:8px;display:flex;gap:8px;flex-wrap:wrap}
+.hl{background:rgba(251,191,36,.2);color:var(--txt);border-bottom:1px solid var(--warn)}
+.pager{display:flex;gap:8px;align-items:center;justify-content:space-between;margin:10px 0}
+.pager .btn{width:auto;min-width:96px;padding:10px 12px}
+.review-list{display:grid;gap:10px;margin-top:12px}
+.review-row{background:var(--card2);border:1px solid var(--line);border-radius:12px;padding:12px}
+.review-row.ok{border-color:var(--good)}
+.review-row.no{border-color:var(--bad)}
+.ai-box{margin-top:10px;padding:12px;border:1px solid var(--line);border-radius:12px;background:rgba(34,211,183,.08)}
+.ai-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
+.ai-actions .btn{width:auto;min-height:44px;padding:9px 12px;font-size:13px}
+.ai-output{margin-top:10px;white-space:pre-wrap;unicode-bidi:plaintext}
 
 /* ---- bottom nav ---- */
 nav.bar{position:fixed;bottom:0;left:0;right:0;background:rgba(11,16,32,.92);
@@ -170,6 +188,18 @@ nav.bar button.on{color:var(--accent2)}
   border:1px solid var(--accent);border-radius:10px;padding:9px 16px;font-size:13px;z-index:40;
   opacity:0;transition:.25s;pointer-events:none}
 .toast.show{opacity:1}
+.auth-card{max-width:520px;margin:24px auto 0}
+.auth-form{display:grid;gap:12px;margin-top:14px}
+.field{display:grid;gap:6px}
+.field label{font-size:13px;color:var(--muted);font-weight:700}
+.input{width:100%;background:var(--card2);border:1px solid var(--line);border-radius:12px;
+  color:var(--txt);min-height:48px;padding:12px 14px;font-size:15px}
+.input:focus{border-color:var(--accent)}
+.auth-msg{min-height:22px;color:var(--warn);font-size:13px}
+.update-banner{position:fixed;left:12px;right:12px;bottom:78px;z-index:45;background:var(--card);
+  border:1px solid var(--accent2);border-radius:14px;box-shadow:var(--shadow);padding:10px 12px;
+  display:flex;align-items:center;justify-content:space-between;gap:10px}
+.update-banner .btn{width:auto;min-height:44px;padding:8px 14px}
 .banner{background:linear-gradient(135deg,#2a1d52,#19234a);border:1px solid var(--line);border-radius:14px;padding:13px 16px;font-size:13px;color:var(--muted);margin-bottom:14px}
 .banner b{color:var(--txt)}
 @media (prefers-reduced-motion: reduce){
@@ -192,6 +222,7 @@ nav.bar button.on{color:var(--accent2)}
       <h1>שלב א' פסיכיאטריה</h1>
       <p>בנק מבחני המועצה המדעית · הר"י · 2020–2025</p>
     </div>
+    <button type="button" class="iconbtn hidden" id="auth-logout" aria-label="התנתקות" title="התנתקות">⇥</button>
   </header>
   <noscript><div class="card" role="alert">האפליקציה דורשת JavaScript כדי לטעון את בנק השאלות ולשמור התקדמות מקומית.</div></noscript>
 
@@ -212,25 +243,246 @@ nav.bar button.on{color:var(--accent2)}
   <button type="button" data-nav="stats" aria-label="נתונים"><span class="ni" aria-hidden="true">📊</span>נתונים</button>
 </nav>
 <div class="toast" id="toast" role="status" aria-live="polite" aria-atomic="true"></div>
+<div class="update-banner hidden" id="update-banner" role="status" aria-live="polite" aria-atomic="true">
+  <span>גרסה חדשה זמינה</span>
+  <button type="button" class="btn primary" id="reload-update">רענן</button>
+</div>
 
 <script>
 "use strict";
 const LETTERS = ["א","ב","ג","ד"];
 const PROG_KEY = "psych_shlava_progress_v1";
-let QUESTIONS = [], TOPICS = [], PROG = {}, EXP = {};
+const STAR_KEY = "psych_shlava_stars_v1";
+const SESSION_KEY = "psych_shlava_session_v1";
+const INSTALL_COACH_KEY = "psych_shlava_install_coach_v1";
+const AUTH_SESSION_KEY = "psych_shlava_auth_session_v1";
+const AUTH_REQUIRED_KEY = "psych_shlava_auth_required_v1";
+const DB_NAME = "psych_shlava_local_v1";
+const DB_STORE = "kv";
+const PAGE_SIZE = 100;
+const EXAM_SECONDS_PER_Q = 72;
+let QUESTIONS = [], TOPICS = [], PROG = {}, EXP = {}, KEY_DOUBTS = {}, QMAP = new Map();
+let STARS = new Set();
 let EXP_PROMISE = null;
+let DB_PROMISE = null;
+let timerHandle = null;
 let storageWarned = false;
+let persistAsked = false;
+let lastCompletedSession = null;
+let AUTH = {required:false,user:null,token:""};
 const REDUCE_DATA = !!(navigator.connection?.saveData || window.matchMedia?.("(prefers-reduced-data: reduce)")?.matches);
 const $ = (s,r=document)=>r.querySelector(s);
 const el = (t,c,h)=>{const e=document.createElement(t);if(c)e.className=c;if(h!=null)e.innerHTML=h;if(t==="button")e.type="button";return e;};
 function sectionTitle(view,id,text){ const h=el("h2","sr-only",text); h.id=id; view.append(h); }
 
-/* ---------- progress (Leitner spaced repetition) ---------- */
-function loadProg(){ try{PROG=JSON.parse(localStorage.getItem(PROG_KEY))||{};}catch(e){PROG={};} }
-function saveProg(){
-  try{localStorage.setItem(PROG_KEY,JSON.stringify(PROG));}
-  catch(e){ if(!storageWarned){storageWarned=true;toast("לא ניתן לשמור התקדמות בדפדפן");} }
+/* ---------- local storage (IndexedDB first, localStorage fallback) ---------- */
+async function openDb(){
+  if(!("indexedDB" in window))throw new Error("IndexedDB unavailable");
+  if(DB_PROMISE)return DB_PROMISE;
+  DB_PROMISE=new Promise((resolve,reject)=>{
+    const req=indexedDB.open(DB_NAME,1);
+    req.onupgradeneeded=()=>req.result.createObjectStore(DB_STORE);
+    req.onsuccess=()=>resolve(req.result);
+    req.onerror=()=>reject(req.error||new Error("IndexedDB open failed"));
+  });
+  return DB_PROMISE;
 }
+async function idbGet(key){
+  const db=await openDb();
+  return new Promise((resolve,reject)=>{
+    const req=db.transaction(DB_STORE,"readonly").objectStore(DB_STORE).get(key);
+    req.onsuccess=()=>resolve(req.result);
+    req.onerror=()=>reject(req.error);
+  });
+}
+async function idbSet(key,value){
+  const db=await openDb();
+  return new Promise((resolve,reject)=>{
+    const req=db.transaction(DB_STORE,"readwrite").objectStore(DB_STORE).put(value,key);
+    req.onsuccess=()=>resolve();
+    req.onerror=()=>reject(req.error);
+  });
+}
+async function idbDel(key){
+  const db=await openDb();
+  return new Promise((resolve,reject)=>{
+    const req=db.transaction(DB_STORE,"readwrite").objectStore(DB_STORE).delete(key);
+    req.onsuccess=()=>resolve();
+    req.onerror=()=>reject(req.error);
+  });
+}
+async function readLocal(key,fallback){
+  try{
+    const value=await idbGet(key);
+    if(value!==undefined)return value;
+  }catch(e){}
+  try{
+    const raw=localStorage.getItem(key);
+    if(raw!=null){
+      const value=JSON.parse(raw);
+      idbSet(key,value).catch(()=>{});
+      return value;
+    }
+  }catch(e){}
+  return fallback;
+}
+function requestPersistentStorage(){
+  if(persistAsked||!navigator.storage?.persist||!navigator.storage?.persisted)return;
+  persistAsked=true;
+  navigator.storage.persisted().then(ok=>ok||navigator.storage.persist()).then(ok=>{
+    if(ok)toast("השמירה המקומית קיבלה הגנה משופרת");
+  }).catch(()=>{});
+}
+function saveLocal(key,value){
+  requestPersistentStorage();
+  idbSet(key,value).catch(()=>{
+    try{localStorage.setItem(key,JSON.stringify(value));}
+    catch(e){ if(!storageWarned){storageWarned=true;toast("לא ניתן לשמור נתונים בדפדפן");} }
+  });
+}
+
+/* ---------- authentication ---------- */
+function storedAuth(){
+  try{
+    const value=JSON.parse(localStorage.getItem(AUTH_SESSION_KEY)||"null");
+    if(!value?.token||!value.expiresAt||Date.parse(value.expiresAt)<=Date.now())return null;
+    return value;
+  }catch(e){return null;}
+}
+function saveAuth(value){
+  try{localStorage.setItem(AUTH_SESSION_KEY,JSON.stringify(value));}
+  catch(e){}
+}
+function clearAuth(){
+  AUTH={required:AUTH.required,user:null,token:""};
+  try{localStorage.removeItem(AUTH_SESSION_KEY);}catch(e){}
+}
+function authRequiredStored(){
+  try{return localStorage.getItem(AUTH_REQUIRED_KEY)==="1";}
+  catch(e){return false;}
+}
+function storeAuthRequired(required){
+  try{
+    if(required)localStorage.setItem(AUTH_REQUIRED_KEY,"1");
+    else localStorage.removeItem(AUTH_REQUIRED_KEY);
+  }catch(e){}
+}
+function authHeaders(extra={}){
+  const headers={...extra};
+  if(AUTH.token)headers.Authorization=`Bearer ${AUTH.token}`;
+  return headers;
+}
+function authFetch(path,opts={}){
+  return fetch(path,{...opts,headers:authHeaders(opts.headers||{})});
+}
+function setAuthChrome(){
+  const locked=AUTH.required&&!AUTH.user;
+  document.querySelector("nav.bar")?.classList.toggle("hidden",locked);
+  const out=$("#auth-logout");
+  if(out){
+    out.classList.toggle("hidden",!AUTH.required||!AUTH.user);
+    out.onclick=()=>logout();
+  }
+}
+async function initAuth(){
+  const remembered=authRequiredStored();
+  try{
+    const res=await fetch("/api/auth-status",{cache:"no-store",headers:{"Accept":"application/json"}});
+    if(res.ok){
+      const data=await res.json().catch(()=>({}));
+      AUTH.required=!!data.enabled;
+      storeAuthRequired(AUTH.required);
+    }else{
+      AUTH.required=remembered;
+    }
+  }catch(e){
+    AUTH.required=remembered;
+  }
+  if(!AUTH.required){setAuthChrome();return true;}
+  const saved=storedAuth();
+  if(!saved){setAuthChrome();return false;}
+  AUTH.token=saved.token;
+  AUTH.user=saved.user||null;
+  try{
+    const res=await authFetch("/api/auth-verify",{method:"POST",cache:"no-store"});
+    if(res.ok){
+      const data=await res.json().catch(()=>({}));
+      AUTH.user=data.user?.username||saved.user||"user";
+      saveAuth({token:AUTH.token,user:AUTH.user,expiresAt:data.expiresAt||saved.expiresAt});
+      setAuthChrome();
+      return true;
+    }
+  }catch(e){}
+  clearAuth();
+  setAuthChrome();
+  return false;
+}
+function renderLogin(message=""){
+  stopTimer();
+  session=null;
+  ["quiz","browse","stats"].forEach(x=>$("#view-"+x).classList.add("hidden"));
+  const v=$("#view-home");
+  v.classList.remove("hidden");
+  v.setAttribute("aria-labelledby","auth-title");
+  v.innerHTML="";
+  sectionTitle(v,"auth-title","כניסה");
+  const card=el("div","card auth-card");
+  card.innerHTML=`
+    <div class="qhead"><div><b>כניסה לחשבון</b><div class="muted small">הזן משתמש וסיסמה כדי לפתוח את בנק השאלות.</div></div></div>
+    <form class="auth-form" id="auth-form">
+      <div class="field">
+        <label for="auth-username">משתמש</label>
+        <input class="input" id="auth-username" name="username" autocomplete="username" required />
+      </div>
+      <div class="field">
+        <label for="auth-password">סיסמה</label>
+        <input class="input" id="auth-password" name="password" type="password" autocomplete="current-password" required />
+      </div>
+      <button type="submit" class="btn primary">כניסה</button>
+      <div class="auth-msg" id="auth-message" role="status" aria-live="polite">${escapeHtml(message)}</div>
+    </form>`;
+  v.append(card);
+  setAuthChrome();
+  const form=$("#auth-form");
+  const msg=$("#auth-message");
+  form.onsubmit=async e=>{
+    e.preventDefault();
+    const btn=form.querySelector("button");
+    btn.disabled=true; msg.textContent="בודק פרטים...";
+    try{
+      const body={username:$("#auth-username").value.trim(),password:$("#auth-password").value};
+      const res=await fetch("/api/auth-login",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)});
+      const data=await res.json().catch(()=>({}));
+      if(!res.ok)throw new Error(data.error||"הכניסה נכשלה");
+      AUTH={required:true,user:data.user?.username||body.username,token:data.token};
+      saveAuth({token:data.token,user:AUTH.user,expiresAt:data.expiresAt});
+      storeAuthRequired(true);
+      setAuthChrome();
+      await loadAppData();
+      registerServiceWorker();
+      toast("התחברת");
+    }catch(err){
+      clearAuth();
+      msg.textContent=err.message||"הכניסה נכשלה";
+      $("#auth-password").value="";
+      $("#auth-password").focus();
+    }finally{
+      btn.disabled=false;
+    }
+  };
+  $("#auth-username").focus({preventScroll:true});
+}
+function logout(){
+  clearActiveSession();
+  clearAuth();
+  renderLogin("התנתקת");
+}
+
+/* ---------- progress (Leitner spaced repetition) ---------- */
+async function loadProg(){ PROG=await readLocal(PROG_KEY,{})||{}; }
+function saveProg(){ saveLocal(PROG_KEY,PROG); }
+async function loadStars(){ STARS=new Set(await readLocal(STAR_KEY,[])||[]); }
+function saveStars(){ saveLocal(STAR_KEY,[...STARS]); }
 const BOX_DAYS=[0,1,3,7,16,40];
 function rec(id){ return PROG[id]||(PROG[id]={box:0,seen:0,correct:0,wrong:0,due:0,last:0}); }
 function grade(id,ok){
@@ -243,28 +495,55 @@ function grade(id,ok){
 const isDue = id => { const r=PROG[id]; return !r || r.seen===0 || (r.due||0)<=Date.now(); };
 const isSeen = id => { const r=PROG[id]; return r && r.seen>0; };
 const isWrongPile = id => { const r=PROG[id]; return r && r.wrong>0 && r.box<=1; };
+function toggleStar(id, after){
+  if(STARS.has(id))STARS.delete(id);else STARS.add(id);
+  saveStars();
+  toast(STARS.has(id)?"נשמר לשאלות שמורות":"הוסר מהשמורות");
+  if(after)after();
+}
+function starButton(id, after){
+  const on=STARS.has(id);
+  const b=el("button","iconbtn"+(on?" on":""),on?"★":"☆");
+  b.setAttribute("aria-label",on?"הסר מהשאלות השמורות":"שמור שאלה");
+  b.setAttribute("aria-pressed",on?"true":"false");
+  b.onclick=()=>toggleStar(id,after);
+  return b;
+}
 
 /* ---------- state ---------- */
 let nav="home";
-let session=null; // {queue:[ids], i, correct, wrong}
+let session=null; // {queue, i, correct, wrong, title, mode, answers, answered, lastAnswer}
 
 /* ---------- data ---------- */
 async function boot(){
-  loadProg();
+  if(!(await initAuth())){
+    renderLogin();
+    return;
+  }
+  await loadAppData();
+  registerServiceWorker();
+}
+async function loadAppData(){
+  await loadProg();
+  await loadStars();
   try{
-    const [q,t]=await Promise.all([
+    const [q,t,doubts]=await Promise.all([
       fetch("data/questions.json").then(r=>r.json()),
-      fetch("data/topics.json").then(r=>r.json())
+      fetch("data/topics.json").then(r=>r.json()),
+      fetch("docs/answer_key_doubts.json").then(r=>r.ok?r.json():[]).catch(()=>[])
     ]);
     QUESTIONS=q; TOPICS=t.topics||[];
+    QMAP=new Map(QUESTIONS.map(q=>[q.id,q]));
+    KEY_DOUBTS=Object.fromEntries((Array.isArray(doubts)?doubts:[]).map(d=>[d.id,d]));
+    session=await loadSavedSession();
     // Explanations are optional + larger; respect reduced-data by loading only on demand.
     if(!REDUCE_DATA) loadExplanations();
   }catch(e){
     $("#view-home").innerHTML='<div class="card" role="alert">שגיאה בטעינת השאלות. נסה לרענן.</div>';
     return;
   }
+  $("#view-home").setAttribute("aria-labelledby","home-title");
   renderHome();
-  if("serviceWorker" in navigator){ navigator.serviceWorker.register("sw.js").catch(()=>{}); }
 }
 function loadExplanations(){
   if(Object.keys(EXP).length)return Promise.resolve(EXP);
@@ -281,6 +560,28 @@ function yearLabel(t){return t.replace("-Jun"," · יוני").replace("-Sep"," �
 function toast(msg){const t=$("#toast");t.textContent=msg;t.classList.add("show");setTimeout(()=>t.classList.remove("show"),1600);}
 function acceptedIndices(q){ return q.all_accepted ? [0,1,2,3] : (q.c_accept&&q.c_accept.length?q.c_accept:[q.c]); }
 function normText(s){return String(s||"").normalize("NFKC").replace(/[\u0591-\u05C7]/g,"").toLowerCase();}
+function qById(id){return QMAP.get(id);}
+function escapeHtml(s){return String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));}
+function escapeRegExp(s){return String(s).replace(/[.*+?^${}()|[\]\\]/g,"\\$&");}
+function highlight(s,term){
+  const safe=escapeHtml(s);
+  const raw=term.trim();
+  if(!raw)return safe;
+  const needle=escapeRegExp(escapeHtml(raw));
+  return safe.replace(new RegExp(needle,"gi"),m=>`<mark class="hl">${m}</mark>`);
+}
+function timerText(sec){
+  sec=Math.max(0,Math.floor(sec));
+  const h=Math.floor(sec/3600), m=Math.floor((sec%3600)/60), s=sec%60;
+  return h?`${h}:${String(m).padStart(2,"0")}:${String(s).padStart(2,"0")}`:`${m}:${String(s).padStart(2,"0")}`;
+}
+function topicName(q){return TOPICS[q.ti]||"";}
+function shouldShowInstallCoach(){
+  const isApple=/iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform==="MacIntel"&&navigator.maxTouchPoints>1);
+  const standalone=window.matchMedia?.("(display-mode: standalone)")?.matches || navigator.standalone;
+  try{return isApple&&!standalone&&localStorage.getItem(INSTALL_COACH_KEY)!=="1";}
+  catch(e){return isApple&&!standalone;}
+}
 
 /* ---------- navigation ---------- */
 function go(v){
@@ -303,8 +604,38 @@ document.querySelectorAll("nav.bar button").forEach(b=>b.onclick=()=>{
   go(b.dataset.nav);
 });
 
+/* ---------- session persistence ---------- */
+async function loadSavedSession(){
+  try{
+    const s=await readLocal(SESSION_KEY,null);
+    if(!s||!Array.isArray(s.queue)||!s.queue.length)return null;
+    s.queue=s.queue.filter(id=>QMAP.has(id));
+    if(!s.queue.length)return null;
+    s.i=Math.max(0,Math.min(Number(s.i)||0,s.queue.length));
+    if(s.i>=s.queue.length)return null;
+    s.correct=Number(s.correct)||0;
+    s.wrong=Number(s.wrong)||0;
+    s.title=String(s.title||"תרגול");
+    s.mode=s.mode==="exam"?"exam":"practice";
+    s.answers=Array.isArray(s.answers)?s.answers.filter(a=>a&&QMAP.has(a.id)):[];
+    if(s.answered && (!s.lastAnswer||s.lastAnswer.id!==s.queue[s.i])){s.answered=false;s.lastAnswer=null;}
+    return s;
+  }catch(e){return null;}
+}
+function saveSession(){
+  if(!session||session.i>=session.queue.length){clearSavedSession();return;}
+  saveLocal(SESSION_KEY,session);
+}
+function clearSavedSession(){
+  idbDel(SESSION_KEY).catch(()=>{});
+  try{localStorage.removeItem(SESSION_KEY);}catch(e){}
+}
+function clearActiveSession(){ stopTimer(); session=null; clearSavedSession(); }
+
 /* ---------- HOME ---------- */
 function renderHome(){
+  setAuthChrome();
+  $("#view-home").setAttribute("aria-labelledby","home-title");
   const total=QUESTIONS.length, seen=QUESTIONS.filter(q=>isSeen(q.id)).length;
   const due=QUESTIONS.filter(q=>isSeen(q.id)&&isDue(q.id)).length;
   const wrong=QUESTIONS.filter(q=>isWrongPile(q.id)).length;
@@ -316,7 +647,27 @@ function renderHome(){
   sectionTitle(v,"home-title","בית");
 
   const visN=QUESTIONS.filter(q=>q.vision).length;
-  v.append(el("div","banner",`בנק עם <b>${total}</b> שאלות מבחן אמיתיות (שלב א' פסיכיאטריה, המועצה המדעית/הר"י, 2020–2025). תשובות לאחר ערעור · מראי מקום (Kaplan &amp; Sadock / DSM). חזרה מרווחת אוטומטית.${visN?`<br><span style="color:var(--warn);font-size:12px">⚠ ${visN} שאלות ממועד 2025 מסומנות OCR — נוסח השאלה תומלל אוטומטית (מקור פגום); תשובות ומפתח מהימנים.</span>`:""}`));
+  const doubts=Object.keys(KEY_DOUBTS).length;
+  v.append(el("div","banner",`בנק עם <b>${total}</b> שאלות מבחן אמיתיות (שלב א' פסיכיאטריה, המועצה המדעית/הר"י, 2020–2025). תשובות לאחר ערעור · מראי מקום (Kaplan &amp; Sadock / DSM). חזרה מרווחת אוטומטית.${visN?`<br><span style="color:var(--warn);font-size:12px">⚠ ${visN} שאלות ממועד 2025 מסומנות OCR — נוסח השאלה תומלל אוטומטית (מקור פגום); תשובות ומפתח מהימנים.</span>`:""}${doubts?`<br><span style="color:var(--warn);font-size:12px">⚑ ${doubts} שאלות כוללות דגל לימודי לגבי המפתח הרשמי; המפתח לא שונה.</span>`:""}`));
+
+  if(session){
+    const q=qById(session.queue[session.i]);
+    const resume=el("div","card");
+    resume.innerHTML=`<div class="qhead"><div><b>סבב פתוח</b><div class="muted small">${escapeHtml(session.title)} · ${session.i+1}/${session.queue.length}${q?` · ${escapeHtml(topicName(q))}`:""}</div></div></div>`;
+    const row=el("div","toolbar");
+    const cont=el("button","btn primary","המשך");cont.onclick=()=>{go("quiz");renderQuiz();};
+    const drop=el("button","btn","סגור סבב");drop.onclick=()=>{clearActiveSession();renderHome();};
+    row.append(cont,drop);resume.append(row);v.append(resume);
+  }
+
+  if(shouldShowInstallCoach()){
+    const coach=el("div","card");
+    coach.innerHTML=`<b>שמירה יציבה יותר באייפון</b><div class="muted small">ב-Safari מומלץ להוסיף למסך הבית כדי לשמור טוב יותר נתוני תרגול לאורך זמן.</div>`;
+    const row=el("div","toolbar");row.style.marginTop="10px";
+    const ok=el("button","btn primary","הבנתי");
+    ok.onclick=()=>{try{localStorage.setItem(INSTALL_COACH_KEY,"1");}catch(e){} renderHome();};
+    row.append(ok);coach.append(row);v.append(coach);
+  }
 
   const ring=el("div","card");
   ring.style.textAlign="center";
@@ -332,6 +683,7 @@ function renderHome(){
       <div class="stat"><div class="n">${seen}/${total}</div><div class="l">שאלות שנראו</div></div>
       <div class="stat"><div class="n">${acc}%</div><div class="l">דיוק כולל</div></div>
       <div class="stat"><div class="n">${due}</div><div class="l">לחזרה היום</div></div>
+      <div class="stat"><div class="n">${STARS.size}</div><div class="l">שמורות</div></div>
     </div>`;
   v.append(ring);
 
@@ -354,9 +706,35 @@ function renderHome(){
       const q=QUESTIONS.filter(x=>isWrongPile(x.id)).map(x=>x.id);
       if(!q.length)return toast("אין שאלות בערימת הטעויות");
       startSession(q,"חזרה על טעויות");
+    }),
+    mk("★","שמורות",STARS.size?`${STARS.size} שאלות מסומנות`:"אין שאלות שמורות",()=>{
+      const q=[...STARS].filter(id=>QMAP.has(id));
+      if(!q.length)return toast("אין שאלות שמורות");
+      startSession(q,"שאלות שמורות",false);
     })
   );
   v.append(acts);
+
+  v.append(el("h2","sec","בלוקים מהירים"));
+  const bc=el("div","chips");
+  [25,50,100].forEach(n=>{
+    const c=el("button","chip",`${n} שאלות <span class="c">${timerText(n*EXAM_SECONDS_PER_Q)}</span>`);
+    c.setAttribute("aria-label",`בלוק מתוזמן של ${n} שאלות אקראיות`);
+    c.onclick=()=>startSession(shuffle(QUESTIONS.map(q=>q.id)).slice(0,n),`בלוק ${n} שאלות`,false,{mode:"exam",durationSec:n*EXAM_SECONDS_PER_Q});
+    bc.append(c);
+  });
+  v.append(bc);
+
+  v.append(el("h2","sec","סימולציה לפי מועד"));
+  const ec=el("div","chips");
+  Object.keys(yrs).sort().forEach(t=>{
+    const ids=QUESTIONS.filter(q=>q.t===t).map(q=>q.id);
+    const c=el("button","chip",`${yearLabel(t)} <span class="c">${timerText(ids.length*EXAM_SECONDS_PER_Q)}</span>`);
+    c.setAttribute("aria-label",`סימולציה מועד ${yearLabel(t)}, ${ids.length} שאלות`);
+    c.onclick=()=>startExam(t);
+    ec.append(c);
+  });
+  v.append(ec);
 
   v.append(el("h2","sec","לפי מועד"));
   const yc=el("div","chips");
@@ -382,26 +760,36 @@ function renderHome(){
 
 /* ---------- QUIZ ---------- */
 function shuffle(a){a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
-function startSession(ids,title,doShuffle){
+function startSession(ids,title,doShuffle,opts={}){
   if(!ids.length){toast("אין שאלות");return;}
-  // prioritize due then unseen unless shuffling everything
-  let queue = doShuffle ? shuffle(ids) : ids.slice();
-  session={queue,i:0,correct:0,wrong:0,title,answered:false};
+  let queue = (doShuffle ? shuffle(ids) : ids.slice()).filter(id=>QMAP.has(id));
+  if(!queue.length){toast("אין שאלות זמינות");return;}
+  session={queue,i:0,correct:0,wrong:0,title,answered:false,lastAnswer:null,answers:[],
+    mode:opts.mode||"practice",source:opts.source||"",startedAt:Date.now(),durationSec:opts.durationSec||0};
+  saveSession();
   go("quiz"); renderQuiz();
 }
-function qById(id){return QUESTIONS.find(q=>q.id===id);}
+function startExam(t){
+  const ids=QUESTIONS.filter(q=>q.t===t).map(q=>q.id);
+  startSession(ids,"סימולציה · "+yearLabel(t),false,{mode:"exam",source:t,durationSec:ids.length*EXAM_SECONDS_PER_Q});
+}
 function renderQuiz(){
   const v=$("#view-quiz");
-  if(!session||session.i>=session.queue.length){return renderSessionEnd();}
+  if(!session){go("home");return;}
+  if(session.i>=session.queue.length){return renderSessionEnd();}
   const q=qById(session.queue[session.i]);
-  session.answered=false;
+  if(!q){session.i++;saveSession();return renderQuiz();}
   v.innerHTML="";
   sectionTitle(v,"quiz-title","תרגול");
   const card=el("div","card");
   const pct=Math.round(session.i/session.queue.length*100);
-  card.append(el("div","qhead",
-    `<div class="qmeta"><span class="tag">${escapeHtml(session.title)}</span><span class="tag">${escapeHtml(yearLabel(q.t))}</span><span class="tag acc">${escapeHtml(TOPICS[q.ti]||"")}</span>${q.vision?'<span class="tag" style="color:var(--warn);border-color:var(--warn)" title="תמלול אוטומטי מהמקור — ודא מול ה-PDF">OCR</span>':''}</div>
-     <div>${session.i+1} / ${session.queue.length}</div>`));
+  const timer=session.mode==="exam"?`<span class="timer" id="timer">${timerText(timeLeft())}</span>`:"";
+  const doubt=KEY_DOUBTS[q.id]?'<span class="tag" style="color:var(--warn);border-color:var(--warn)">דגל מפתח</span>':"";
+  const qhead=el("div","qhead",
+    `<div class="qmeta"><span class="tag">${escapeHtml(session.title)}</span><span class="tag">${escapeHtml(yearLabel(q.t))}</span><span class="tag acc">${escapeHtml(topicName(q))}</span>${q.vision?'<span class="tag" style="color:var(--warn);border-color:var(--warn)" title="תמלול אוטומטי מהמקור — ודא מול ה-PDF">OCR</span>':""}${doubt}</div>
+     <div class="toolbar">${timer}<span>${session.i+1} / ${session.queue.length}</span></div>`);
+  qhead.querySelector(".toolbar").prepend(starButton(q.id,()=>renderQuiz()));
+  card.append(qhead);
   const pb=el("div","progbar",`<i style="width:${pct}%"></i>`);pb.setAttribute("role","progressbar");pb.setAttribute("aria-label","התקדמות בסבב");pb.setAttribute("aria-valuemin","0");pb.setAttribute("aria-valuemax","100");pb.setAttribute("aria-valuenow",String(pct));card.append(pb);
   const qText=el("div","qtext",escapeHtml(q.q));qText.id="current-question";card.append(qText);
   const opts=el("div","opts");opts.setAttribute("role","group");opts.setAttribute("aria-labelledby","current-question");
@@ -415,13 +803,19 @@ function renderQuiz(){
   card.append(opts);
   const fb=el("div","fb");fb.id="grading-feedback";fb.setAttribute("role","status");fb.setAttribute("aria-live","polite");fb.setAttribute("aria-atomic","true");fb.tabIndex=-1;card.append(fb);
   const foot=el("div","qfoot");
-  const skip=el("button","btn",`דלג`);skip.setAttribute("aria-label","דלג לשאלה הבאה");skip.onclick=()=>nextQ();
+  const skip=el("button","btn",`דלג`);skip.setAttribute("aria-label","דלג לשאלה הבאה");skip.onclick=()=>skipQ();
   foot.append(skip);card.append(foot);
   v.append(card);
-  card._fb=fb;
+  if(session.answered&&session.lastAnswer&&session.lastAnswer.id===q.id){
+    showAnswer(q,session.lastAnswer.k,opts,fb,card,false);
+  }
+  startTimer();
 }
 async function answer(q,k,opts,fb,card){
   if(session.answered)return;
+  showAnswer(q,k,opts,fb,card,true);
+}
+function showAnswer(q,k,opts,fb,card,record){
   session.answered=true;
   const accept=acceptedIndices(q);
   const ok=accept.includes(k);
@@ -431,8 +825,14 @@ async function answer(q,k,opts,fb,card){
     else if(idx===k)b.classList.add("wrong");
     else b.classList.add("dim");
   });
-  if(ok)session.correct++;else session.wrong++;
-  grade(q.id,ok);
+  if(record){
+    if(ok)session.correct++;else session.wrong++;
+    session.lastAnswer={id:q.id,k,ok,at:Date.now()};
+    session.answers=session.answers.filter(a=>!(a.index===session.i&&a.id===q.id));
+    session.answers.push({index:session.i,id:q.id,k,ok,skipped:false,at:Date.now()});
+    grade(q.id,ok);
+    saveSession();
+  }
   fb.className="fb show "+(ok?"ok":"no");
   fb.setAttribute("aria-live",ok?"polite":"assertive");
   let h = ok?"✅ נכון!":"❌ לא נכון";
@@ -444,6 +844,9 @@ async function answer(q,k,opts,fb,card){
   else h+=`<div class="expl" data-exp-slot="${q.id}"><div class="expl-h">הסבר</div><span class="muted">טוען הסבר...</span></div>`;
   if(q.ref) h+=`<div class="ref">מקור: <b>${escapeHtml(q.ref)}</b> · Kaplan &amp; Sadock Synopsis</div>`;
   if(q.vision) h+='<div class="note">⚠ נוסח השאלה תומלל אוטומטית (מועד 2025 פגום במקור) — התשובות, המפתח וההסבר מהימנים; ודא ניסוח מול ה-PDF</div>';
+  const keyDoubt=KEY_DOUBTS[q.id];
+  if(keyDoubt) h+=`<div class="note">⚑ דגל לימודי לגבי המפתח הרשמי: ${escapeHtml(keyDoubt.issue)} המפתח הרשמי נשמר ללא שינוי.</div>`;
+  h+=aiTutorHtml();
   fb.innerHTML=h;
   const expSlot=fb.querySelector("[data-exp-slot]");
   if(expSlot){
@@ -462,50 +865,130 @@ async function answer(q,k,opts,fb,card){
       loadBtn.closest(".expl").innerHTML=`<div class="expl-h">הסבר</div>${escapeHtml(expNow)}`;
     };
   }
-  // turn skip into next
+  wireAiButtons(fb,q,k);
   const foot=card.querySelector(".qfoot");foot.innerHTML="";
-  const nx=el("button","btn primary",`הבא ←`);nx.setAttribute("aria-label","השאלה הבאה");nx.setAttribute("aria-keyshortcuts","Enter");nx.onclick=()=>nextQ();foot.append(nx);
-  fb.focus({preventScroll:true});
+  const isLast=session.i+1>=session.queue.length;
+  const nx=el("button","btn primary",isLast?"סיים":"הבא ←");nx.setAttribute("aria-label",isLast?"סיים סבב":"השאלה הבאה");nx.setAttribute("aria-keyshortcuts","Enter");nx.onclick=()=>nextQ();foot.append(nx);
+  if(record)fb.focus({preventScroll:true});
 }
-function nextQ(){ if(!session)return; session.i++; renderQuiz(); window.scrollTo({top:0,behavior:"auto"}); }
+function skipQ(){
+  if(!session)return;
+  const q=qById(session.queue[session.i]);
+  if(session.mode==="exam"&&!session.answered&&q){
+    session.wrong++;
+    session.answers=session.answers.filter(a=>!(a.index===session.i&&a.id===q.id));
+    session.answers.push({index:session.i,id:q.id,k:null,ok:false,skipped:true,at:Date.now()});
+  }
+  nextQ();
+}
+function nextQ(){
+  if(!session)return;
+  session.i++;
+  session.answered=false;
+  session.lastAnswer=null;
+  saveSession();
+  renderQuiz();
+  window.scrollTo({top:0,behavior:"auto"});
+}
+function timeLeft(){
+  if(!session||session.mode!=="exam")return 0;
+  return Math.max(0,session.durationSec-Math.floor((Date.now()-session.startedAt)/1000));
+}
+function startTimer(){
+  stopTimer();
+  if(!session||session.mode!=="exam")return;
+  updateTimer();
+  timerHandle=setInterval(updateTimer,1000);
+}
+function stopTimer(){ if(timerHandle){clearInterval(timerHandle);timerHandle=null;} }
+function updateTimer(){
+  if(!session||session.mode!=="exam"){stopTimer();return;}
+  const left=timeLeft();
+  const node=$("#timer"); if(node)node.textContent=timerText(left);
+  if(left<=0){toast("הזמן הסתיים");session.i=session.queue.length;saveSession();go("quiz");renderSessionEnd();}
+}
 function renderSessionEnd(){
-  const v=$("#view-quiz");const tot=session.correct+session.wrong;
-  const acc=tot?Math.round(session.correct/tot*100):0;
+  stopTimer();
+  const done={...session,queue:session.queue.slice(),answers:(session.answers||[]).slice()};
+  lastCompletedSession=done;
+  clearSavedSession();
+  const v=$("#view-quiz");const tot=done.correct+done.wrong;
+  const acc=tot?Math.round(done.correct/tot*100):0;
   v.innerHTML="";
   sectionTitle(v,"quiz-title","סיכום סבב");
-  const completedQueue = session.queue.slice(0, session.i);
+  const completedQueue = done.queue.slice(0, done.i);
   const c=el("div","card");c.style.textAlign="center";
   c.innerHTML=`<div style="font-size:46px">${acc>=80?"🏆":acc>=60?"👍":"💪"}</div>
    <h2 style="margin:6px 0">סיימת!</h2>
    <div class="grid g3" style="margin:14px 0">
-     <div class="stat"><div class="n">${session.correct}</div><div class="l">נכון</div></div>
-     <div class="stat"><div class="n">${session.wrong}</div><div class="l">טעות</div></div>
+     <div class="stat"><div class="n">${done.correct}</div><div class="l">נכון</div></div>
+     <div class="stat"><div class="n">${done.wrong}</div><div class="l">טעות/דילוג</div></div>
      <div class="stat"><div class="n">${acc}%</div><div class="l">דיוק</div></div>
    </div>`;
   const b=el("button","btn primary","חזרה לבית");b.setAttribute("aria-label","חזרה למסך הבית");b.onclick=()=>{session=null;go("home");};
   c.append(b);
-  if(session.wrong>0){
+  if(done.mode==="exam"){
+    const rev=el("button","btn","סקירת המבחן");rev.style.marginTop="10px";rev.onclick=()=>renderExamReview(done);c.append(rev);
+  }
+  if(done.wrong>0){
     const w=el("button","btn","חזור על הטעויות מהסבב");w.style.marginTop="10px";
-    const retryIds=completedQueue.filter(id=>{const r=PROG[id];return r&&r.box<=1;});
+    const wrongSet=new Set(done.answers.filter(a=>!a.ok).map(a=>a.id));
+    const retryIds=completedQueue.filter(id=>wrongSet.has(id)||((PROG[id]||{}).box<=1));
     w.onclick=()=>startSession(retryIds.length?retryIds:completedQueue,"חזרה על טעויות");
     c.append(w);
   }
   v.append(c);
   session=null;
 }
+function renderExamReview(done=lastCompletedSession){
+  if(!done)return;
+  const v=$("#view-quiz");v.innerHTML="";
+  sectionTitle(v,"quiz-title","סקירת מבחן");
+  const answers=new Map(done.answers.map(a=>[a.id,a]));
+  const c=el("div","card");
+  c.append(el("h2","",`סקירת ${escapeHtml(done.title)}`));
+  const list=el("div","review-list");
+  done.queue.forEach((id,idx)=>{
+    const q=qById(id); if(!q)return;
+    const a=answers.get(id);
+    const accept=acceptedIndices(q);
+    const row=el("div","review-row "+(a&&a.ok?"ok":"no"));
+    const chosen=a?.skipped?"דולג":(Number.isInteger(a?.k)?`${LETTERS[a.k]}. ${escapeHtml(q.o[a.k])}`:"לא נענה");
+    row.innerHTML=`<div class="qhead"><b>${idx+1}. ${escapeHtml(yearLabel(q.t))}</b><span>${a&&a.ok?"נכון":"דורש חזרה"}</span></div>
+      <div class="qq">${escapeHtml(q.q)}</div>
+      <div class="meta"><span>נבחר: ${chosen}</span><span>מתקבל: ${accept.map(i=>LETTERS[i]).join(", ")}</span>${KEY_DOUBTS[id]?'<span style="color:var(--warn)">דגל מפתח</span>':""}</div>`;
+    list.append(row);
+  });
+  c.append(list);
+  const row=el("div","toolbar");row.style.marginTop="14px";
+  const wrongIds=done.answers.filter(a=>!a.ok).map(a=>a.id);
+  const retry=el("button","btn primary","תרגל טעויות");retry.onclick=()=>startSession(wrongIds.length?wrongIds:done.queue,"טעויות מהמבחן");
+  const home=el("button","btn","בית");home.onclick=()=>go("home");
+  row.append(retry,home);c.append(row);v.append(c);
+}
 
 /* ---------- BROWSE ---------- */
-let browseState={q:"",ti:-1,t:""};
+let browseState={q:"",ti:-1,filter:"all",page:0};
 function renderBrowse(){
   const v=$("#view-browse");v.innerHTML="";
   sectionTitle(v,"browse-title","עיון");
   const s=el("input","search");s.placeholder="חיפוש בשאלות, תשובות, מקורות…";s.value=browseState.q;
   s.type="search";s.setAttribute("aria-label","חיפוש בשאלות, תשובות ומקורות");
-  s.oninput=()=>{browseState.q=s.value;drawList();};
+  s.oninput=()=>{browseState.q=s.value;browseState.page=0;drawList();};
   v.append(s);
+  const fc=el("div","chips");fc.style.margin="12px 0";
+  [
+    ["all","הכל"],["ocr","OCR"],["keyDoubt","דגל מפתח"],["allAccepted","בוטלו"],["multi","ריבוי תשובות"],["weak","חלשות"],["star","שמורות"]
+  ].forEach(([id,label])=>{
+    const b=el("button","chip"+(browseState.filter===id?" on":""),label);
+    b.setAttribute("aria-pressed",browseState.filter===id?"true":"false");
+    b.onclick=()=>{browseState.filter=id;browseState.page=0;renderBrowse();};
+    fc.append(b);
+  });
+  v.append(fc);
   // topic filter chips
   const tc=el("div","chips");tc.style.margin="12px 0";
-  const all=el("button","chip"+(browseState.ti<0?" on":""),"הכל");all.setAttribute("aria-pressed",browseState.ti<0?"true":"false");all.onclick=()=>{browseState.ti=-1;renderBrowse();};
+  const all=el("button","chip"+(browseState.ti<0?" on":""),"כל הנושאים");all.setAttribute("aria-pressed",browseState.ti<0?"true":"false");all.onclick=()=>{browseState.ti=-1;browseState.page=0;renderBrowse();};
   tc.append(all);
   const tps=byTopic();
   Object.keys(tps).map(Number).sort((a,b)=>tps[b]-tps[a]).forEach(ti=>{
@@ -513,30 +996,47 @@ function renderBrowse(){
     const c=el("button","chip"+(browseState.ti===ti?" on":""),`${escapeHtml(topic)} <span class="c">${tps[ti]}</span>`);
     c.setAttribute("aria-label",`סנן לפי נושא ${topic}, ${tps[ti]} שאלות`);
     c.setAttribute("aria-pressed",browseState.ti===ti?"true":"false");
-    c.onclick=()=>{browseState.ti=ti;renderBrowse();};tc.append(c);
+    c.onclick=()=>{browseState.ti=ti;browseState.page=0;renderBrowse();};tc.append(c);
   });
   v.append(tc);
   const list=el("div");list.id="blist";v.append(list);
   drawList();
 }
+function browsePass(q){
+  if(browseState.ti>=0&&q.ti!==browseState.ti)return false;
+  const accept=acceptedIndices(q);
+  if(browseState.filter==="ocr"&&!q.vision)return false;
+  if(browseState.filter==="keyDoubt"&&!KEY_DOUBTS[q.id])return false;
+  if(browseState.filter==="allAccepted"&&!q.all_accepted)return false;
+  if(browseState.filter==="multi"&&accept.length<2)return false;
+  if(browseState.filter==="weak"&&!isWrongPile(q.id))return false;
+  if(browseState.filter==="star"&&!STARS.has(q.id))return false;
+  const term=normText(browseState.q.trim());
+  if(term&&!normText(q.q+" "+q.o.join(" ")+" "+(q.ref||"")+" "+topicName(q)+" "+(KEY_DOUBTS[q.id]?.issue||"")).includes(term))return false;
+  return true;
+}
 function drawList(){
   const list=$("#blist");if(!list)return;
-  const term=normText(browseState.q.trim());
-  let res=QUESTIONS;
-  if(browseState.ti>=0)res=res.filter(q=>q.ti===browseState.ti);
-  if(term)res=res.filter(q=>normText(q.q+" "+q.o.join(" ")+" "+(q.ref||"")+" "+(TOPICS[q.ti]||"")).includes(term));
-  list.innerHTML=`<div class="muted small" style="margin:4px 0 10px">${res.length} שאלות</div>`;
-  res.slice(0,300).forEach(q=>{
+  const rawTerm=browseState.q.trim();
+  let res=QUESTIONS.filter(browsePass);
+  const pages=Math.max(1,Math.ceil(res.length/PAGE_SIZE));
+  browseState.page=Math.max(0,Math.min(browseState.page,pages-1));
+  const start=browseState.page*PAGE_SIZE;
+  list.innerHTML=`<div class="pager"><span class="muted small">${res.length} שאלות · עמוד ${browseState.page+1}/${pages}</span><span class="toolbar"><button type="button" class="btn" id="prev-page"${browseState.page===0?" disabled":""}>הקודם</button><button type="button" class="btn" id="next-page"${browseState.page>=pages-1?" disabled":""}>הבא</button></span></div>`;
+  $("#prev-page")?.addEventListener("click",()=>{browseState.page--;drawList();});
+  $("#next-page")?.addEventListener("click",()=>{browseState.page++;drawList();});
+  res.slice(start,start+PAGE_SIZE).forEach(q=>{
     const it=el("div","qitem");
-    it.append(el("div","qq",escapeHtml(q.q)));
+    const head=el("div","qhead");
+    head.append(el("div","qq",highlight(q.q,rawTerm)),starButton(q.id,()=>drawList()));
+    it.append(head);
     const accept=acceptedIndices(q);
-    q.o.forEach((o,k)=>it.append(el("div","oo"+(accept.includes(k)?" c":""),`${LETTERS[k]}. ${escapeHtml(o)}`)));
+    q.o.forEach((o,k)=>it.append(el("div","oo"+(accept.includes(k)?" c":""),`${LETTERS[k]}. ${highlight(o,rawTerm)}`)));
     const ex=EXP[q.id];
     if(ex)it.append(el("div","expl",`<div class="expl-h">הסבר</div>${escapeHtml(ex)}`));
-    it.append(el("div","meta",`<span>${escapeHtml(yearLabel(q.t))}</span><span>${escapeHtml(TOPICS[q.ti]||"")}</span>${q.ref?`<span>${escapeHtml(q.ref)}</span>`:""}${q.all_accepted?`<span style="color:var(--warn)">בוטלה בערעור</span>`:""}${q.vision?`<span style="color:var(--warn)">OCR</span>`:""}`));
+    it.append(el("div","meta",`<span>${escapeHtml(yearLabel(q.t))}</span><span>${escapeHtml(topicName(q))}</span>${q.ref?`<span>${highlight(q.ref,rawTerm)}</span>`:""}${q.all_accepted?`<span style="color:var(--warn)">בוטלה בערעור</span>`:""}${accept.length>1&&!q.all_accepted?`<span style="color:var(--warn)">ריבוי תשובות</span>`:""}${q.vision?`<span style="color:var(--warn)">OCR</span>`:""}${KEY_DOUBTS[q.id]?`<span style="color:var(--warn)">דגל מפתח</span>`:""}`));
     list.append(it);
   });
-  if(res.length>300)list.append(el("div","muted small","מוצגות 300 הראשונות — צמצם בחיפוש."));
 }
 
 /* ---------- STATS ---------- */
@@ -550,7 +1050,8 @@ function renderStats(){
   head.innerHTML=`<div class="grid g3">
     <div class="stat"><div class="n">${seen}</div><div class="l">שאלות שנראו</div></div>
     <div class="stat"><div class="n">${s}</div><div class="l">תשובות</div></div>
-    <div class="stat"><div class="n">${acc}%</div><div class="l">דיוק</div></div></div>`;
+    <div class="stat"><div class="n">${acc}%</div><div class="l">דיוק</div></div>
+    <div class="stat"><div class="n">${STARS.size}</div><div class="l">שמורות</div></div></div>`;
   v.append(head);
   // per-topic accuracy
   v.append(el("h2","sec","דיוק לפי נושא"));
@@ -566,13 +1067,101 @@ function renderStats(){
     card.append(row);
   });
   v.append(card);
-  const reset=el("button","btn","איפוס התקדמות");reset.style.marginTop="16px";reset.setAttribute("aria-label","איפוס כל ההתקדמות והנתונים");
-  reset.onclick=()=>{if(confirm("לאפס את כל ההתקדמות והנתונים?")){PROG={};saveProg();toast("אופס");go("home");}};
-  v.append(reset);
+  v.append(el("h2","sec","ניהול נתונים"));
+  const tools=el("div","grid g2");
+  const exp=el("button","btn","ייצוא התקדמות");exp.onclick=exportProgress;
+  const imp=el("button","btn","ייבוא התקדמות");
+  const input=el("input","hidden");input.type="file";input.accept="application/json,.json";input.onchange=()=>input.files[0]&&importProgress(input.files[0]);
+  imp.onclick=()=>input.click();
+  const reset=el("button","btn warn","איפוס מלא");reset.setAttribute("aria-label","איפוס כל ההתקדמות, השמורות והסבב הפתוח");
+  reset.onclick=()=>{if(confirm("לאפס את כל ההתקדמות, השמורות והסבב הפתוח? לא ניתן לשחזר בלי קובץ ייצוא.")){PROG={};STARS=new Set();clearActiveSession();saveProg();saveStars();toast("אופס");go("home");}};
+  tools.append(exp,imp,reset,input);v.append(tools);
 }
 
-/* ---------- util ---------- */
-function escapeHtml(s){return String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));}
+/* ---------- AI tutor ---------- */
+function aiTutorHtml(){
+  return `<div class="ai-box"><div class="expl-h">AI Tutor</div>
+    <div class="ai-actions">
+      <button type="button" class="btn" data-ai-mode="explain">הסבר קצר</button>
+      <button type="button" class="btn" data-ai-mode="wrong">למה טעיתי?</button>
+      <button type="button" class="btn" data-ai-mode="plan">תכנית חיזוק</button>
+    </div>
+    <div class="ai-output" role="status" aria-live="polite" aria-atomic="true"></div></div>`;
+}
+function wireAiButtons(root,q,k){
+  root.querySelectorAll("[data-ai-mode]").forEach(b=>b.onclick=()=>askAi(b.dataset.aiMode,q,k,root.querySelector(".ai-output")));
+}
+function progressSummary(){
+  const topics={};
+  QUESTIONS.forEach(q=>{const r=PROG[q.id];if(r&&r.seen){const t=topicName(q);topics[t]=topics[t]||{seen:0,correct:0,total:0};topics[t].seen++;topics[t].correct+=r.correct;topics[t].total+=r.correct+r.wrong;}});
+  const weak=Object.entries(topics).map(([topic,v])=>({topic,accuracy:v.total?Math.round(v.correct/v.total*100):0,seen:v.seen})).sort((a,b)=>a.accuracy-b.accuracy).slice(0,3);
+  return {seen:QUESTIONS.filter(q=>isSeen(q.id)).length,starred:STARS.size,weak};
+}
+async function askAi(mode,q,k,out){
+  out.textContent="טוען תשובת AI...";
+  try{
+    if(!EXP[q.id])await loadExplanations();
+    const res=await authFetch("/api/ai-tutor",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({
+      mode,selectedIndex:k,selectedLetter:Number.isInteger(k)?LETTERS[k]:null,
+      question:{id:q.id,stem:q.q,options:q.o,acceptedIndices:acceptedIndices(q),acceptedLetters:acceptedIndices(q).map(i=>LETTERS[i]),allAccepted:!!q.all_accepted,ref:q.ref||"",topic:topicName(q),sitting:q.t,vision:!!q.vision},
+      explanation:EXP[q.id]||"",keyDoubt:KEY_DOUBTS[q.id]||null,progressSummary:progressSummary()
+    })});
+    if(!res.ok){
+      out.textContent=res.status===401?"יש להתחבר מחדש כדי להשתמש ב-AI Tutor.":[404,405,501].includes(res.status)?"AI Tutor אינו פעיל בפריסה הזו. יש לפרוס ב-Netlify ולהגדיר OPENAI_API_KEY.":`שגיאת AI (${res.status}).`;
+      return;
+    }
+    const data=await res.json();
+    out.innerHTML=`${escapeHtml(data.answer||"אין תשובה זמינה.")}${Array.isArray(data.citations)&&data.citations.length?`\n\nמקורות: ${data.citations.map(escapeHtml).join(" · ")}`:""}`;
+  }catch(e){
+    out.textContent="AI Tutor אינו זמין כרגע. התרגול המקומי ממשיך לעבוד כרגיל.";
+  }
+}
+
+/* ---------- import / export ---------- */
+function exportProgress(){
+  const payload={version:1,exportedAt:new Date().toISOString(),progress:PROG,stars:[...STARS]};
+  const blob=new Blob([JSON.stringify(payload,null,2)],{type:"application/json"});
+  const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=`psychiatry-progress-${new Date().toISOString().slice(0,10)}.json`;a.click();
+  setTimeout(()=>URL.revokeObjectURL(a.href),1000);
+}
+function importProgress(file){
+  const reader=new FileReader();
+  reader.onload=()=>{
+    try{
+      const data=JSON.parse(reader.result);
+      if(!data||typeof data!=="object"||!data.progress)throw new Error("bad file");
+      if(!confirm("להחליף את ההתקדמות והשאלות השמורות בקובץ הייבוא?"))return;
+      PROG=data.progress&&typeof data.progress==="object"?data.progress:{};
+      STARS=new Set((Array.isArray(data.stars)?data.stars:[]).filter(id=>QMAP.has(id)));
+      saveProg();saveStars();toast("הייבוא הושלם");renderStats();
+    }catch(e){toast("קובץ הייבוא לא תקין");}
+  };
+  reader.readAsText(file);
+}
+
+/* ---------- service worker updates ---------- */
+function registerServiceWorker(){
+  if(!("serviceWorker" in navigator))return;
+  navigator.serviceWorker.register("sw.js").then(reg=>{
+    reg.update().catch(()=>{});
+    if(reg.waiting)showUpdate(reg.waiting);
+    reg.addEventListener("updatefound",()=>{
+      const worker=reg.installing;
+      if(worker)worker.addEventListener("statechange",()=>{
+        if(worker.state==="installed"&&navigator.serviceWorker.controller)showUpdate(worker);
+      });
+    });
+  }).catch(()=>{});
+  let refreshing=false;
+  navigator.serviceWorker.addEventListener("controllerchange",()=>{
+    if(refreshing)return;refreshing=true;location.reload();
+  });
+}
+function showUpdate(worker){
+  const banner=$("#update-banner");banner.classList.remove("hidden");
+  $("#reload-update").onclick=()=>worker.postMessage({type:"SKIP_WAITING"});
+}
+
 document.addEventListener("keydown",e=>{
   if(nav!=="quiz"||!session)return;
   const key = e.key && /^[1-4]$/.test(e.key) ? e.key : (e.code&&/^Digit[1-4]$/.test(e.code) ? e.code.slice(-1) : "");
