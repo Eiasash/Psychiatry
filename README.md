@@ -38,7 +38,7 @@ A single-file, installable PWA for drilling the Israeli **Shlav Aleph (שלב א
 - Progress export/import as local JSON.
 - IndexedDB-first local persistence with a persistent-storage request when study state is saved.
 - Optional Supabase email/password login on Netlify, with protected question JSON and cross-device progress sync.
-- Optional AI Tutor via Netlify Function (`/api/ai-tutor`) when deployed with `OPENAI_API_KEY`.
+- Optional AI Tutor via Netlify Function (`/api/ai-tutor`), routed through the shared Toranot Claude proxy.
 - Hebrew RTL, dark theme, **offline-capable**, installable to home screen.
 - Progress is stored locally first; when Supabase auth is configured it also syncs per user to Supabase.
 
@@ -46,7 +46,7 @@ A single-file, installable PWA for drilling the Israeli **Shlav Aleph (שלב א
 
 Zero-build single-file app (`index.html`) + JSON data files. Service worker (`sw.js`) caches the shell for offline use while keeping protected question JSON out of the public cache. Hosted on GitHub Pages for the public/offline build; Netlify Functions add optional Supabase login, protected JSON delivery, AI, and progress sync when deployed there.
 
-The optional AI Tutor is implemented as a Netlify Function in `netlify/functions/ai-tutor.mjs`. Configure `OPENAI_API_KEY` in Netlify environment variables; optionally set `OPENAI_MODEL` to override the default model. When Supabase auth is configured, the AI endpoint requires a valid Supabase access token. The GitHub Pages version keeps working without this endpoint and shows a graceful unavailable message.
+The optional AI Tutor is implemented as a Netlify Function in `netlify/functions/ai-tutor.mjs`. It calls the shared **Toranot Claude proxy** (`toranot.netlify.app/api/claude`, Anthropic messages API) rather than a model vendor directly, so no model API key is stored in this project. Configure `CLAUDE_PROXY_SECRET` (the shared `x-api-secret` accepted by the Toranot proxy) in Netlify environment variables; optionally set `CLAUDE_PROXY_URL` to point at a different proxy and `CLAUDE_MODEL` to override the default model (`claude-sonnet-4-6`). When Supabase auth is configured, the AI endpoint requires a valid Supabase access token. The GitHub Pages version keeps working without this endpoint and shows a graceful unavailable message.
 
 ## Supabase + Netlify auth
 
@@ -54,8 +54,9 @@ Supabase login is enabled only when these Netlify environment variables are set:
 
 - `SUPABASE_URL` — project URL, for example `https://<project-ref>.supabase.co`.
 - `SUPABASE_PUBLISHABLE_KEY` — Supabase publishable/anon browser key. `SUPABASE_ANON_KEY` is accepted as a fallback.
-- `OPENAI_API_KEY` — optional; enables `/api/ai-tutor`.
-- `OPENAI_MODEL` — optional; overrides the default AI Tutor model.
+- `CLAUDE_PROXY_SECRET` — optional; enables `/api/ai-tutor` (the shared `x-api-secret` for the Toranot Claude proxy).
+- `CLAUDE_PROXY_URL` — optional; overrides the proxy endpoint (default `https://toranot.netlify.app/api/claude`).
+- `CLAUDE_MODEL` — optional; overrides the default AI Tutor model (`claude-sonnet-4-6`).
 
 Apply the SQL migration in `supabase/migrations/` to create the per-user progress tables and row-level-security policies. Enable email/password signups in Supabase Auth, then manage users from the Supabase dashboard.
 

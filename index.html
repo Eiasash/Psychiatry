@@ -1391,7 +1391,7 @@ async function askAi(mode,q,k,out){
       explanation:EXP[q.id]||"",keyDoubt:KEY_DOUBTS[q.id]||null,progressSummary:progressSummary()
     })});
     if(!res.ok){
-      out.textContent=res.status===401?"יש להתחבר מחדש כדי להשתמש ב-AI Tutor.":[404,405,501].includes(res.status)?"AI Tutor אינו פעיל בפריסה הזו. יש לפרוס ב-Netlify ולהגדיר OPENAI_API_KEY.":`שגיאת AI (${res.status}).`;
+      out.textContent=res.status===401?"יש להתחבר מחדש כדי להשתמש ב-AI Tutor.":[404,405,501].includes(res.status)?"AI Tutor אינו פעיל בפריסה הזו.":`שגיאת AI (${res.status}).`;
       return;
     }
     const data=await res.json();

@@ -46,6 +46,8 @@ function citations(body) {
   return out;
 }
 
+const SYSTEM_PROMPT = "You are a source-grounded medical exam study tutor. You help with board-exam study, not patient care. Use only the information provided in the user message. Never change the official answer key. Answer in concise Hebrew.";
+
 export default async function handler(req) {
   if (req.method === "OPTIONS") return new Response(null, { status: 204, headers: JSON_HEADERS });
   if (req.method !== "POST") return json({ error: "Method not allowed" }, 405);
@@ -53,8 +55,11 @@ export default async function handler(req) {
   const auth = await requireSupabaseUser(req);
   if (!auth.ok) return auth.response;
 
-  const apiKey = env("OPENAI_API_KEY");
-  if (!apiKey) return json({ error: "OPENAI_API_KEY is not configured" }, 501);
+  // AI tutor routes through the shared Toranot Claude proxy (Anthropic messages API),
+  // authenticated with a shared x-api-secret matching Toranot's API_SECRET env.
+  const proxyUrl = env("CLAUDE_PROXY_URL") || "https://toranot.netlify.app/api/claude";
+  const proxySecret = env("CLAUDE_PROXY_SECRET");
+  if (!proxySecret) return json({ error: "AI tutor is not configured" }, 501);
 
   let body;
   try {
@@ -67,29 +72,34 @@ export default async function handler(req) {
     return json({ error: "Missing question payload" }, 400);
   }
 
-  const model = env("OPENAI_MODEL") || "gpt-5.5";
-  const response = await fetch("https://api.openai.com/v1/responses", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "Authorization": `Bearer ${apiKey}`
-    },
-    body: JSON.stringify({
-      model,
-      instructions: "You are a source-grounded medical exam study tutor. You help with board-exam study, not patient care. Answer in concise Hebrew.",
-      input: buildPrompt(body),
-      max_output_tokens: 700
-    })
-  });
-
-  const data = await response.json().catch(() => ({}));
-  if (!response.ok) {
-    return json({ error: data.error?.message || "OpenAI request failed" }, response.status);
+  const model = env("CLAUDE_MODEL") || "claude-sonnet-4-6";
+  let response, data;
+  try {
+    response = await fetch(proxyUrl, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "x-api-secret": proxySecret
+      },
+      body: JSON.stringify({
+        model,
+        max_tokens: 700,
+        system: SYSTEM_PROMPT,
+        messages: [{ role: "user", content: buildPrompt(body) }]
+      })
+    });
+    data = await response.json().catch(() => ({}));
+  } catch (err) {
+    return json({ error: `AI proxy request failed: ${err?.message || "network error"}` }, 502);
   }
 
-  const answer = data.output_text || (Array.isArray(data.output)
-    ? data.output.flatMap(item => item.content || []).filter(part => part.type === "output_text").map(part => part.text).join("\n")
-    : "");
+  if (!response.ok) {
+    return json({ error: data?.error?.message || data?.error || "AI proxy request failed" }, response.status);
+  }
+
+  const answer = Array.isArray(data.content)
+    ? data.content.filter(part => part.type === "text").map(part => part.text).join("\n")
+    : "";
 
   return json({
     answer: answer.trim() || "לא התקבלה תשובה מהמודל.",
