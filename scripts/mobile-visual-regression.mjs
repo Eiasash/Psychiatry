@@ -13,6 +13,7 @@ function expect(pattern, label) {
 
 expect(/@media\(max-width:560px\)\{[\s\S]*?\.fb\.show\{[^}]*margin-inline:-4px/, "mobile feedback should reclaim horizontal space");
 expect(/@media\(max-width:560px\)\{[\s\S]*?\.ai-box\{[^}]*border-left:0[^}]*border-right:0/, "mobile AI panel should avoid nested side rails");
+expect(/@media\(max-width:560px\)\{[\s\S]*?\.ai-section\{[^}]*padding:10px[^}]*margin:8px 0/, "mobile AI sections should be compact, separated cards");
 expect(/@media\(max-width:560px\)\{[\s\S]*?\.ai-table td::before\{[^}]*data-label/, "mobile AI tables should expose per-cell labels");
 expect(/\.ai-loading\{[\s\S]*?border:1px solid var\(--line\)/, "AI loading state should be visibly framed");
 expect(/\.ai-error\{[\s\S]*?border:1px solid var\(--bad\)/, "AI error state should be visibly framed");
