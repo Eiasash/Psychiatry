@@ -47,6 +47,9 @@ expect(/aria-busy/, "AI Tutor output should expose busy state to assistive tech"
 expect(/id="dismiss-update"/, "update banner needs a dismiss control");
 expect(/id="update-copy"/, "update banner needs descriptive copy");
 expect(/role="alert"[^>]*id="update-banner"|id="update-banner"[^>]*role="alert"/, "update banner should be announced as an alert");
+expect(/dismiss\.onclick=\(\)=>\{[^}]*banner\.classList\.add\("hidden"\)[^}]*banner\.hidden=true/s, "update banner dismiss should hide it semantically");
+expect(/reload\.disabled=false/, "update banner should reset the update button enabled state when shown");
+expect(/reload\.textContent="עדכן עכשיו"/, "update banner should reset the update button label when shown");
 expectMissing(/out\.innerHTML=`\$\{escapeHtml\(data\.answer\|\|/s, "AI Tutor still appends escaped raw Markdown as text");
 
 const mobile560Index = html.lastIndexOf("@media(max-width:560px)");

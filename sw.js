@@ -47,12 +47,12 @@ self.addEventListener("fetch", e => {
     e.respondWith(
       caches.open(CACHE).then(cache =>
         fetch(e.request).then(r => {
+          if (!r || !r.ok) return caches.match(e.request).then(cached => cached || caches.match("./index.html").then(shell => shell || r));
           if (r && r.ok) {
             cache.put(e.request, r.clone());
             cache.put("./index.html", r.clone());
             return r;
           }
-          return caches.match(e.request).then(cached => cached || caches.match("./index.html") || r);
         }).catch(() => caches.match(e.request).then(r => r || caches.match("./index.html")))
       )
     );
