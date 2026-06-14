@@ -1,9 +1,11 @@
 {
+  "id": "/Psychiatry/",
   "name": "שלב א' פסיכיאטריה — בנק שאלות",
   "short_name": "שלב א' פסיכ'",
+  "version": "1.2.1",
   "description": "Israeli Psychiatry Shlav Aleph Board Prep — 900 real exam questions (2020–2025) with answer keys + Kaplan & Sadock / DSM references and spaced repetition.",
-  "start_url": "index.html",
-  "scope": ".",
+  "start_url": "./",
+  "scope": "./",
   "display": "standalone",
   "orientation": "portrait",
   "background_color": "#0b1020",
@@ -12,7 +14,6 @@
   "dir": "rtl",
   "icons": [
     { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
-    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" },
-    { "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🧠</text></svg>", "sizes": "any", "type": "image/svg+xml" }
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
   ]
 }

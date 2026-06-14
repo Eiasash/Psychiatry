@@ -4,21 +4,34 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
 <meta name="theme-color" content="#0b1020" />
-<meta name="description" content="בנק שאלות שלב א' בפסיכיאטריה — מבחני המועצה המדעית / הר\"י, 2020–2024. תרגול MCQ עם חזרה מרווחת." />
+<meta name="description" content="בנק שאלות שלב א' בפסיכיאטריה — מבחני המועצה המדעית / הר&quot;י, 2020–2025. תרגול MCQ עם חזרה מרווחת והסברים בעברית." />
+<meta name="robots" content="index,follow" />
+<link rel="canonical" href="https://eiasash.github.io/Psychiatry/" />
 <link rel="manifest" href="manifest.json" />
-<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🧠</text></svg>" />
+<link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png" />
 <link rel="apple-touch-icon" href="icons/icon-192.png" />
+<meta property="og:type" content="website" />
+<meta property="og:locale" content="he_IL" />
+<meta property="og:title" content="שלב א' פסיכיאטריה — בנק שאלות" />
+<meta property="og:description" content="900 שאלות מבחן אמיתיות, מפתחות רשמיים לאחר ערעור, הסברים בעברית וחזרה מרווחת." />
+<meta property="og:url" content="https://eiasash.github.io/Psychiatry/" />
+<meta property="og:image" content="https://eiasash.github.io/Psychiatry/icons/icon-512.png" />
+<meta name="twitter:card" content="summary" />
+<meta name="twitter:title" content="שלב א' פסיכיאטריה — בנק שאלות" />
+<meta name="twitter:description" content="900 שאלות מבחן אמיתיות עם הסברים בעברית וחזרה מרווחת." />
+<meta name="twitter:image" content="https://eiasash.github.io/Psychiatry/icons/icon-512.png" />
 <title>שלב א' פסיכיאטריה — בנק שאלות</title>
 <style>
 :root{
   --bg:#0b1020; --bg2:#11172e; --card:#161d38; --card2:#1c2547;
-  --line:#28315a; --txt:#e8ecfb; --muted:#9aa6d4; --faint:#6b76a8;
-  --accent:#7c6cff; --accent2:#22d3b7; --accent-d:#5b4bd6;
+  --line:#28315a; --txt:#e8ecfb; --muted:#9aa6d4; --faint:#92a0d6;
+  --accent:#5b4bd6; --accent2:#22d3b7; --accent-d:#4938bf;
   --good:#34d399; --good-bg:#0f3d33; --bad:#fb7185; --bad-bg:#3d1622;
-  --warn:#fbbf24; --chip:#222c52; --shadow:0 10px 40px rgba(0,0,0,.45);
+  --warn:#fbbf24; --chip:#222c52; --focus:#ffffff; --shadow:0 10px 40px rgba(0,0,0,.45);
   --r:16px;
 }
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html{scroll-padding-top:12px}
 html,body{margin:0;padding:0}
 body{
   font-family:"Segoe UI",Rubik,Arial,system-ui,sans-serif;
@@ -29,8 +42,19 @@ body{
 }
 .wrap{max-width:880px;margin:0 auto;padding:14px 14px 96px}
 a{color:var(--accent2)}
-button{font-family:inherit}
+button,input{font-family:inherit}
+button{touch-action:manipulation}
+button:focus{outline:none}
+button:focus-visible,input:focus-visible,.fb:focus-visible{
+  outline:3px solid var(--focus);
+  outline-offset:3px;
+  box-shadow:0 0 0 6px rgba(34,211,183,.28);
+}
 .hidden{display:none!important}
+.skip-link{position:fixed;top:8px;right:8px;z-index:100;background:var(--focus);color:var(--bg);
+  border-radius:10px;padding:10px 14px;font-weight:800;transform:translateY(-140%);transition:.15s transform}
+.skip-link:focus{transform:translateY(0);outline:3px solid var(--accent2);outline-offset:2px}
+.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
 
 /* ---- header ---- */
 header.app{
@@ -53,7 +77,7 @@ header.app{
 @media(max-width:560px){.g3{grid-template-columns:1fr 1fr}}
 
 .stat{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px;text-align:center}
-.stat .n{font-size:26px;font-weight:800;background:linear-gradient(135deg,var(--accent2),var(--accent));-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+.stat .n{font-size:26px;font-weight:800;color:var(--accent2)}
 .stat .l{font-size:12px;color:var(--muted);margin-top:2px}
 
 h2.sec{font-size:14px;color:var(--muted);font-weight:600;margin:22px 4px 10px;text-transform:uppercase;letter-spacing:1px}
@@ -74,11 +98,11 @@ h2.sec{font-size:14px;color:var(--muted);font-weight:600;margin:22px 4px 10px;te
 /* ---- chips ---- */
 .chips{display:flex;flex-wrap:wrap;gap:8px}
 .chip{background:var(--chip);border:1px solid var(--line);border-radius:999px;
-  padding:7px 13px;font-size:13px;cursor:pointer;color:var(--txt);transition:.15s;display:flex;gap:7px;align-items:center}
+  min-height:44px;padding:7px 13px;font-size:13px;cursor:pointer;color:var(--txt);transition:.15s;display:flex;gap:7px;align-items:center}
 .chip:hover{border-color:var(--accent)}
 .chip .c{color:var(--faint);font-size:12px}
 .chip.on{background:var(--accent);border-color:var(--accent);color:#fff}
-.chip.on .c{color:#e3deff}
+.chip.on .c{color:#fff}
 
 /* ---- quiz ---- */
 .qhead{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:8px;font-size:12.5px;color:var(--muted)}
@@ -90,7 +114,7 @@ h2.sec{font-size:14px;color:var(--muted);font-weight:600;margin:22px 4px 10px;te
 .qtext{font-size:18px;font-weight:600;line-height:1.7;margin:6px 0 16px}
 .opts{display:grid;gap:10px}
 .opt{display:flex;gap:12px;align-items:flex-start;background:var(--card2);border:1.5px solid var(--line);
-  border-radius:13px;padding:13px 14px;cursor:pointer;font-size:15.5px;transition:.13s;text-align:right;width:100%;color:var(--txt)}
+  border-radius:13px;min-height:56px;padding:13px 14px;cursor:pointer;font-size:15.5px;transition:.13s;text-align:right;width:100%;color:var(--txt)}
 .opt:hover{border-color:var(--accent)}
 .opt .k{flex:0 0 auto;width:26px;height:26px;border-radius:8px;background:var(--chip);
   display:grid;place-items:center;font-weight:700;font-size:14px;color:var(--muted)}
@@ -109,7 +133,7 @@ h2.sec{font-size:14px;color:var(--muted);font-weight:600;margin:22px 4px 10px;te
 .fb .ref{margin-top:7px;font-size:13px;color:var(--muted)}
 .fb .ref b{color:var(--accent2);font-weight:600}
 .expl{margin-top:10px;padding:11px 13px;background:rgba(124,108,255,.10);border:1px solid var(--line);border-radius:11px;font-size:14px;line-height:1.75;unicode-bidi:plaintext}
-.expl-h{font-size:11px;font-weight:700;letter-spacing:1px;color:var(--accent);margin-bottom:5px}
+.expl-h{font-size:11px;font-weight:700;letter-spacing:1px;color:var(--accent2);margin-bottom:5px}
 .fb .note{margin-top:6px;font-size:12.5px;color:var(--warn)}
 
 .qfoot{display:flex;gap:10px;margin-top:16px}
@@ -117,8 +141,8 @@ h2.sec{font-size:14px;color:var(--muted);font-weight:600;margin:22px 4px 10px;te
 
 /* ---- browse / search ---- */
 .search{width:100%;background:var(--card2);border:1px solid var(--line);border-radius:12px;
-  color:var(--txt);padding:13px 15px;font-size:15px;font-family:inherit}
-.search:focus{outline:none;border-color:var(--accent)}
+  color:var(--txt);min-height:48px;padding:13px 15px;font-size:15px;font-family:inherit}
+.search:focus{border-color:var(--accent)}
 .qitem{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:13px 15px;margin-bottom:10px}
 .qitem .qq{font-weight:600;margin-bottom:8px}
 .qitem .oo{font-size:14px;color:var(--muted);padding:3px 0;unicode-bidi:plaintext}
@@ -130,7 +154,7 @@ nav.bar{position:fixed;bottom:0;left:0;right:0;background:rgba(11,16,32,.92);
   backdrop-filter:blur(12px);border-top:1px solid var(--line);display:flex;z-index:20;
   padding-bottom:env(safe-area-inset-bottom)}
 nav.bar button{flex:1;background:none;border:none;color:var(--faint);padding:9px 4px 8px;
-  font-size:11px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:3px;font-weight:600}
+  min-height:52px;font-size:11px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:3px;font-weight:600}
 nav.bar button .ni{font-size:20px}
 nav.bar button.on{color:var(--accent2)}
 
@@ -148,47 +172,65 @@ nav.bar button.on{color:var(--accent2)}
 .toast.show{opacity:1}
 .banner{background:linear-gradient(135deg,#2a1d52,#19234a);border:1px solid var(--line);border-radius:14px;padding:13px 16px;font-size:13px;color:var(--muted);margin-bottom:14px}
 .banner b{color:var(--txt)}
+@media (prefers-reduced-motion: reduce){
+  *,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;scroll-behavior:auto!important;transition-duration:.01ms!important}
+  .skip-link{transition:none}
+}
+@media (prefers-reduced-data: reduce){
+  body{background:var(--bg)}
+  .card,.logo{box-shadow:none}
+  nav.bar{backdrop-filter:none}
+}
 </style>
 </head>
 <body>
-<div class="wrap">
+<a class="skip-link" href="#main">דלג לתוכן</a>
+<main class="wrap" id="main" tabindex="-1">
   <header class="app">
-    <div class="logo">🧠</div>
+    <div class="logo" aria-hidden="true">🧠</div>
     <div class="htxt">
       <h1>שלב א' פסיכיאטריה</h1>
       <p>בנק מבחני המועצה המדעית · הר"י · 2020–2025</p>
     </div>
   </header>
+  <noscript><div class="card" role="alert">האפליקציה דורשת JavaScript כדי לטעון את בנק השאלות ולשמור התקדמות מקומית.</div></noscript>
 
   <!-- DASHBOARD -->
-  <section id="view-home"></section>
+  <section id="view-home" aria-labelledby="home-title"><div class="card" role="status" aria-live="polite">טוען שאלות...</div></section>
   <!-- QUIZ -->
-  <section id="view-quiz" class="hidden"></section>
+  <section id="view-quiz" class="hidden" aria-labelledby="quiz-title"></section>
   <!-- BROWSE -->
-  <section id="view-browse" class="hidden"></section>
+  <section id="view-browse" class="hidden" aria-labelledby="browse-title"></section>
   <!-- STATS -->
-  <section id="view-stats" class="hidden"></section>
-</div>
+  <section id="view-stats" class="hidden" aria-labelledby="stats-title"></section>
+</main>
 
-<nav class="bar">
-  <button data-nav="home" class="on"><span class="ni">🏠</span>בית</button>
-  <button data-nav="quiz"><span class="ni">✍️</span>תרגול</button>
-  <button data-nav="browse"><span class="ni">🔎</span>עיון</button>
-  <button data-nav="stats"><span class="ni">📊</span>נתונים</button>
+<nav class="bar" aria-label="ניווט ראשי">
+  <button type="button" data-nav="home" class="on" aria-label="בית"><span class="ni" aria-hidden="true">🏠</span>בית</button>
+  <button type="button" data-nav="quiz" aria-label="תרגול"><span class="ni" aria-hidden="true">✍️</span>תרגול</button>
+  <button type="button" data-nav="browse" aria-label="עיון"><span class="ni" aria-hidden="true">🔎</span>עיון</button>
+  <button type="button" data-nav="stats" aria-label="נתונים"><span class="ni" aria-hidden="true">📊</span>נתונים</button>
 </nav>
-<div class="toast" id="toast"></div>
+<div class="toast" id="toast" role="status" aria-live="polite" aria-atomic="true"></div>
 
 <script>
 "use strict";
 const LETTERS = ["א","ב","ג","ד"];
 const PROG_KEY = "psych_shlava_progress_v1";
 let QUESTIONS = [], TOPICS = [], PROG = {}, EXP = {};
+let EXP_PROMISE = null;
+let storageWarned = false;
+const REDUCE_DATA = !!(navigator.connection?.saveData || window.matchMedia?.("(prefers-reduced-data: reduce)")?.matches);
 const $ = (s,r=document)=>r.querySelector(s);
-const el = (t,c,h)=>{const e=document.createElement(t);if(c)e.className=c;if(h!=null)e.innerHTML=h;return e;};
+const el = (t,c,h)=>{const e=document.createElement(t);if(c)e.className=c;if(h!=null)e.innerHTML=h;if(t==="button")e.type="button";return e;};
+function sectionTitle(view,id,text){ const h=el("h2","sr-only",text); h.id=id; view.append(h); }
 
 /* ---------- progress (Leitner spaced repetition) ---------- */
 function loadProg(){ try{PROG=JSON.parse(localStorage.getItem(PROG_KEY))||{};}catch(e){PROG={};} }
-function saveProg(){ try{localStorage.setItem(PROG_KEY,JSON.stringify(PROG));}catch(e){} }
+function saveProg(){
+  try{localStorage.setItem(PROG_KEY,JSON.stringify(PROG));}
+  catch(e){ if(!storageWarned){storageWarned=true;toast("לא ניתן לשמור התקדמות בדפדפן");} }
+}
 const BOX_DAYS=[0,1,3,7,16,40];
 function rec(id){ return PROG[id]||(PROG[id]={box:0,seen:0,correct:0,wrong:0,due:0,last:0}); }
 function grade(id,ok){
@@ -215,14 +257,21 @@ async function boot(){
       fetch("data/topics.json").then(r=>r.json())
     ]);
     QUESTIONS=q; TOPICS=t.topics||[];
-    // explanations are optional + larger — load in the background, don't block boot
-    fetch("data/explanations.json").then(r=>r.ok?r.json():{}).then(e=>{EXP=e||{};}).catch(()=>{});
+    // Explanations are optional + larger; respect reduced-data by loading only on demand.
+    if(!REDUCE_DATA) loadExplanations();
   }catch(e){
-    $("#view-home").innerHTML='<div class="card">שגיאה בטעינת השאלות. נסה לרענן.</div>';
+    $("#view-home").innerHTML='<div class="card" role="alert">שגיאה בטעינת השאלות. נסה לרענן.</div>';
     return;
   }
   renderHome();
   if("serviceWorker" in navigator){ navigator.serviceWorker.register("sw.js").catch(()=>{}); }
+}
+function loadExplanations(){
+  if(Object.keys(EXP).length)return Promise.resolve(EXP);
+  if(!EXP_PROMISE){
+    EXP_PROMISE = fetch("data/explanations.json").then(r=>r.ok?r.json():{}).then(e=>{EXP=e||{};return EXP;}).catch(()=>({}));
+  }
+  return EXP_PROMISE;
 }
 
 /* ---------- helpers ---------- */
@@ -230,17 +279,24 @@ const byYear = ()=>{const m={};QUESTIONS.forEach(q=>m[q.t]=(m[q.t]||0)+1);return
 const byTopic= ()=>{const m={};QUESTIONS.forEach(q=>m[q.ti]=(m[q.ti]||0)+1);return m;};
 function yearLabel(t){return t.replace("-Jun"," · יוני").replace("-Sep"," · ספטמבר").replace("-May"," · מאי");}
 function toast(msg){const t=$("#toast");t.textContent=msg;t.classList.add("show");setTimeout(()=>t.classList.remove("show"),1600);}
+function acceptedIndices(q){ return q.all_accepted ? [0,1,2,3] : (q.c_accept&&q.c_accept.length?q.c_accept:[q.c]); }
+function normText(s){return String(s||"").normalize("NFKC").replace(/[\u0591-\u05C7]/g,"").toLowerCase();}
 
 /* ---------- navigation ---------- */
 function go(v){
   nav=v;
   ["home","quiz","browse","stats"].forEach(x=>$("#view-"+x).classList.toggle("hidden",x!==v));
-  document.querySelectorAll("nav.bar button").forEach(b=>b.classList.toggle("on",b.dataset.nav===v));
+  document.querySelectorAll("nav.bar button").forEach(b=>{
+    const on=b.dataset.nav===v;
+    b.classList.toggle("on",on);
+    b.setAttribute("aria-current",on?"page":"false");
+  });
   if(v==="home")renderHome();
   if(v==="browse")renderBrowse();
   if(v==="stats")renderStats();
   if(v==="quiz"&&!session)renderHome(),go("home"); // no active session -> home
-  window.scrollTo(0,0);
+  window.scrollTo({top:0,behavior:"auto"});
+  $("#main").focus({preventScroll:true});
 }
 document.querySelectorAll("nav.bar button").forEach(b=>b.onclick=()=>{
   if(b.dataset.nav==="quiz"&&!session){ startSession(QUESTIONS.map(q=>q.id),"תרגול חופשי",true); return; }
@@ -257,6 +313,7 @@ function renderHome(){
   const C=2*Math.PI*52, off=C*(1-pct/100);
   const yrs=byYear(), tps=byTopic();
   const v=$("#view-home"); v.innerHTML="";
+  sectionTitle(v,"home-title","בית");
 
   const visN=QUESTIONS.filter(q=>q.vision).length;
   v.append(el("div","banner",`בנק עם <b>${total}</b> שאלות מבחן אמיתיות (שלב א' פסיכיאטריה, המועצה המדעית/הר"י, 2020–2025). תשובות לאחר ערעור · מראי מקום (Kaplan &amp; Sadock / DSM). חזרה מרווחת אוטומטית.${visN?`<br><span style="color:var(--warn);font-size:12px">⚠ ${visN} שאלות ממועד 2025 מסומנות OCR — נוסח השאלה תומלל אוטומטית (מקור פגום); תשובות ומפתח מהימנים.</span>`:""}`));
@@ -264,8 +321,8 @@ function renderHome(){
   const ring=el("div","card");
   ring.style.textAlign="center";
   ring.innerHTML=`
-    <div class="ring">
-      <svg width="120" height="120"><circle cx="60" cy="60" r="52" stroke="#222c52" stroke-width="12" fill="none"/>
+    <div class="ring" role="progressbar" aria-label="אחוז שאלות שנלמדו" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${pct}">
+      <svg width="120" height="120" aria-hidden="true" focusable="false"><circle cx="60" cy="60" r="52" stroke="#222c52" stroke-width="12" fill="none"/>
       <circle cx="60" cy="60" r="52" stroke="url(#g)" stroke-width="12" fill="none" stroke-linecap="round"
         stroke-dasharray="${C.toFixed(1)}" stroke-dashoffset="${off.toFixed(1)}"/>
       <defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#7c6cff"/><stop offset="1" stop-color="#22d3b7"/></linearGradient></defs></svg>
@@ -280,7 +337,7 @@ function renderHome(){
 
   v.append(el("h2","sec","התחל תרגול"));
   const acts=el("div","grid g2");
-  const mk=(ic,t,sub,fn,cls="")=>{const b=el("button","btn col "+cls,`<span class="ic">${ic}</span><span>${t}</span><span class="sub">${sub}</span>`);b.onclick=fn;return b;};
+  const mk=(ic,t,sub,fn,cls="")=>{const b=el("button","btn col "+cls,`<span class="ic" aria-hidden="true">${ic}</span><span>${t}</span><span class="sub">${sub}</span>`);b.setAttribute("aria-label",`${t}: ${sub}`);b.onclick=fn;return b;};
   acts.append(
     mk("🎯","חזרה חכמה",due?`${due} שאלות שהגיע זמנן`:"הכל מעודכן ✓",()=>{
       const q=QUESTIONS.filter(x=>isSeen(x.id)&&isDue(x.id)).map(x=>x.id);
@@ -305,6 +362,7 @@ function renderHome(){
   const yc=el("div","chips");
   Object.keys(yrs).sort().forEach(t=>{
     const c=el("button","chip",`${yearLabel(t)} <span class="c">${yrs[t]}</span>`);
+    c.setAttribute("aria-label",`תרגול מועד ${yearLabel(t)}, ${yrs[t]} שאלות`);
     c.onclick=()=>startSession(QUESTIONS.filter(q=>q.t===t).map(q=>q.id),"מועד "+yearLabel(t),true);
     yc.append(c);
   });
@@ -313,8 +371,10 @@ function renderHome(){
   v.append(el("h2","sec","לפי נושא"));
   const tc=el("div","chips");
   Object.keys(tps).map(Number).sort((a,b)=>tps[b]-tps[a]).forEach(ti=>{
-    const c=el("button","chip",`${TOPICS[ti]} <span class="c">${tps[ti]}</span>`);
-    c.onclick=()=>startSession(QUESTIONS.filter(q=>q.ti===ti).map(q=>q.id),TOPICS[ti],true);
+    const topic=TOPICS[ti]||"";
+    const c=el("button","chip",`${escapeHtml(topic)} <span class="c">${tps[ti]}</span>`);
+    c.setAttribute("aria-label",`תרגול נושא ${TOPICS[ti]}, ${tps[ti]} שאלות`);
+    c.onclick=()=>startSession(QUESTIONS.filter(q=>q.ti===ti).map(q=>q.id),topic,true);
     tc.append(c);
   });
   v.append(tc);
@@ -336,31 +396,34 @@ function renderQuiz(){
   const q=qById(session.queue[session.i]);
   session.answered=false;
   v.innerHTML="";
+  sectionTitle(v,"quiz-title","תרגול");
   const card=el("div","card");
   const pct=Math.round(session.i/session.queue.length*100);
   card.append(el("div","qhead",
-    `<div class="qmeta"><span class="tag">${session.title}</span><span class="tag">${yearLabel(q.t)}</span><span class="tag acc">${TOPICS[q.ti]||""}</span>${q.vision?'<span class="tag" style="color:var(--warn);border-color:var(--warn)" title="תמלול אוטומטי מהמקור — ודא מול ה-PDF">OCR</span>':''}</div>
+    `<div class="qmeta"><span class="tag">${escapeHtml(session.title)}</span><span class="tag">${escapeHtml(yearLabel(q.t))}</span><span class="tag acc">${escapeHtml(TOPICS[q.ti]||"")}</span>${q.vision?'<span class="tag" style="color:var(--warn);border-color:var(--warn)" title="תמלול אוטומטי מהמקור — ודא מול ה-PDF">OCR</span>':''}</div>
      <div>${session.i+1} / ${session.queue.length}</div>`));
-  const pb=el("div","progbar",`<i style="width:${pct}%"></i>`);card.append(pb);
-  card.append(el("div","qtext",escapeHtml(q.q)));
-  const opts=el("div","opts");
+  const pb=el("div","progbar",`<i style="width:${pct}%"></i>`);pb.setAttribute("role","progressbar");pb.setAttribute("aria-label","התקדמות בסבב");pb.setAttribute("aria-valuemin","0");pb.setAttribute("aria-valuemax","100");pb.setAttribute("aria-valuenow",String(pct));card.append(pb);
+  const qText=el("div","qtext",escapeHtml(q.q));qText.id="current-question";card.append(qText);
+  const opts=el("div","opts");opts.setAttribute("role","group");opts.setAttribute("aria-labelledby","current-question");
   q.o.forEach((o,k)=>{
     const b=el("button","opt",`<span class="k">${LETTERS[k]}</span><span class="ot">${escapeHtml(o)}</span>`);
+    b.setAttribute("aria-label",`אפשרות ${LETTERS[k]}: ${o}`);
+    b.setAttribute("aria-keyshortcuts",String(k+1));
     b.onclick=()=>answer(q,k,opts,fb,card);
     opts.append(b);
   });
   card.append(opts);
-  const fb=el("div","fb");card.append(fb);
+  const fb=el("div","fb");fb.id="grading-feedback";fb.setAttribute("role","status");fb.setAttribute("aria-live","polite");fb.setAttribute("aria-atomic","true");fb.tabIndex=-1;card.append(fb);
   const foot=el("div","qfoot");
-  const skip=el("button","btn",`דלג`);skip.onclick=()=>nextQ();
+  const skip=el("button","btn",`דלג`);skip.setAttribute("aria-label","דלג לשאלה הבאה");skip.onclick=()=>nextQ();
   foot.append(skip);card.append(foot);
   v.append(card);
   card._fb=fb;
 }
-function answer(q,k,opts,fb,card){
+async function answer(q,k,opts,fb,card){
   if(session.answered)return;
   session.answered=true;
-  const accept=q.c_accept&&q.c_accept.length?q.c_accept:[q.c];
+  const accept=acceptedIndices(q);
   const ok=accept.includes(k);
   [...opts.children].forEach((b,idx)=>{
     b.disabled=true;
@@ -371,24 +434,46 @@ function answer(q,k,opts,fb,card){
   if(ok)session.correct++;else session.wrong++;
   grade(q.id,ok);
   fb.className="fb show "+(ok?"ok":"no");
+  fb.setAttribute("aria-live",ok?"polite":"assertive");
   let h = ok?"✅ נכון!":"❌ לא נכון";
   if(q.all_accepted) h+=' <span class="note">— כל התשובות התקבלו (שאלה שבוטלה לאחר ערעור)</span>';
   else if(accept.length>1) h+=` <span class="note">— מתקבלות גם: ${accept.map(i=>LETTERS[i]).join(", ")}</span>`;
   const exp=EXP[q.id];
   if(exp) h+=`<div class="expl"><div class="expl-h">הסבר</div>${escapeHtml(exp)}</div>`;
+  else if(REDUCE_DATA) h+=`<div class="expl"><div class="expl-h">הסבר</div><button type="button" class="btn" data-load-exp="${q.id}">טען הסבר</button></div>`;
+  else h+=`<div class="expl" data-exp-slot="${q.id}"><div class="expl-h">הסבר</div><span class="muted">טוען הסבר...</span></div>`;
   if(q.ref) h+=`<div class="ref">מקור: <b>${escapeHtml(q.ref)}</b> · Kaplan &amp; Sadock Synopsis</div>`;
   if(q.vision) h+='<div class="note">⚠ נוסח השאלה תומלל אוטומטית (מועד 2025 פגום במקור) — התשובות, המפתח וההסבר מהימנים; ודא ניסוח מול ה-PDF</div>';
   fb.innerHTML=h;
+  const expSlot=fb.querySelector("[data-exp-slot]");
+  if(expSlot){
+    loadExplanations().then(()=>{
+      const expNow=EXP[q.id]||"אין הסבר זמין לשאלה זו.";
+      if(expSlot.isConnected) expSlot.innerHTML=`<div class="expl-h">הסבר</div>${escapeHtml(expNow)}`;
+    });
+  }
+  const loadBtn=fb.querySelector("[data-load-exp]");
+  if(loadBtn){
+    loadBtn.onclick=async()=>{
+      loadBtn.disabled=true;
+      loadBtn.textContent="טוען הסבר...";
+      await loadExplanations();
+      const expNow=EXP[q.id]||"אין הסבר זמין לשאלה זו.";
+      loadBtn.closest(".expl").innerHTML=`<div class="expl-h">הסבר</div>${escapeHtml(expNow)}`;
+    };
+  }
   // turn skip into next
   const foot=card.querySelector(".qfoot");foot.innerHTML="";
-  const nx=el("button","btn primary",`הבא ←`);nx.onclick=()=>nextQ();foot.append(nx);
-  nx.focus();
+  const nx=el("button","btn primary",`הבא ←`);nx.setAttribute("aria-label","השאלה הבאה");nx.setAttribute("aria-keyshortcuts","Enter");nx.onclick=()=>nextQ();foot.append(nx);
+  fb.focus({preventScroll:true});
 }
-function nextQ(){ if(!session)return; session.i++; renderQuiz(); window.scrollTo(0,0); }
+function nextQ(){ if(!session)return; session.i++; renderQuiz(); window.scrollTo({top:0,behavior:"auto"}); }
 function renderSessionEnd(){
   const v=$("#view-quiz");const tot=session.correct+session.wrong;
   const acc=tot?Math.round(session.correct/tot*100):0;
   v.innerHTML="";
+  sectionTitle(v,"quiz-title","סיכום סבב");
+  const completedQueue = session.queue.slice(0, session.i);
   const c=el("div","card");c.style.textAlign="center";
   c.innerHTML=`<div style="font-size:46px">${acc>=80?"🏆":acc>=60?"👍":"💪"}</div>
    <h2 style="margin:6px 0">סיימת!</h2>
@@ -397,12 +482,12 @@ function renderSessionEnd(){
      <div class="stat"><div class="n">${session.wrong}</div><div class="l">טעות</div></div>
      <div class="stat"><div class="n">${acc}%</div><div class="l">דיוק</div></div>
    </div>`;
-  const b=el("button","btn primary","חזרה לבית");b.onclick=()=>{session=null;go("home");};
+  const b=el("button","btn primary","חזרה לבית");b.setAttribute("aria-label","חזרה למסך הבית");b.onclick=()=>{session=null;go("home");};
   c.append(b);
   if(session.wrong>0){
     const w=el("button","btn","חזור על הטעויות מהסבב");w.style.marginTop="10px";
-    const wrongIds=session.queue.slice(0,session.i).filter(id=>{const r=PROG[id];return r&&r.wrong>0&&r.last>Date.now()-36e5;});
-    w.onclick=()=>{const ids=session.queue.filter(id=>{const r=PROG[id];return r&&r.box<=1;});startSession(ids.length?ids:session.queue,"חזרה על טעויות");};
+    const retryIds=completedQueue.filter(id=>{const r=PROG[id];return r&&r.box<=1;});
+    w.onclick=()=>startSession(retryIds.length?retryIds:completedQueue,"חזרה על טעויות");
     c.append(w);
   }
   v.append(c);
@@ -413,16 +498,21 @@ function renderSessionEnd(){
 let browseState={q:"",ti:-1,t:""};
 function renderBrowse(){
   const v=$("#view-browse");v.innerHTML="";
+  sectionTitle(v,"browse-title","עיון");
   const s=el("input","search");s.placeholder="חיפוש בשאלות, תשובות, מקורות…";s.value=browseState.q;
+  s.type="search";s.setAttribute("aria-label","חיפוש בשאלות, תשובות ומקורות");
   s.oninput=()=>{browseState.q=s.value;drawList();};
   v.append(s);
   // topic filter chips
   const tc=el("div","chips");tc.style.margin="12px 0";
-  const all=el("button","chip"+(browseState.ti<0?" on":""),"הכל");all.onclick=()=>{browseState.ti=-1;renderBrowse();};
+  const all=el("button","chip"+(browseState.ti<0?" on":""),"הכל");all.setAttribute("aria-pressed",browseState.ti<0?"true":"false");all.onclick=()=>{browseState.ti=-1;renderBrowse();};
   tc.append(all);
   const tps=byTopic();
   Object.keys(tps).map(Number).sort((a,b)=>tps[b]-tps[a]).forEach(ti=>{
-    const c=el("button","chip"+(browseState.ti===ti?" on":""),`${TOPICS[ti]} <span class="c">${tps[ti]}</span>`);
+    const topic=TOPICS[ti]||"";
+    const c=el("button","chip"+(browseState.ti===ti?" on":""),`${escapeHtml(topic)} <span class="c">${tps[ti]}</span>`);
+    c.setAttribute("aria-label",`סנן לפי נושא ${topic}, ${tps[ti]} שאלות`);
+    c.setAttribute("aria-pressed",browseState.ti===ti?"true":"false");
     c.onclick=()=>{browseState.ti=ti;renderBrowse();};tc.append(c);
   });
   v.append(tc);
@@ -431,19 +521,19 @@ function renderBrowse(){
 }
 function drawList(){
   const list=$("#blist");if(!list)return;
-  const term=browseState.q.trim();
+  const term=normText(browseState.q.trim());
   let res=QUESTIONS;
   if(browseState.ti>=0)res=res.filter(q=>q.ti===browseState.ti);
-  if(term)res=res.filter(q=>(q.q+" "+q.o.join(" ")+" "+(q.ref||"")).includes(term));
+  if(term)res=res.filter(q=>normText(q.q+" "+q.o.join(" ")+" "+(q.ref||"")+" "+(TOPICS[q.ti]||"")).includes(term));
   list.innerHTML=`<div class="muted small" style="margin:4px 0 10px">${res.length} שאלות</div>`;
   res.slice(0,300).forEach(q=>{
     const it=el("div","qitem");
     it.append(el("div","qq",escapeHtml(q.q)));
-    const accept=q.c_accept&&q.c_accept.length?q.c_accept:[q.c];
+    const accept=acceptedIndices(q);
     q.o.forEach((o,k)=>it.append(el("div","oo"+(accept.includes(k)?" c":""),`${LETTERS[k]}. ${escapeHtml(o)}`)));
     const ex=EXP[q.id];
     if(ex)it.append(el("div","expl",`<div class="expl-h">הסבר</div>${escapeHtml(ex)}`));
-    it.append(el("div","meta",`<span>${yearLabel(q.t)}</span><span>${TOPICS[q.ti]||""}</span>${q.ref?`<span>${escapeHtml(q.ref)}</span>`:""}${q.all_accepted?`<span style="color:var(--warn)">בוטלה בערעור</span>`:""}${q.vision?`<span style="color:var(--warn)">OCR</span>`:""}`));
+    it.append(el("div","meta",`<span>${escapeHtml(yearLabel(q.t))}</span><span>${escapeHtml(TOPICS[q.ti]||"")}</span>${q.ref?`<span>${escapeHtml(q.ref)}</span>`:""}${q.all_accepted?`<span style="color:var(--warn)">בוטלה בערעור</span>`:""}${q.vision?`<span style="color:var(--warn)">OCR</span>`:""}`));
     list.append(it);
   });
   if(res.length>300)list.append(el("div","muted small","מוצגות 300 הראשונות — צמצם בחיפוש."));
@@ -452,6 +542,7 @@ function drawList(){
 /* ---------- STATS ---------- */
 function renderStats(){
   const v=$("#view-stats");v.innerHTML="";
+  sectionTitle(v,"stats-title","נתונים");
   const seen=QUESTIONS.filter(q=>isSeen(q.id)).length;
   let c=0,s=0;QUESTIONS.forEach(q=>{const r=PROG[q.id];if(r){c+=r.correct;s+=r.correct+r.wrong;}});
   const acc=s?Math.round(c/s*100):0;
@@ -470,12 +561,12 @@ function renderStats(){
   keys.forEach(ti=>{
     const a=tp[ti].t?Math.round(tp[ti].c/tp[ti].t*100):0;
     const row=el("div");row.style.margin="9px 0";
-    row.innerHTML=`<div style="display:flex;justify-content:space-between;font-size:13.5px"><span>${TOPICS[ti]}</span><span class="muted">${a}% · ${tp[ti].t}</span></div>
+    row.innerHTML=`<div style="display:flex;justify-content:space-between;font-size:13.5px"><span>${escapeHtml(TOPICS[ti]||"")}</span><span class="muted">${a}% · ${tp[ti].t}</span></div>
       <div class="progbar" style="margin:4px 0 0"><i style="width:${a}%"></i></div>`;
     card.append(row);
   });
   v.append(card);
-  const reset=el("button","btn","איפוס התקדמות");reset.style.marginTop="16px";
+  const reset=el("button","btn","איפוס התקדמות");reset.style.marginTop="16px";reset.setAttribute("aria-label","איפוס כל ההתקדמות והנתונים");
   reset.onclick=()=>{if(confirm("לאפס את כל ההתקדמות והנתונים?")){PROG={};saveProg();toast("אופס");go("home");}};
   v.append(reset);
 }
@@ -484,8 +575,9 @@ function renderStats(){
 function escapeHtml(s){return String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));}
 document.addEventListener("keydown",e=>{
   if(nav!=="quiz"||!session)return;
-  if(["1","2","3","4"].includes(e.key)){const opts=$("#view-quiz .opts");if(opts&&!session.answered)opts.children[+e.key-1]?.click();}
-  if(e.key==="Enter"&&session.answered){const nx=$("#view-quiz .qfoot .primary");nx&&nx.click();}
+  const key = e.key && /^[1-4]$/.test(e.key) ? e.key : (e.code&&/^Digit[1-4]$/.test(e.code) ? e.code.slice(-1) : "");
+  if(key){const opts=$("#view-quiz .opts");if(opts&&!session.answered){e.preventDefault();opts.children[+key-1]?.click();}}
+  if(e.key==="Enter"&&session.answered){const nx=$("#view-quiz .qfoot .primary");if(nx){e.preventDefault();nx.click();}}
 });
 boot();
 </script>
