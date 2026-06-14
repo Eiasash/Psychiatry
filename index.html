@@ -40,7 +40,7 @@ body{
   color:var(--txt);min-height:100vh;line-height:1.6;
   -webkit-font-smoothing:antialiased;
 }
-.wrap{max-width:880px;margin:0 auto;padding:14px 14px 96px}
+.wrap{max-width:880px;margin:0 auto;padding:14px 14px calc(112px + env(safe-area-inset-bottom))}
 a{color:var(--accent2)}
 button,input,select{font-family:inherit}
 button{touch-action:manipulation}
@@ -142,13 +142,13 @@ h2.sec{font-size:14px;color:var(--muted);font-weight:600;margin:22px 4px 10px;te
 .exam-banner b{color:var(--accent2)}
 .opt[disabled]{cursor:default}
 
-.fb{margin-top:14px;border-radius:13px;padding:13px 15px;font-size:14px;display:none}
+.fb{margin-top:14px;border-radius:13px;padding:13px 15px;font-size:14px;display:none;text-align:right;overflow-wrap:anywhere}
 .fb.show{display:block}
 .fb.ok{background:var(--good-bg);border:1px solid var(--good)}
 .fb.no{background:var(--bad-bg);border:1px solid var(--bad)}
 .fb .ref{margin-top:7px;font-size:13px;color:var(--muted)}
 .fb .ref b{color:var(--accent2);font-weight:600}
-.expl{margin-top:10px;padding:11px 13px;background:rgba(124,108,255,.10);border:1px solid var(--line);border-radius:11px;font-size:14px;line-height:1.75;unicode-bidi:plaintext}
+.expl{margin-top:10px;padding:11px 13px;background:rgba(124,108,255,.10);border:1px solid var(--line);border-radius:11px;font-size:14px;line-height:1.75;unicode-bidi:plaintext;text-align:right;overflow-wrap:anywhere}
 .expl-h{font-size:11px;font-weight:700;letter-spacing:1px;color:var(--accent2);margin-bottom:5px}
 .fb .note{margin-top:6px;font-size:12.5px;color:var(--warn)}
 
@@ -171,10 +171,11 @@ h2.sec{font-size:14px;color:var(--muted);font-weight:600;margin:22px 4px 10px;te
 .review-row{background:var(--card2);border:1px solid var(--line);border-radius:12px;padding:12px}
 .review-row.ok{border-color:var(--good)}
 .review-row.no{border-color:var(--bad)}
-.ai-box{margin-top:10px;padding:12px;border:1px solid rgba(34,211,183,.35);border-radius:12px;background:var(--card2);box-shadow:inset -3px 0 0 rgba(34,211,183,.55)}
+.ai-box{margin-top:10px;padding:12px;border:1px solid rgba(34,211,183,.35);border-radius:12px;background:var(--card2);box-shadow:inset -3px 0 0 rgba(34,211,183,.55);overflow-wrap:anywhere;text-align:right}
 .ai-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
 .ai-actions .btn{width:auto;min-height:44px;padding:9px 12px;font-size:13px}
-.ai-output{margin-top:10px;unicode-bidi:plaintext;line-height:1.75;color:var(--txt)}
+.ai-output{margin-top:10px;direction:rtl;unicode-bidi:isolate;line-height:1.75;color:var(--txt);text-align:right;overflow-wrap:anywhere}
+.ai-answer{direction:rtl;text-align:right;unicode-bidi:isolate}
 .ai-output p{margin:0 0 10px}
 .ai-output p:last-child{margin-bottom:0}
 .ai-output h4{font-size:14px;line-height:1.45;margin:14px 0 6px;color:var(--accent2);font-weight:800;letter-spacing:0}
@@ -183,9 +184,37 @@ h2.sec{font-size:14px;color:var(--muted);font-weight:600;margin:22px 4px 10px;te
 .ai-output code{direction:ltr;unicode-bidi:isolate;background:var(--chip);border:1px solid var(--line);border-radius:6px;padding:1px 5px}
 .ai-output ul{margin:0 0 10px;padding:0 18px 0 0}
 .ai-output li{margin:4px 0}
+.ai-table{width:100%;border-collapse:separate;border-spacing:0;margin:10px 0;font-size:13px;direction:rtl}
+.ai-table th,.ai-table td{border-bottom:1px solid var(--line);padding:7px 6px;text-align:right;vertical-align:top;overflow-wrap:anywhere}
+.ai-table th{color:var(--accent2);font-weight:800}
+.ai-table tr:last-child td{border-bottom:0}
+.ai-quote{margin:10px 0;padding:8px 10px;border-right:3px solid var(--accent2);border-radius:9px;background:rgba(34,211,183,.08);font-weight:800;color:var(--txt)}
 .ai-rule{border:0;border-top:1px solid var(--line);margin:12px 0}
 .ai-citations{display:flex;gap:6px;flex-wrap:wrap;margin-top:12px;padding-top:10px;border-top:1px solid var(--line);font-size:12px;color:var(--muted)}
 .ai-citations span:first-child{font-weight:800;color:var(--accent2)}
+@media(max-width:560px){
+  .wrap{padding-inline:10px;padding-top:10px}
+  .card{padding:14px;border-radius:14px}
+  .g3{grid-template-columns:1fr 1fr}
+  .qhead{align-items:flex-start}
+  .qtext{font-size:17px;line-height:1.65}
+  .opt{padding:12px;gap:10px}
+  .fb.show{margin-inline:-4px;padding:12px 10px}
+  .expl{padding:10px 9px;font-size:13.8px;line-height:1.72}
+  .ai-box{margin-inline:-2px;padding:10px;border-left:0;border-right:0;border-radius:10px;box-shadow:inset -2px 0 0 rgba(34,211,183,.55)}
+  .ai-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+  .ai-actions .btn{width:100%;min-height:44px;padding:8px 10px;font-size:13px}
+  .ai-output{font-size:14px;line-height:1.72}
+  .ai-output h4{font-size:14px;margin:12px 0 6px}
+  .ai-table{display:block;font-size:13px}
+  .ai-table thead{display:none}
+  .ai-table tbody,.ai-table tr,.ai-table td{display:block;width:100%}
+  .ai-table tr{border:1px solid var(--line);border-radius:10px;margin:8px 0;padding:6px;background:rgba(11,16,32,.18)}
+  .ai-table td{border:0;padding:4px 4px}
+  .ai-table td::before{content:attr(data-label);display:block;margin-bottom:1px;color:var(--accent2);font-size:11px;font-weight:800}
+  .ai-quote{padding:8px 9px}
+  .ai-citations{display:grid;gap:4px}
+}
 
 /* ---- bottom nav ---- */
 nav.bar{position:fixed;bottom:0;left:0;right:0;background:rgba(11,16,32,.92);
@@ -1566,6 +1595,21 @@ function aiInlineMarkdown(s){
     .replace(/`([^`]+)`/g,"<code>$1</code>")
     .replace(/\*\*([^*]+)\*\*/g,"<strong>$1</strong>");
 }
+function aiTableCells(line){
+  const txt=String(line||"").trim();
+  if(!/^\|.*\|$/.test(txt))return null;
+  const cells=txt.slice(1,-1).split("|").map(c=>c.trim());
+  return cells.length>1?cells:null;
+}
+function aiTableDivider(line){
+  const cells=aiTableCells(line);
+  return !!cells&&cells.every(c=>/^:?-{3,}:?$/.test(c.replace(/\s+/g,"")));
+}
+function renderAiTable(headers,rows){
+  const head=headers.map(c=>`<th>${aiInlineMarkdown(c)}</th>`).join("");
+  const body=rows.map(row=>`<tr>${row.map((c,i)=>`<td data-label="${escapeHtml(headers[i]||"")}">${aiInlineMarkdown(c)}</td>`).join("")}</tr>`).join("");
+  return `<table class="ai-table"><thead><tr>${head}</tr></thead><tbody>${body}</tbody></table>`;
+}
 function renderAiMarkdown(text){
   const lines=String(text||"").replace(/\r\n?/g,"\n").split("\n");
   const html=[];
@@ -1577,10 +1621,30 @@ function renderAiMarkdown(text){
     html.push(`<p>${para.map(aiInlineMarkdown).join("<br>")}</p>`);
     para=[];
   };
-  for(const raw of lines){
+  for(let idx=0;idx<lines.length;idx++){
+    const raw=lines[idx];
     const line=raw.trim();
     if(!line){flushPara();closeList();continue;}
+    const tableHeaders=aiTableCells(line);
+    const nextLine=lines[idx+1]||"";
+    const nextCells=aiTableCells(nextLine);
+    const hasTableDivider=aiTableDivider(nextLine);
+    if(tableHeaders&&(hasTableDivider||nextCells)){
+      flushPara();closeList();
+      if(hasTableDivider)idx++;
+      const rows=[];
+      while(idx+1<lines.length){
+        const cells=aiTableCells(lines[idx+1]);
+        if(!cells||aiTableDivider(lines[idx+1]))break;
+        rows.push(cells);
+        idx++;
+      }
+      html.push(renderAiTable(tableHeaders,rows));
+      continue;
+    }
     if(/^[-*_]{3,}$/.test(line)){flushPara();closeList();html.push('<hr class="ai-rule">');continue;}
+    const quote=line.match(/^[><]\s*(.+)$/);
+    if(quote){flushPara();closeList();html.push(`<blockquote class="ai-quote">${aiInlineMarkdown(quote[1])}</blockquote>`);continue;}
     const heading=line.match(/^(#{1,4})\s+(.+)$/);
     if(heading){flushPara();closeList();html.push(`<h4>${aiInlineMarkdown(heading[2])}</h4>`);continue;}
     const bullet=line.match(/^[-*]\s+(.+)$/);

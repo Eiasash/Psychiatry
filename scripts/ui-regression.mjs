@@ -23,7 +23,26 @@ expect(/class="qcount" dir="ltr"/, "quiz counter needs an LTR boundary inside th
 expect(/\.ai-box\{[^}]*background:var\(--card2\)/s, "AI Tutor panel needs a neutral card background");
 expect(/\.ai-output h4/, "AI Tutor Markdown headings need compact panel styling");
 expect(/\.ai-citations/, "AI Tutor citations need semantic styling");
+expect(/\.ai-answer\{[^}]*direction:rtl/s, "AI Tutor answer body should be anchored in RTL");
+expect(/\.ai-table/, "AI Tutor Markdown tables need mobile-safe styling");
+expect(/\.ai-quote/, "AI Tutor blockquotes need semantic styling");
+expect(/\.fb\{[^}]*text-align:right/s, "quiz feedback should keep readable RTL text alignment");
+expect(/\.expl\{[^}]*text-align:right/s, "quiz explanations should keep readable RTL text alignment");
+expect(/\.ai-box\{[^}]*overflow-wrap:anywhere/s, "AI Tutor panel should prevent mobile overflow");
+expect(/\.wrap\{[^}]*padding:14px 14px calc\(112px \+ env\(safe-area-inset-bottom\)\)/s, "main content needs safe bottom padding above fixed nav");
+expect(/@media\(max-width:560px\)\{[\s\S]*?\.wrap\{[^}]*padding-inline:10px/, "mobile viewport needs tighter horizontal padding");
+expect(/@media\(max-width:560px\)\{[\s\S]*?\.card\{[^}]*padding:14px/, "mobile cards need reduced padding");
+expect(/@media\(max-width:560px\)\{[\s\S]*?\.fb\.show\{[^}]*margin-inline:-4px/, "mobile feedback should reclaim card width");
+expect(/@media\(max-width:560px\)\{[\s\S]*?\.ai-box\{[^}]*padding:10px/, "mobile AI Tutor panel needs compact padding");
+expect(/@media\(max-width:560px\)\{[\s\S]*?\.ai-box\{[^}]*margin-inline:-2px/, "mobile AI Tutor panel should reclaim horizontal room");
+expect(/@media\(max-width:560px\)\{[\s\S]*?\.ai-box\{[^}]*border-left:0/, "mobile AI Tutor panel should reduce nested side borders");
+expect(/@media\(max-width:560px\)\{[\s\S]*?\.ai-output\{[^}]*font-size:14px/, "mobile AI Tutor output needs controlled text sizing");
 expectMissing(/out\.innerHTML=`\$\{escapeHtml\(data\.answer\|\|/s, "AI Tutor still appends escaped raw Markdown as text");
+
+const mobile560Index = html.lastIndexOf("@media(max-width:560px)");
+const aiActionsIndex = html.indexOf(".ai-actions .btn{width:auto");
+const explIndex = html.indexOf(".expl{margin-top:10px");
+if (mobile560Index < aiActionsIndex || mobile560Index < explIndex) failures.push("mobile feedback overrides must appear after base feedback and AI Tutor styles");
 expect(/home-brief/, "home summary should use a structured brief instead of a dense paragraph");
 expect(/home-catalog card/, "home practice entry points should be grouped in a catalog card");
 expect(/ai-drill-card card/, "AI syllabus drill card is missing");
@@ -52,7 +71,7 @@ function extractFunction(name) {
   return "";
 }
 
-const rendererSource = ["escapeHtml", "aiInlineMarkdown", "renderAiMarkdown", "renderAiAnswer"].map(extractFunction).join("\n");
+const rendererSource = ["escapeHtml", "aiInlineMarkdown", "aiTableCells", "aiTableDivider", "renderAiTable", "renderAiMarkdown", "renderAiAnswer"].map(extractFunction).join("\n");
 const aiCardSource = ["escapeHtml", "weakestTopicIndex", "aiQuestionAvailable", "aiQuestionHtml"].map(extractFunction).join("\n");
 if (aiCardSource.trim()) {
   try {
@@ -92,13 +111,35 @@ if (rendererSource.trim()) {
       "",
       "### הסבר קצר",
       "- נקודה אחת",
-      "- נקודה שתיים"
+      "- נקודה שתיים",
+      "",
+      "| הפרעה | שלב שינה | זיכרון |",
+      "|---|---|---|",
+      "| Nightmare | REM | זוכר |",
+      "| Sleepwalking | NREM | לא זוכר |",
+      "",
+      "> REM = זוכר + מפחיד",
+      "< נקודת מפתח: Trazodone אינו מפחית Slow-wave sleep"
     ].join("\n"))})`, context);
     if (!rendered.includes("<h4>תשובה</h4>")) failures.push("AI Markdown renderer does not convert level-2 headings");
     if (!rendered.includes("<strong>התשובה הנכונה: א. Olanzapine</strong>")) failures.push("AI Markdown renderer does not convert bold emphasis");
     if (!rendered.includes('<hr class="ai-rule">')) failures.push("AI Markdown renderer does not convert separators");
     if (!rendered.includes("<ul>") || !rendered.includes("<li>נקודה אחת</li>")) failures.push("AI Markdown renderer does not convert bullets");
-    if (/(^|>)\s*(#{2,3}|---|\*\*)/.test(rendered)) failures.push("AI Markdown renderer leaves raw Markdown markers visible");
+    if (!rendered.includes('<table class="ai-table">')) failures.push("AI Markdown renderer does not convert pipe tables");
+    if (!rendered.includes("<th>הפרעה</th>") || !rendered.includes('data-label="הפרעה">Nightmare</td>')) failures.push("AI Markdown renderer loses table cells");
+    if (!rendered.includes('data-label="הפרעה"')) failures.push("AI Markdown renderer does not label mobile table cells");
+    if (!rendered.includes('<blockquote class="ai-quote">REM = זוכר + מפחיד</blockquote>')) failures.push("AI Markdown renderer does not convert blockquotes");
+    if (!rendered.includes('<blockquote class="ai-quote">נקודת מפתח: Trazodone אינו מפחית Slow-wave sleep</blockquote>')) failures.push("AI Markdown renderer does not convert mirrored RTL blockquotes");
+    if (/(^|>)\s*(#{2,3}|---|\*\*|&lt;|\|---|\|[^<]*\|)/.test(rendered)) failures.push("AI Markdown renderer leaves raw Markdown markers visible");
+
+    const looseTable = vm.runInContext(`renderAiMarkdown(${JSON.stringify([
+      "### ניתוח האפשרויות",
+      "| תרופה | מינון מוצע | הערה |",
+      "| Fluoxetine 20 mg | נמוך מדי | טווח יעיל: 20-60 מ\"ג |",
+      "| Sertraline 200 mg | מינון מקסימלי-יעיל | תשובה נכונה |"
+    ].join("\n"))})`, context);
+    if (!looseTable.includes('<table class="ai-table">')) failures.push("AI Markdown renderer does not convert loose pipe-row tables");
+    if (/\|\s*תרופה\s*\||\|\s*Fluoxetine 20 mg\s*\|/.test(looseTable)) failures.push("AI Markdown renderer leaves loose pipe rows visible");
 
     const answerHtml = vm.runInContext(`
       const out = { innerHTML: "" };
