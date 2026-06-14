@@ -10,6 +10,36 @@ function compact(value, max = 12000) {
   return String(value || "").slice(0, max);
 }
 
+function sanitizeAiAnswer(answer) {
+  const lines = String(answer || "").replace(/\r\n?/g, "\n").split("\n");
+  const out = [];
+  let headingCount = 0;
+  let bulletCount = 0;
+  for (const raw of lines) {
+    let line = raw.trim();
+    if (!line) {
+      if (out[out.length - 1] !== "") out.push("");
+      continue;
+    }
+    if (/^\|?\s*:?-{3,}:?\s*(\|\s*:?-{3,}:?\s*)+\|?$/.test(line)) continue;
+    if (/^\|.*\|$/.test(line)) {
+      const cells = line.slice(1, -1).split("|").map(c => c.trim()).filter(Boolean);
+      if (cells.length) line = `- ${cells.join(" — ")}`;
+    }
+    line = line.replace(/^[><]\s*/, "");
+    if (/^#{1,4}\s+/.test(line)) {
+      headingCount++;
+      if (headingCount > 4) line = line.replace(/^#{1,4}\s+/, "- ");
+    }
+    if (/^[-*]\s+/.test(line)) {
+      bulletCount++;
+      if (bulletCount > 6) continue;
+    }
+    out.push(line);
+  }
+  return compact(out.join("\n").replace(/\n{3,}/g, "\n\n").trim(), 2800);
+}
+
 function buildPrompt(body) {
   const q = body.question || {};
   const options = Array.isArray(q.options) ? q.options : [];
@@ -35,6 +65,7 @@ ${options.map((opt, i) => `${["א", "ב", "ג", "ד"][i]}. ${compact(opt, 1000)}
 חולשות משתמש לפי התקדמות מקומית: ${compact(weak, 1200)}
 
 ענה בעברית. השתמש רק במידע שסופק כאן. אל תשנה את המפתח הרשמי. אם קיים דגל מפתח, הסבר שזה דגל לימודי ולא תיקון רשמי. אל תיתן ייעוץ רפואי למטופל אמיתי.
+מבנה תשובה: עד 4 כותרות קצרות, עד 6 נקודות, משפטים קצרים שמתאימים למסך טלפון. אל תשתמש בטבלאות Markdown או בקווי הפרדה ארוכים.
 `.trim();
 }
 
@@ -46,7 +77,7 @@ function citations(body) {
   return out;
 }
 
-const SYSTEM_PROMPT = "You are a source-grounded medical exam study tutor. You help with board-exam study, not patient care. Use only the information provided in the user message. Never change the official answer key. Answer in concise Hebrew.";
+const SYSTEM_PROMPT = "You are a source-grounded medical exam study tutor. You help with board-exam study, not patient care. Use only the information provided in the user message. Never change the official answer key. Answer in concise Hebrew. Keep answers phone-friendly: no Markdown tables, no long separators, at most four short headings and six bullets.";
 
 export default async function handler(req) {
   if (req.method === "OPTIONS") return new Response(null, { status: 204, headers: JSON_HEADERS });
@@ -88,7 +119,7 @@ export default async function handler(req) {
       headers: proxyHeaders,
       body: JSON.stringify({
         model,
-        max_tokens: 700,
+        max_tokens: 520,
         system: SYSTEM_PROMPT,
         messages: [{ role: "user", content: buildPrompt(body) }]
       })
@@ -107,7 +138,7 @@ export default async function handler(req) {
     : "";
 
   return json({
-    answer: answer.trim() || "לא התקבלה תשובה מהמודל.",
+    answer: sanitizeAiAnswer(answer) || "לא התקבלה תשובה מהמודל.",
     citations: citations(body),
     keyDoubt: !!body.keyDoubt,
     safetyNote: "Study support only; official answer key is unchanged."
