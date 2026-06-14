@@ -1643,7 +1643,7 @@ function renderAiMarkdown(text){
       continue;
     }
     if(/^[-*_]{3,}$/.test(line)){flushPara();closeList();html.push('<hr class="ai-rule">');continue;}
-    const quote=line.match(/^>\s*(.+)$/);
+    const quote=line.match(/^[><]\s*(.+)$/);
     if(quote){flushPara();closeList();html.push(`<blockquote class="ai-quote">${aiInlineMarkdown(quote[1])}</blockquote>`);continue;}
     const heading=line.match(/^(#{1,4})\s+(.+)$/);
     if(heading){flushPara();closeList();html.push(`<h4>${aiInlineMarkdown(heading[2])}</h4>`);continue;}

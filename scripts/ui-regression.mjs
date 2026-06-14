@@ -118,7 +118,8 @@ if (rendererSource.trim()) {
       "| Nightmare | REM | זוכר |",
       "| Sleepwalking | NREM | לא זוכר |",
       "",
-      "> REM = זוכר + מפחיד"
+      "> REM = זוכר + מפחיד",
+      "< נקודת מפתח: Trazodone אינו מפחית Slow-wave sleep"
     ].join("\n"))})`, context);
     if (!rendered.includes("<h4>תשובה</h4>")) failures.push("AI Markdown renderer does not convert level-2 headings");
     if (!rendered.includes("<strong>התשובה הנכונה: א. Olanzapine</strong>")) failures.push("AI Markdown renderer does not convert bold emphasis");
@@ -128,7 +129,8 @@ if (rendererSource.trim()) {
     if (!rendered.includes("<th>הפרעה</th>") || !rendered.includes('data-label="הפרעה">Nightmare</td>')) failures.push("AI Markdown renderer loses table cells");
     if (!rendered.includes('data-label="הפרעה"')) failures.push("AI Markdown renderer does not label mobile table cells");
     if (!rendered.includes('<blockquote class="ai-quote">REM = זוכר + מפחיד</blockquote>')) failures.push("AI Markdown renderer does not convert blockquotes");
-    if (/(^|>)\s*(#{2,3}|---|\*\*|\|---|\|[^<]*\|)/.test(rendered)) failures.push("AI Markdown renderer leaves raw Markdown markers visible");
+    if (!rendered.includes('<blockquote class="ai-quote">נקודת מפתח: Trazodone אינו מפחית Slow-wave sleep</blockquote>')) failures.push("AI Markdown renderer does not convert mirrored RTL blockquotes");
+    if (/(^|>)\s*(#{2,3}|---|\*\*|&lt;|\|---|\|[^<]*\|)/.test(rendered)) failures.push("AI Markdown renderer leaves raw Markdown markers visible");
 
     const looseTable = vm.runInContext(`renderAiMarkdown(${JSON.stringify([
       "### ניתוח האפשרויות",
