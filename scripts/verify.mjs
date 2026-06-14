@@ -26,7 +26,7 @@ for (const [i, q] of Q.entries()) {
 // per-sitting counts must match the known exam sizes
 const counts = {};
 for (const q of Q) counts[q.t] = (counts[q.t] || 0) + 1;
-const EXPECT = { "2020": 150, "2021-Jun": 150, "2022-Jun": 150, "2023-Jun": 150, "2024-Sep": 100 };
+const EXPECT = { "2020": 150, "2021-Jun": 150, "2022-Jun": 150, "2023-Jun": 150, "2024-May": 100, "2024-Sep": 100, "2025-Jun": 100 };
 for (const [t, n] of Object.entries(EXPECT))
   if (counts[t] !== n) errs.push(`sitting ${t}: ${counts[t]} != ${n}`);
 

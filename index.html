@@ -154,7 +154,7 @@ nav.bar button.on{color:var(--accent2)}
     <div class="logo">🧠</div>
     <div class="htxt">
       <h1>שלב א' פסיכיאטריה</h1>
-      <p>בנק מבחני המועצה המדעית · הר"י · 2020–2024</p>
+      <p>בנק מבחני המועצה המדעית · הר"י · 2020–2025</p>
     </div>
   </header>
 
@@ -224,7 +224,7 @@ async function boot(){
 /* ---------- helpers ---------- */
 const byYear = ()=>{const m={};QUESTIONS.forEach(q=>m[q.t]=(m[q.t]||0)+1);return m;};
 const byTopic= ()=>{const m={};QUESTIONS.forEach(q=>m[q.ti]=(m[q.ti]||0)+1);return m;};
-function yearLabel(t){return t.replace("-Jun"," · יוני").replace("-Sep"," · ספטמבר");}
+function yearLabel(t){return t.replace("-Jun"," · יוני").replace("-Sep"," · ספטמבר").replace("-May"," · מאי");}
 function toast(msg){const t=$("#toast");t.textContent=msg;t.classList.add("show");setTimeout(()=>t.classList.remove("show"),1600);}
 
 /* ---------- navigation ---------- */
@@ -254,7 +254,8 @@ function renderHome(){
   const yrs=byYear(), tps=byTopic();
   const v=$("#view-home"); v.innerHTML="";
 
-  v.append(el("div","banner",`בנק עם <b>${total}</b> שאלות מבחן אמיתיות (שלב א' פסיכיאטריה, המועצה המדעית/הר"י). תשובות לאחר ערעור · מראי מקום (Kaplan &amp; Sadock / DSM). חזרה מרווחת אוטומטית.`));
+  const visN=QUESTIONS.filter(q=>q.vision).length;
+  v.append(el("div","banner",`בנק עם <b>${total}</b> שאלות מבחן אמיתיות (שלב א' פסיכיאטריה, המועצה המדעית/הר"י, 2020–2025). תשובות לאחר ערעור · מראי מקום (Kaplan &amp; Sadock / DSM). חזרה מרווחת אוטומטית.${visN?`<br><span style="color:var(--warn);font-size:12px">⚠ ${visN} שאלות ממועד 2025 מסומנות OCR — נוסח השאלה תומלל אוטומטית (מקור פגום); תשובות ומפתח מהימנים.</span>`:""}`));
 
   const ring=el("div","card");
   ring.style.textAlign="center";
@@ -334,7 +335,7 @@ function renderQuiz(){
   const card=el("div","card");
   const pct=Math.round(session.i/session.queue.length*100);
   card.append(el("div","qhead",
-    `<div class="qmeta"><span class="tag">${session.title}</span><span class="tag">${yearLabel(q.t)}</span><span class="tag acc">${TOPICS[q.ti]||""}</span></div>
+    `<div class="qmeta"><span class="tag">${session.title}</span><span class="tag">${yearLabel(q.t)}</span><span class="tag acc">${TOPICS[q.ti]||""}</span>${q.vision?'<span class="tag" style="color:var(--warn);border-color:var(--warn)" title="תמלול אוטומטי מהמקור — ודא מול ה-PDF">OCR</span>':''}</div>
      <div>${session.i+1} / ${session.queue.length}</div>`));
   const pb=el("div","progbar",`<i style="width:${pct}%"></i>`);card.append(pb);
   card.append(el("div","qtext",escapeHtml(q.q)));
@@ -370,6 +371,7 @@ function answer(q,k,opts,fb,card){
   if(q.all_accepted) h+=' <span class="note">— כל התשובות התקבלו (שאלה שבוטלה לאחר ערעור)</span>';
   else if(accept.length>1) h+=` <span class="note">— מתקבלות גם: ${accept.map(i=>LETTERS[i]).join(", ")}</span>`;
   if(q.ref) h+=`<div class="ref">מקור: <b>${escapeHtml(q.ref)}</b></div>`;
+  if(q.vision) h+='<div class="note">⚠ נוסח השאלה תומלל אוטומטית (מועד 2025 פגום במקור) — התשובות והמפתח מהימנים; ודא ניסוח מול ה-PDF</div>';
   fb.innerHTML=h;
   // turn skip into next
   const foot=card.querySelector(".qfoot");foot.innerHTML="";
@@ -433,7 +435,7 @@ function drawList(){
     it.append(el("div","qq",escapeHtml(q.q)));
     const accept=q.c_accept&&q.c_accept.length?q.c_accept:[q.c];
     q.o.forEach((o,k)=>it.append(el("div","oo"+(accept.includes(k)?" c":""),`${LETTERS[k]}. ${escapeHtml(o)}`)));
-    it.append(el("div","meta",`<span>${yearLabel(q.t)}</span><span>${TOPICS[q.ti]||""}</span>${q.ref?`<span>${escapeHtml(q.ref)}</span>`:""}${q.all_accepted?`<span style="color:var(--warn)">בוטלה בערעור</span>`:""}`));
+    it.append(el("div","meta",`<span>${yearLabel(q.t)}</span><span>${TOPICS[q.ti]||""}</span>${q.ref?`<span>${escapeHtml(q.ref)}</span>`:""}${q.all_accepted?`<span style="color:var(--warn)">בוטלה בערעור</span>`:""}${q.vision?`<span style="color:var(--warn)">OCR</span>`:""}`));
     list.append(it);
   });
   if(res.length>300)list.append(el("div","muted small","מוצגות 300 הראשונות — צמצם בחיפוש."));

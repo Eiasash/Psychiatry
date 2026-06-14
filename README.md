@@ -6,15 +6,19 @@ A single-file, installable PWA for drilling the Israeli **Shlav Aleph (שלב א
 
 ## What's inside
 
-- **700 real exam questions** from 5 sittings (byte-accurate from the official PDFs):
+- **900 real exam questions** from 7 sittings:
 
-  | Sitting | Questions |
-  |---|---|
-  | 2020 | 150 |
-  | 2021 · June | 150 |
-  | 2022 · June | 150 |
-  | 2023 · June | 150 |
-  | 2024 · September | 100 |
+  | Sitting | Questions | Source fidelity |
+  |---|---|---|
+  | 2020 | 150 | byte-accurate (PDF text layer) |
+  | 2021 · June | 150 | byte-accurate |
+  | 2022 · June | 150 | byte-accurate |
+  | 2023 · June | 150 | byte-accurate |
+  | 2024 · May | 100 | byte-accurate |
+  | 2024 · September | 100 | byte-accurate |
+  | 2025 · June | 100 | **OCR/vision** — see note below |
+
+  > **2025 · June** is tagged `vision: true`. Its source PDF has a corrupt font/text layer (private-use glyphs), so the **question stems were transcribed from page images and are not byte-verified** — they may contain occasional word-level errors. The **answer options, the official answer key, and the source references are reliable**, so questions remain answerable; the app marks these with an `OCR` badge and a "verify against the PDF" note. The other 800 questions are byte-accurate from the clean PDF text layers.
 
 - **Official answer keys** (תשובה נכונה לאחר ערעור), including multi-accept answers and questions nullified on appeal (`כל התשובות מתקבלות`).
 - **Source references** per question — Kaplan & Sadock *Synopsis*, DSM-5, and the relevant statutes (חוק לטיפול בחולי נפש וכו').
@@ -33,10 +37,6 @@ A single-file, installable PWA for drilling the Israeli **Shlav Aleph (שלב א
 ## Tech
 
 Zero-build single-file app (`index.html`) + `data/questions.json`. Service worker (`sw.js`) caches for offline. Hosted on GitHub Pages.
-
-## Pending (phase 2)
-
-- **2024 · May** (100 Q) and **2025 · June** (100 Q) sittings — their source PDFs need image-based recovery (corrupt/edge-case text layers) before they meet the same byte-accuracy bar. They'll be added to `data/questions.json` once verified.
 
 ## Provenance & use
 
