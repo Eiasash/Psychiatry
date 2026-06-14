@@ -10,6 +10,7 @@ const Q = readJson("../data/questions.json");
 const topicPayload = readJson("../data/topics.json");
 const T = topicPayload.topics;
 const EXP = readJson("../data/explanations.json");
+const KEY_DOUBTS = readJson("../docs/answer_key_doubts.json");
 const PKG = readJson("../package.json");
 const MANIFEST = readJson("../manifest.json");
 const SW = readFileSync(new URL("../sw.js", import.meta.url), "utf8");
@@ -20,6 +21,7 @@ const ids = new Set();
 if (!Array.isArray(Q)) errs.push("questions.json must be an array");
 if (!Array.isArray(T) || !T.length) errs.push("topics.json must expose a non-empty topics array");
 if (!EXP || typeof EXP !== "object" || Array.isArray(EXP)) errs.push("explanations.json must be an object keyed by question id");
+if (!Array.isArray(KEY_DOUBTS)) errs.push("answer_key_doubts.json must be an array");
 
 for (const [i, q] of (Array.isArray(Q) ? Q : []).entries()) {
   const at = `#${i} (${q?.id || "missing-id"})`;
@@ -56,6 +58,20 @@ for (const [i, q] of (Array.isArray(Q) ? Q : []).entries()) {
 for (const [id, exp] of Object.entries(EXP || {})) {
   if (!ids.has(id)) errs.push(`explanations.json: orphan explanation id ${id}`);
   if (typeof exp !== "string" || !exp.trim()) errs.push(`explanations.json: empty explanation for ${id}`);
+}
+
+const doubtIds = new Set();
+for (const [i, doubt] of (Array.isArray(KEY_DOUBTS) ? KEY_DOUBTS : []).entries()) {
+  const at = `answer_key_doubts[${i}]`;
+  if (!doubt || typeof doubt !== "object" || Array.isArray(doubt)) {
+    errs.push(`${at}: doubt must be an object`);
+    continue;
+  }
+  if (!ids.has(doubt.id)) errs.push(`${at}: unknown question id ${doubt.id}`);
+  if (doubtIds.has(doubt.id)) errs.push(`${at}: duplicate doubt id ${doubt.id}`);
+  doubtIds.add(doubt.id);
+  if (typeof doubt.issue !== "string" || doubt.issue.trim().length < 20) errs.push(`${at}: missing issue text`);
+  if (typeof doubt.keyed !== "string" || !doubt.keyed.trim()) errs.push(`${at}: missing keyed letter`);
 }
 
 // Per-sitting counts must match the known official exam sizes.
@@ -102,4 +118,4 @@ if (errs.length) {
   process.exit(1);
 }
 
-console.log(`✓ ${Q.length} questions valid · ${Object.keys(EXP).length} explanations covered · PWA ${PKG.version} aligned · sittings: ${Object.entries(counts).map(([k, v]) => `${k}:${v}`).join(", ")}`);
+console.log(`✓ ${Q.length} questions valid · ${Object.keys(EXP).length} explanations covered · ${doubtIds.size} key-doubt flags mapped · PWA ${PKG.version} aligned · sittings: ${Object.entries(counts).map(([k, v]) => `${k}:${v}`).join(", ")}`);

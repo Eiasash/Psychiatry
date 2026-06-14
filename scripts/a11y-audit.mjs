@@ -111,6 +111,13 @@ const checks = [
   [/prefers-reduced-motion: reduce/, "reduced motion media query"],
   [/prefers-reduced-data: reduce/, "reduced data media query"],
   [/navigator\.connection\?\.saveData/, "Save-Data runtime handling"],
+  [/indexedDB\.open/, "IndexedDB-first local state"],
+  [/navigator\.storage\?\.persist/, "persistent storage request"],
+  [/שמירה יציבה יותר באייפון/, "Safari Home Screen durability coach"],
+  [/aria-labelledby","auth-title"/, "login view label management"],
+  [/autocomplete="username"/, "username autocomplete"],
+  [/autocomplete="current-password"/, "password autocomplete"],
+  [/id="auth-message" role="status" aria-live="polite"/, "login feedback live region"],
   [/min-height:44px/, "44px minimum hit target"],
   [/min-height:56px/, "larger quiz option hit target"]
 ];

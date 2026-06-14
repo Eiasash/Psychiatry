@@ -1,5 +1,5 @@
 /* Psychiatry Shlav Aleph — service worker (offline cache) */
-const CACHE = "psych-shlava-v1.2.1";
+const CACHE = "psych-shlava-v1.4.0";
 const ASSETS = [
   "./",
   "./index.html",
@@ -7,12 +7,13 @@ const ASSETS = [
   "./data/questions.json",
   "./data/topics.json",
   "./data/explanations.json",
+  "./docs/answer_key_doubts.json",
   "./icons/icon-192.png",
   "./icons/icon-512.png"
 ];
 
 self.addEventListener("install", e => {
-  e.waitUntil(caches.open(CACHE).then(c => c.addAll(ASSETS)).then(() => self.skipWaiting()));
+  e.waitUntil(caches.open(CACHE).then(c => c.addAll(ASSETS)));
 });
 
 self.addEventListener("activate", e => {
@@ -20,6 +21,10 @@ self.addEventListener("activate", e => {
     caches.keys().then(keys => Promise.all(keys.filter(k => k !== CACHE).map(k => caches.delete(k))))
       .then(() => self.clients.claim())
   );
+});
+
+self.addEventListener("message", e => {
+  if (e.data && e.data.type === "SKIP_WAITING") self.skipWaiting();
 });
 
 // network-first for data (fresh questions), cache-first for shell
