@@ -42,10 +42,15 @@ body{
 }
 .wrap{max-width:880px;margin:0 auto;padding:14px 14px 96px}
 a{color:var(--accent2)}
-button,input{font-family:inherit}
+button,input,select{font-family:inherit}
 button{touch-action:manipulation}
 button:focus{outline:none}
 button:focus-visible,input:focus-visible,.fb:focus-visible,.ai-output:focus-visible{
+  outline:3px solid var(--focus);
+  outline-offset:3px;
+  box-shadow:0 0 0 6px rgba(34,211,183,.28);
+}
+select:focus-visible{
   outline:3px solid var(--focus);
   outline-offset:3px;
   box-shadow:0 0 0 6px rgba(34,211,183,.28);
@@ -215,8 +220,41 @@ nav.bar button.on{color:var(--accent2)}
   border:1px solid var(--accent2);border-radius:14px;box-shadow:var(--shadow);padding:10px 12px;
   display:flex;align-items:center;justify-content:space-between;gap:10px}
 .update-banner .btn{width:auto;min-height:44px;padding:8px 14px}
-.banner{background:linear-gradient(135deg,#2a1d52,#19234a);border:1px solid var(--line);border-radius:14px;padding:13px 16px;font-size:13px;color:var(--muted);margin-bottom:14px}
-.banner b{color:var(--txt)}
+.home-brief{background:linear-gradient(180deg,var(--card),var(--bg2));border:1px solid var(--line);border-radius:14px;padding:14px 16px;margin-bottom:14px}
+.brief-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
+.brief-head strong{font-size:16px;color:var(--txt);line-height:1.55}
+.eyebrow{font-size:11px;font-weight:800;color:var(--accent2);border:1px solid rgba(34,211,183,.45);border-radius:999px;padding:2px 9px;white-space:nowrap}
+.brief-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:12px}
+.brief-item{background:var(--card2);border:1px solid var(--line);border-radius:10px;padding:9px 10px;font-size:12.5px;color:var(--muted)}
+.brief-item b{display:block;color:var(--txt);font-size:13.5px}
+.brief-notes{display:grid;gap:5px;margin-top:10px;font-size:12.5px;color:var(--warn)}
+.home-catalog{margin-top:16px}
+.catalog-head{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;margin-bottom:10px}
+.catalog-head b{font-size:15px}
+.catalog-details{border-top:1px solid var(--line);padding-top:10px;margin-top:10px}
+.catalog-details summary{cursor:pointer;color:var(--txt);font-weight:800;min-height:44px;display:flex;align-items:center}
+.catalog-details summary::marker{color:var(--accent2)}
+.catalog-sub{margin:10px 0 6px;font-size:12px;color:var(--muted);font-weight:800;text-transform:uppercase;letter-spacing:1px}
+.chip-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(156px,1fr));gap:8px}
+.chip-grid .chip{justify-content:space-between;border-radius:12px;width:100%;min-width:0}
+.ai-drill-card{margin-top:16px;border-color:rgba(34,211,183,.35)}
+.ai-drill-head{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:12px}
+.ai-drill-head b{font-size:15px;color:var(--txt)}
+.ai-drill-head span{font-size:12.5px;color:var(--muted)}
+.ai-drill-controls{display:grid;grid-template-columns:1.2fr 1fr 1fr auto;gap:8px;align-items:end}
+.ai-drill-controls .field{gap:4px}
+.ai-drill-controls .btn{min-height:48px;white-space:nowrap}
+.ai-drill-output{margin-top:12px}
+.ai-question{background:var(--card2);border:1px solid var(--line);border-radius:12px;padding:12px}
+.ai-question .qtext{font-size:15.5px;margin:0 0 12px}
+.ai-q-meta{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px}
+.ai-q-feedback{margin-top:10px;min-height:24px;font-size:13.5px;color:var(--muted)}
+.ai-q-feedback b{color:var(--accent2)}
+.ai-generated-note{font-size:12px;color:var(--warn);margin-top:9px}
+@media(max-width:720px){
+  .brief-head{display:grid}
+  .brief-grid,.ai-drill-controls{grid-template-columns:1fr}
+}
 @media (prefers-reduced-motion: reduce){
   *,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;scroll-behavior:auto!important;transition-duration:.01ms!important}
   .skip-link{transition:none}
@@ -276,6 +314,12 @@ const DB_NAME = "psych_shlava_local_v1";
 const DB_STORE = "kv";
 const PAGE_SIZE = 100;
 const EXAM_SECONDS_PER_Q = 72;
+const AI_SYLLABUS_SOURCES = [
+  {value:"synopsis",label:"Kaplan & Sadock Synopsis",hint:"סיכום ליבה לבחינה"},
+  {value:"dsm",label:"DSM diagnostic criteria",hint:"קריטריונים ואבחנה מבדלת"},
+  {value:"psychopharm",label:"Psychopharmacology syllabus",hint:"תרופות, מנגנונים ותופעות לוואי"},
+  {value:"ethics",label:"Law, ethics and board syllabus",hint:"חוק, אתיקה ומבנה הבחינה"}
+];
 let QUESTIONS = [], TOPICS = [], PROG = {}, EXP = {}, KEY_DOUBTS = {}, QMAP = new Map();
 let STARS = new Set();
 let EXP_PROMISE = null;
@@ -887,7 +931,22 @@ function renderHome(){
 
   const visN=QUESTIONS.filter(q=>q.vision).length;
   const doubts=Object.keys(KEY_DOUBTS).length;
-  v.append(el("div","banner",`בנק עם <b>${total}</b> שאלות מבחן אמיתיות (שלב א' פסיכיאטריה, המועצה המדעית/הר"י, 2020–2025). תשובות לאחר ערעור · מראי מקום (Kaplan &amp; Sadock / DSM). חזרה מרווחת אוטומטית.${visN?`<br><span style="color:var(--warn);font-size:12px">⚠ ${visN} שאלות ממועד 2025 מסומנות OCR — נוסח השאלה תומלל אוטומטית (מקור פגום); תשובות ומפתח מהימנים.</span>`:""}${doubts?`<br><span style="color:var(--warn);font-size:12px">⚑ ${doubts} שאלות כוללות דגל לימודי לגבי המפתח הרשמי; המפתח לא שונה.</span>`:""}`));
+  const sourceLine=`<span dir="ltr">Kaplan &amp; Sadock</span> / <span dir="ltr">DSM</span>`;
+  const brief=el("div","home-brief",`
+    <div class="brief-head">
+      <strong>בנק מאומת עם <span dir="ltr">${total}</span> שאלות מבחן אמיתיות משלב א' פסיכיאטריה.</strong>
+      <span class="eyebrow">2020-2025</span>
+    </div>
+    <div class="brief-grid">
+      <div class="brief-item"><b>מפתח לאחר ערעור</b> התשובות הרשמיות נשמרות ללא שינוי</div>
+      <div class="brief-item"><b>מקורות</b> מראי מקום מתוך ${sourceLine}</div>
+      <div class="brief-item"><b>למידה</b> חזרה מרווחת, שמורות וערימות טעויות</div>
+    </div>
+    <div class="brief-notes">
+      ${visN?`<span>⚠ ${visN} שאלות ממועד 2025 מסומנות OCR; התשובות והמפתח מהימנים.</span>`:""}
+      ${doubts?`<span>⚑ ${doubts} שאלות כוללות דגל לימודי לגבי המפתח הרשמי.</span>`:""}
+    </div>`);
+  v.append(brief);
 
   if(session){
     const q=qById(session.queue[session.i]);
@@ -954,18 +1013,21 @@ function renderHome(){
   );
   v.append(acts);
 
-  v.append(el("h2","sec","בלוקים מהירים"));
-  const bc=el("div","chips");
+  v.insertAdjacentHTML("beforeend",aiQuestionHtml(tps));
+  wireAiQuestionCard(v);
+
+  const catalog=el("div","home-catalog card",`<div class="catalog-head"><div><b>עוד דרכי תרגול</b><div class="muted small">בלוקים, מועדים ונושאים מקופלים כדי לשמור על מסך הבית קריא.</div></div></div>`);
+  const structured=el("details","catalog-details",`<summary>בלוקים ומועדים</summary>`);
+  const bc=el("div","chip-grid");
   [25,50,100].forEach(n=>{
     const c=el("button","chip",`${n} שאלות <span class="c">${timerText(n*EXAM_SECONDS_PER_Q)}</span>`);
     c.setAttribute("aria-label",`בלוק מתוזמן של ${n} שאלות אקראיות`);
     c.onclick=()=>startSession(shuffle(QUESTIONS.map(q=>q.id)).slice(0,n),`בלוק ${n} שאלות`,false,{mode:"exam",durationSec:n*EXAM_SECONDS_PER_Q});
     bc.append(c);
   });
-  v.append(bc);
+  structured.append(el("div","catalog-sub","בלוקים מהירים"),bc);
 
-  v.append(el("h2","sec","סימולציה לפי מועד"));
-  const ec=el("div","chips");
+  const ec=el("div","chip-grid");
   Object.keys(yrs).sort().forEach(t=>{
     const ids=QUESTIONS.filter(q=>q.t===t).map(q=>q.id);
     const c=el("button","chip",`${yearLabel(t)} <span class="c">${timerText(ids.length*EXAM_SECONDS_PER_Q)}</span>`);
@@ -973,20 +1035,20 @@ function renderHome(){
     c.onclick=()=>startExam(t);
     ec.append(c);
   });
-  v.append(ec);
+  structured.append(el("div","catalog-sub","סימולציה לפי מועד"),ec);
 
-  v.append(el("h2","sec","לפי מועד"));
-  const yc=el("div","chips");
+  const yc=el("div","chip-grid");
   Object.keys(yrs).sort().forEach(t=>{
     const c=el("button","chip",`${yearLabel(t)} <span class="c">${yrs[t]}</span>`);
     c.setAttribute("aria-label",`תרגול מועד ${yearLabel(t)}, ${yrs[t]} שאלות`);
     c.onclick=()=>startSession(QUESTIONS.filter(q=>q.t===t).map(q=>q.id),"מועד "+yearLabel(t),true);
     yc.append(c);
   });
-  v.append(yc);
+  structured.append(el("div","catalog-sub","לפי מועד"),yc);
+  catalog.append(structured);
 
-  v.append(el("h2","sec","לפי נושא"));
-  const tc=el("div","chips");
+  const topicDetails=el("details","catalog-details",`<summary>נושאים לפי סילבוס</summary>`);
+  const tc=el("div","chip-grid");
   Object.keys(tps).map(Number).sort((a,b)=>tps[b]-tps[a]).forEach(ti=>{
     const topic=TOPICS[ti]||"";
     const c=el("button","chip",`${escapeHtml(topic)} <span class="c">${tps[ti]}</span>`);
@@ -994,7 +1056,114 @@ function renderHome(){
     c.onclick=()=>startSession(QUESTIONS.filter(q=>q.ti===ti).map(q=>q.id),topic,true);
     tc.append(c);
   });
-  v.append(tc);
+  topicDetails.append(tc);
+  catalog.append(topicDetails);
+  v.append(catalog);
+}
+
+function weakestTopicIndex(tps){
+  const scored=Object.keys(tps).map(Number).map(ti=>{
+    let wrong=0,total=0;
+    QUESTIONS.forEach(q=>{
+      if(q.ti!==ti)return;
+      const r=PROG[q.id];
+      if(!r)return;
+      wrong+=r.wrong||0;
+      total+=(r.correct||0)+(r.wrong||0);
+    });
+    return {ti,score:total?wrong/total:0,count:tps[ti]||0};
+  }).sort((a,b)=>(b.score-a.score)||(b.count-a.count));
+  return scored[0]?.ti ?? 0;
+}
+function aiSourceLabel(value){
+  return AI_SYLLABUS_SOURCES.find(s=>s.value===value)?.label || AI_SYLLABUS_SOURCES[0].label;
+}
+function aiQuestionHtml(tps){
+  const defaultTi=weakestTopicIndex(tps);
+  const topicOptions=TOPICS.map((topic,ti)=>`<option value="${ti}"${ti===defaultTi?" selected":""}>${escapeHtml(topic)} (${tps[ti]||0})</option>`).join("");
+  const sourceOptions=AI_SYLLABUS_SOURCES.map(s=>`<option value="${escapeHtml(s.value)}">${escapeHtml(s.label)} · ${escapeHtml(s.hint)}</option>`).join("");
+  return `<div class="ai-drill-card card">
+    <div class="ai-drill-head">
+      <div><b>שאלת AI לפי הסילבוס</b><br><span>תרגול נוסף שמסומן כ-AI ואינו משנה את בנק 900 השאלות המאומתות.</span></div>
+      <span class="tag acc">חדש</span>
+    </div>
+    <div class="ai-drill-controls">
+      <label class="field"><span>נושא</span><select class="input" id="ai-topic">${topicOptions}</select></label>
+      <label class="field"><span>מקור סילבוס</span><select class="input" id="ai-source">${sourceOptions}</select></label>
+      <label class="field"><span>רמה</span><select class="input" id="ai-level">
+        <option value="board">שלב א'</option>
+        <option value="hard">קשה</option>
+        <option value="review">חזרה מהירה</option>
+      </select></label>
+      <button type="button" class="btn primary" id="ai-generate">צור שאלה</button>
+    </div>
+    <div class="ai-drill-output" role="status" aria-live="polite" aria-atomic="true"></div>
+  </div>`;
+}
+function wireAiQuestionCard(root){
+  const card=root.querySelector(".ai-drill-card");
+  if(!card)return;
+  const btn=card.querySelector("#ai-generate");
+  btn.onclick=()=>generateAiQuestion(card);
+}
+async function generateAiQuestion(card){
+  const out=card.querySelector(".ai-drill-output");
+  const topicIndex=Number(card.querySelector("#ai-topic").value);
+  const source=card.querySelector("#ai-source").value;
+  const level=card.querySelector("#ai-level").value;
+  out.textContent="יוצר שאלת AI...";
+  try{
+    const res=await authFetch("/api/ai-question",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({
+      topic:TOPICS[topicIndex]||"Other / General",
+      topicIndex,
+      source,
+      sourceLabel:aiSourceLabel(source),
+      level,
+      progressSummary:progressSummary()
+    })});
+    const data=await res.json().catch(()=>({}));
+    if(!res.ok){
+      out.textContent=res.status===401?"יש להתחבר כדי ליצור שאלות AI.":[404,405,501].includes(res.status)?"שאלות AI זמינות בפריסת Netlify המחוברת.":(data.error||`שגיאת AI (${res.status}).`);
+      return;
+    }
+    renderGeneratedAiQuestion(out,data.question||data);
+  }catch(e){
+    out.textContent="יצירת שאלת AI אינה זמינה כרגע. בנק השאלות המאומת ממשיך לעבוד כרגיל.";
+  }
+}
+function renderGeneratedAiQuestion(out,q){
+  const opts=Array.isArray(q?.options)?q.options.slice(0,4):[];
+  const correct=Number.isInteger(q?.correctIndex)?q.correctIndex:-1;
+  if(!q?.stem||opts.length!==4||correct<0||correct>3){
+    out.textContent="המודל החזיר שאלה לא תקינה. נסה שוב.";
+    return;
+  }
+  out.__aiQuestion=q;
+  out.dataset.correctIndex=String(correct);
+  const citations=Array.isArray(q.citations)?q.citations.filter(Boolean).slice(0,4):[];
+  out.innerHTML=`<div class="ai-question">
+    <div class="ai-q-meta"><span class="tag acc">AI</span><span class="tag">${escapeHtml(q.topic||"")}</span><span class="tag" dir="ltr">${escapeHtml(q.sourceLabel||"Syllabus")}</span></div>
+    <div class="qtext">${escapeHtml(q.stem)}</div>
+    <div class="opts">${opts.map((opt,k)=>`<button type="button" class="opt ai-q-option" data-ai-q-option="${k}" aria-label="אפשרות ${LETTERS[k]}: ${escapeHtml(opt)}"><span class="k">${LETTERS[k]}</span><span class="ot">${escapeHtml(opt)}</span></button>`).join("")}</div>
+    <div class="ai-q-feedback" role="status" aria-live="polite"></div>
+    ${citations.length?`<div class="ai-citations"><span>מקורות:</span>${citations.map(c=>`<span>${escapeHtml(c)}</span>`).join("")}</div>`:""}
+    <div class="ai-generated-note">שאלה זו נוצרה לתרגול בלבד ואינה חלק מהמפתח הרשמי.</div>
+  </div>`;
+  out.querySelectorAll("[data-ai-q-option]").forEach(b=>b.onclick=()=>gradeGeneratedAiQuestion(out,Number(b.dataset.aiQOption)));
+}
+function gradeGeneratedAiQuestion(out,k){
+  const q=out.__aiQuestion||{};
+  const correct=Number(out.dataset.correctIndex);
+  const buttons=[...out.querySelectorAll("[data-ai-q-option]")];
+  buttons.forEach((b,i)=>{
+    b.disabled=true;
+    b.classList.toggle("correct",i===correct);
+    b.classList.toggle("wrong",i===k&&k!==correct);
+    b.classList.toggle("dim",i!==correct&&i!==k);
+  });
+  const fb=out.querySelector(".ai-q-feedback");
+  const ok=k===correct;
+  fb.innerHTML=`<b>${ok?"נכון":"לא נכון"}</b><div class="expl">${renderAiMarkdown(q.explanation||"")}</div>`;
 }
 
 /* ---------- QUIZ ---------- */

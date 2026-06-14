@@ -24,6 +24,15 @@ expect(/\.ai-box\{[^}]*background:var\(--card2\)/s, "AI Tutor panel needs a neut
 expect(/\.ai-output h4/, "AI Tutor Markdown headings need compact panel styling");
 expect(/\.ai-citations/, "AI Tutor citations need semantic styling");
 expectMissing(/out\.innerHTML=`\$\{escapeHtml\(data\.answer\|\|/s, "AI Tutor still appends escaped raw Markdown as text");
+expect(/home-brief/, "home summary should use a structured brief instead of a dense paragraph");
+expect(/home-catalog card/, "home practice entry points should be grouped in a catalog card");
+expect(/ai-drill-card card/, "AI syllabus drill card is missing");
+expect(/function aiQuestionHtml\(/, "AI syllabus question renderer is missing");
+expect(/async function generateAiQuestion\(/, "AI syllabus question generator is missing");
+expect(/\/api\/ai-question/, "AI syllabus question endpoint is not wired into the UI");
+expect(/dir="ltr">Kaplan &amp; Sadock/, "mixed Hebrew/English source names need an LTR boundary");
+expectMissing(/v\.append\(el\("div","banner",`בנק עם/, "old dense home banner is still present");
+expectMissing(/v\.append\(aiQuestionHtml\(tps\)\)/, "AI syllabus card HTML is appended as text instead of rendered DOM");
 
 function extractFunction(name) {
   const start = html.indexOf(`function ${name}(`);

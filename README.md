@@ -39,6 +39,7 @@ A single-file, installable PWA for drilling the Israeli **Shlav Aleph (שלב א
 - IndexedDB-first local persistence with a persistent-storage request when study state is saved.
 - Optional Supabase email/password login on Netlify, with protected question JSON and cross-device progress sync.
 - Optional AI Tutor via Netlify Function (`/api/ai-tutor`), routed through the shared Toranot Claude proxy.
+- Optional AI-generated syllabus drill (`/api/ai-question`) for extra practice, kept separate from the verified 900-question exam bank.
 - Hebrew RTL, dark theme, **offline-capable**, installable to home screen.
 - Progress is stored locally first; when Supabase auth is configured it also syncs per user to Supabase.
 
@@ -46,7 +47,7 @@ A single-file, installable PWA for drilling the Israeli **Shlav Aleph (שלב א
 
 Zero-build single-file app (`index.html`) + JSON data files. Service worker (`sw.js`) caches the shell for offline use while keeping protected question JSON out of the public cache. Hosted on GitHub Pages for the public/offline build; Netlify Functions add optional Supabase login, protected JSON delivery, AI, and progress sync when deployed there.
 
-The optional AI Tutor is implemented as a Netlify Function in `netlify/functions/ai-tutor.mjs`. It calls the shared **Toranot Claude proxy** (`toranot.netlify.app/api/claude`, Anthropic messages API) rather than a model vendor directly, so no model API key is stored in this project. The function requires an authenticated Supabase user and **forwards that user's Supabase session JWT to the proxy** as the `Authorization: Bearer` credential — the proxy validates it against the same shared Supabase project, so **no shared proxy secret needs to be stored on this site**. Optionally set `CLAUDE_PROXY_URL` to point at a different proxy, `CLAUDE_MODEL` to override the default model (`claude-sonnet-4-6`), and `CLAUDE_PROXY_SECRET` to send an explicit `x-api-secret` instead of the user JWT (only needed when pointing at a non-Supabase proxy). The GitHub Pages version keeps working without this endpoint and shows a graceful unavailable message.
+The optional AI Tutor is implemented as a Netlify Function in `netlify/functions/ai-tutor.mjs`. The optional AI-generated syllabus drill is implemented in `netlify/functions/ai-question.mjs`; it creates clearly labeled practice-only MCQs and never writes them into `data/questions.json`. Both call the shared **Toranot Claude proxy** (`toranot.netlify.app/api/claude`, Anthropic messages API) rather than a model vendor directly, so no model API key is stored in this project. The functions require an authenticated Supabase user and **forward that user's Supabase session JWT to the proxy** as the `Authorization: Bearer` credential — the proxy validates it against the same shared Supabase project, so **no shared proxy secret needs to be stored on this site**. Optionally set `CLAUDE_PROXY_URL` to point at a different proxy, `CLAUDE_MODEL` to override the default model (`claude-sonnet-4-6`), and `CLAUDE_PROXY_SECRET` to send an explicit `x-api-secret` instead of the user JWT (only needed when pointing at a non-Supabase proxy). The GitHub Pages version keeps working without these endpoints and shows graceful unavailable messages.
 
 ## Supabase + Netlify auth
 
