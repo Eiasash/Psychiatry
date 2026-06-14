@@ -581,6 +581,15 @@ function setAuthChrome(){
 }
 async function initAuth(){
   const remembered=authRequiredStored();
+  // Static-only hosts (GitHub Pages) have no Netlify Functions, so auth is impossible
+  // there — it's the public/offline build. Skip the /api probe (avoids a 404 log) and
+  // never gate the bank. Auth + cross-device sync activate only on the Netlify deploy.
+  if(/(^|\.)github\.io$/.test(location.hostname)){
+    AUTH.required=false;
+    storeAuthRequired(false);
+    setAuthChrome();
+    return true;
+  }
   try{
     const res=await fetch("/api/supabase-config",{cache:"no-store",headers:{"Accept":"application/json"}});
     if(res.ok){
