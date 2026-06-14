@@ -2,7 +2,7 @@
 
 A single-file, installable PWA for drilling the Israeli **Shlav Aleph (שלב א') Psychiatry** board exam — built from the **המועצה המדעית / הר"י** sittings, with official answer keys (post-appeal) and source references.
 
-🔗 **Live:** https://eiasash.github.io/Psychiatry/
+🔗 **Live:**https://psychiatry-szmc.netlify.app/
 
 ## What's inside
 
