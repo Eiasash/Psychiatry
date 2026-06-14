@@ -14,7 +14,10 @@ export default async function handler(req) {
   if (!auth.ok) return auth.response;
 
   const url = new URL(req.url);
-  const path = url.searchParams.get("path") || "";
+  // Prefer the explicit ?path= (direct call). Fall back to the request pathname so a
+  // netlify.toml rewrite of /data/*.json still resolves (it doesn't forward the query).
+  let path = url.searchParams.get("path") || "";
+  if (!path) path = url.pathname.replace(/^\/+/, "").replace(/^api\/protected-asset\/?/, "");
   const target = ALLOWED.get(path);
   if (!target) return json({ error: "Not found" }, 404);
 

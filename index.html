@@ -519,6 +519,12 @@ function authFetch(path,opts={}){
   return fetch(path,{...opts,headers:authHeaders(opts.headers||{})});
 }
 function dataFetch(path,opts={}){
+  // On the auth-enabled (Netlify) deploy, hit the protected-asset function directly with
+  // ?path= — the netlify.toml rewrite does not forward the query to the v2 function.
+  // On GitHub Pages (AUTH.required=false) this is a plain static fetch (no change).
+  if(AUTH.required && /^(data|docs)\//.test(path)){
+    return authFetch(`/api/protected-asset?path=${encodeURIComponent(path)}`,opts);
+  }
   return authFetch(path,opts);
 }
 function supabaseBase(path){
