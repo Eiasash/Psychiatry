@@ -23,7 +23,21 @@ expect(/class="qcount" dir="ltr"/, "quiz counter needs an LTR boundary inside th
 expect(/\.ai-box\{[^}]*background:var\(--card2\)/s, "AI Tutor panel needs a neutral card background");
 expect(/\.ai-output h4/, "AI Tutor Markdown headings need compact panel styling");
 expect(/\.ai-citations/, "AI Tutor citations need semantic styling");
+expect(/\.fb\{[^}]*text-align:right/s, "quiz feedback should keep readable RTL text alignment");
+expect(/\.expl\{[^}]*text-align:right/s, "quiz explanations should keep readable RTL text alignment");
+expect(/\.ai-box\{[^}]*overflow-wrap:anywhere/s, "AI Tutor panel should prevent mobile overflow");
+expect(/\.wrap\{[^}]*padding:14px 14px calc\(112px \+ env\(safe-area-inset-bottom\)\)/s, "main content needs safe bottom padding above fixed nav");
+expect(/@media\(max-width:560px\)\{[\s\S]*?\.wrap\{[^}]*padding-inline:10px/, "mobile viewport needs tighter horizontal padding");
+expect(/@media\(max-width:560px\)\{[\s\S]*?\.card\{[^}]*padding:14px/, "mobile cards need reduced padding");
+expect(/@media\(max-width:560px\)\{[\s\S]*?\.fb\.show\{[^}]*margin-inline:-4px/, "mobile feedback should reclaim card width");
+expect(/@media\(max-width:560px\)\{[\s\S]*?\.ai-box\{[^}]*padding:10px/, "mobile AI Tutor panel needs compact padding");
+expect(/@media\(max-width:560px\)\{[\s\S]*?\.ai-output\{[^}]*font-size:14px/, "mobile AI Tutor output needs controlled text sizing");
 expectMissing(/out\.innerHTML=`\$\{escapeHtml\(data\.answer\|\|/s, "AI Tutor still appends escaped raw Markdown as text");
+
+const mobile560Index = html.lastIndexOf("@media(max-width:560px)");
+const aiActionsIndex = html.indexOf(".ai-actions .btn{width:auto");
+const explIndex = html.indexOf(".expl{margin-top:10px");
+if (mobile560Index < aiActionsIndex || mobile560Index < explIndex) failures.push("mobile feedback overrides must appear after base feedback and AI Tutor styles");
 expect(/home-brief/, "home summary should use a structured brief instead of a dense paragraph");
 expect(/home-catalog card/, "home practice entry points should be grouped in a catalog card");
 expect(/ai-drill-card card/, "AI syllabus drill card is missing");

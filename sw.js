@@ -1,5 +1,5 @@
 /* Psychiatry Shlav Aleph — service worker (offline cache) */
-const CACHE = "psych-shlava-v1.5.7";
+const CACHE = "psych-shlava-v1.5.8";
 const ASSETS = [
   "./",
   "./index.html",
