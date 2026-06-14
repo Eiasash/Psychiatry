@@ -37,27 +37,29 @@ A single-file, installable PWA for drilling the Israeli **Shlav Aleph (שלב א
 - Quick timed random blocks of 25, 50, or 100 questions.
 - Progress export/import as local JSON.
 - IndexedDB-first local persistence with a persistent-storage request when study state is saved.
-- Optional username/password login gate on Netlify, backed by a hashed password and signed session token.
+- Optional Supabase email/password login on Netlify, with protected question JSON and cross-device progress sync.
 - Optional AI Tutor via Netlify Function (`/api/ai-tutor`) when deployed with `OPENAI_API_KEY`.
 - Hebrew RTL, dark theme, **offline-capable**, installable to home screen.
-- All progress stored locally in your browser — nothing leaves the device unless you explicitly use the optional AI Tutor.
+- Progress is stored locally first; when Supabase auth is configured it also syncs per user to Supabase.
 
 ## Tech
 
-Zero-build single-file app (`index.html`) + JSON data files. Service worker (`sw.js`) caches for offline. Hosted on GitHub Pages; Netlify Functions add optional login and AI features when deployed there.
+Zero-build single-file app (`index.html`) + JSON data files. Service worker (`sw.js`) caches the shell for offline use while keeping protected question JSON out of the public cache. Hosted on GitHub Pages for the public/offline build; Netlify Functions add optional Supabase login, protected JSON delivery, AI, and progress sync when deployed there.
 
-The optional AI Tutor is implemented as a Netlify Function in `netlify/functions/ai-tutor.mjs`. Configure `OPENAI_API_KEY` in Netlify environment variables; optionally set `OPENAI_MODEL` to override the default model. The GitHub Pages version keeps working without this endpoint and shows a graceful unavailable message.
+The optional AI Tutor is implemented as a Netlify Function in `netlify/functions/ai-tutor.mjs`. Configure `OPENAI_API_KEY` in Netlify environment variables; optionally set `OPENAI_MODEL` to override the default model. When Supabase auth is configured, the AI endpoint requires a valid Supabase access token. The GitHub Pages version keeps working without this endpoint and shows a graceful unavailable message.
 
-## Netlify login
+## Supabase + Netlify auth
 
-Password login is enabled only when these Netlify environment variables are set:
+Supabase login is enabled only when these Netlify environment variables are set:
 
-- `APP_AUTH_USERNAME` — the login username.
-- `APP_AUTH_PASSWORD_HASH` — generated with `npm run auth:hash -- "your password"`.
-- `APP_AUTH_SESSION_SECRET` — a random signing secret, at least 32 bytes.
-- `APP_AUTH_SESSION_HOURS` — optional session lifetime, default `168`.
+- `SUPABASE_URL` — project URL, for example `https://<project-ref>.supabase.co`.
+- `SUPABASE_PUBLISHABLE_KEY` — Supabase publishable/anon browser key. `SUPABASE_ANON_KEY` is accepted as a fallback.
+- `OPENAI_API_KEY` — optional; enables `/api/ai-tutor`.
+- `OPENAI_MODEL` — optional; overrides the default AI Tutor model.
 
-When enabled, the app shows the login screen before loading the question bank, and `/api/ai-tutor` requires the signed session token. Do not commit raw passwords or secrets.
+Apply the SQL migration in `supabase/migrations/` to create the per-user progress tables and row-level-security policies. Enable email/password signups in Supabase Auth, then manage users from the Supabase dashboard.
+
+When Supabase env vars are enabled, the app shows the login screen before loading the question bank. Netlify redirects direct requests for `data/questions.json`, `data/explanations.json`, and `docs/answer_key_doubts.json` through `/api/protected-asset`, which validates the Supabase access token before returning JSON. Do not commit raw service keys or secrets.
 
 ## Verification
 
@@ -67,7 +69,7 @@ Run the repository gate before shipping changes:
 npm run verify
 ```
 
-This validates JavaScript syntax, Netlify auth/tutor functions, question integrity, explanation coverage, key-doubt mappings, official sitting counts, local-durability hooks, PWA metadata/cache alignment, and the WCAG-oriented static accessibility audit (computed color-contrast pairs plus keyboard/focus/live-region checks).
+This validates JavaScript syntax, Netlify Supabase/tutor functions, protected-asset routing, question integrity, explanation coverage, key-doubt mappings, official sitting counts, local-durability hooks, PWA metadata/cache alignment, and the WCAG-oriented static accessibility audit (computed color-contrast pairs plus keyboard/focus/live-region checks).
 
 ## Provenance & use
 

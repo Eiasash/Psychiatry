@@ -14,6 +14,7 @@ const KEY_DOUBTS = readJson("../docs/answer_key_doubts.json");
 const PKG = readJson("../package.json");
 const MANIFEST = readJson("../manifest.json");
 const SW = readFileSync(new URL("../sw.js", import.meta.url), "utf8");
+const NETLIFY = readFileSync(new URL("../netlify.toml", import.meta.url), "utf8");
 
 let errs = [];
 const ids = new Set();
@@ -103,13 +104,19 @@ else {
 const assetBlock = SW.match(/const ASSETS = \[([\s\S]*?)\];/);
 if (!assetBlock) errs.push("sw.js: missing ASSETS list");
 else {
+  const protectedAssets = new Set(["./data/questions.json", "./data/explanations.json", "./docs/answer_key_doubts.json"]);
   for (const match of assetBlock[1].matchAll(/"([^"]+)"/g)) {
     const asset = match[1];
+    if (protectedAssets.has(asset)) errs.push(`sw.js: protected asset must not be precached ${asset}`);
     if (asset === "./") continue;
     const rel = asset.replace(/^\.\//, "");
     if (!existsSync(new URL(`../${rel}`, import.meta.url))) errs.push(`sw.js: missing cached asset ${asset}`);
   }
 }
+for (const asset of ["data/questions.json", "data/explanations.json", "docs/answer_key_doubts.json"]) {
+  if (!NETLIFY.includes(`path=${asset}`)) errs.push(`netlify.toml: missing protected redirect for ${asset}`);
+}
+if (!NETLIFY.includes("included_files")) errs.push("netlify.toml: protected JSON files must be included in functions bundle");
 
 if (errs.length) {
   console.error(`✗ ${errs.length} problems:`);

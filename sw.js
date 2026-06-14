@@ -1,13 +1,10 @@
 /* Psychiatry Shlav Aleph — service worker (offline cache) */
-const CACHE = "psych-shlava-v1.4.0";
+const CACHE = "psych-shlava-v1.5.0";
 const ASSETS = [
   "./",
   "./index.html",
   "./manifest.json",
-  "./data/questions.json",
   "./data/topics.json",
-  "./data/explanations.json",
-  "./docs/answer_key_doubts.json",
   "./icons/icon-192.png",
   "./icons/icon-512.png"
 ];
@@ -25,6 +22,13 @@ self.addEventListener("activate", e => {
 
 self.addEventListener("message", e => {
   if (e.data && e.data.type === "SKIP_WAITING") self.skipWaiting();
+  if (e.data && e.data.type === "CLEAR_PROTECTED_CACHE") {
+    e.waitUntil(caches.open(CACHE).then(cache => Promise.all([
+      cache.delete("./data/questions.json"),
+      cache.delete("./data/explanations.json"),
+      cache.delete("./docs/answer_key_doubts.json")
+    ])));
+  }
 });
 
 // network-first for data (fresh questions), cache-first for shell
@@ -32,9 +36,11 @@ self.addEventListener("fetch", e => {
   if (e.request.method !== "GET") return;
   const url = new URL(e.request.url);
   const isData = url.pathname.endsWith(".json");
+  const isAuthorized = e.request.headers.has("Authorization");
   if (isData) {
     e.respondWith(
       fetch(e.request).then(r => {
+        if (isAuthorized) return r;
         const copy = r.clone();
         caches.open(CACHE).then(c => c.put(e.request, copy));
         return r;

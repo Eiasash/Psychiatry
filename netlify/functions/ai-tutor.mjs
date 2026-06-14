@@ -1,23 +1,10 @@
-import { requireAuth } from "./lib/auth.mjs";
-
-const JSON_HEADERS = {
-  "Content-Type": "application/json; charset=utf-8",
-  "Cache-Control": "no-store"
-};
+import { env, json, JSON_HEADERS, requireSupabaseUser } from "./lib/supabase.mjs";
 
 const MODE_LABELS = {
   explain: "הסבר קצר ומדויק",
   wrong: "ניתוח הטעות של המשתמש",
   plan: "תכנית חיזוק קצרה"
 };
-
-function json(data, status = 200) {
-  return new Response(JSON.stringify(data), { status, headers: JSON_HEADERS });
-}
-
-function env(name) {
-  return globalThis.Netlify?.env?.get(name) || process.env?.[name] || "";
-}
 
 function compact(value, max = 12000) {
   return String(value || "").slice(0, max);
@@ -63,7 +50,7 @@ export default async function handler(req) {
   if (req.method === "OPTIONS") return new Response(null, { status: 204, headers: JSON_HEADERS });
   if (req.method !== "POST") return json({ error: "Method not allowed" }, 405);
 
-  const auth = requireAuth(req);
+  const auth = await requireSupabaseUser(req);
   if (!auth.ok) return auth.response;
 
   const apiKey = env("OPENAI_API_KEY");

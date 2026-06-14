@@ -255,7 +255,7 @@ const PROG_KEY = "psych_shlava_progress_v1";
 const STAR_KEY = "psych_shlava_stars_v1";
 const SESSION_KEY = "psych_shlava_session_v1";
 const INSTALL_COACH_KEY = "psych_shlava_install_coach_v1";
-const AUTH_SESSION_KEY = "psych_shlava_auth_session_v1";
+const SUPABASE_SESSION_KEY = "psych_shlava_supabase_session_v1";
 const AUTH_REQUIRED_KEY = "psych_shlava_auth_required_v1";
 const DB_NAME = "psych_shlava_local_v1";
 const DB_STORE = "kv";
@@ -269,7 +269,9 @@ let timerHandle = null;
 let storageWarned = false;
 let persistAsked = false;
 let lastCompletedSession = null;
-let AUTH = {required:false,user:null,token:""};
+let AUTH = {required:false,config:null,session:null,user:null,token:""};
+let SYNC_READY = false, SYNC_PAUSED = false, fullSyncDirty = false, starsDirty = false, sessionDirty = false, syncTimer = null;
+let dirtyProgress = new Set();
 const REDUCE_DATA = !!(navigator.connection?.saveData || window.matchMedia?.("(prefers-reduced-data: reduce)")?.matches);
 const $ = (s,r=document)=>r.querySelector(s);
 const el = (t,c,h)=>{const e=document.createElement(t);if(c)e.className=c;if(h!=null)e.innerHTML=h;if(t==="button")e.type="button";return e;};
@@ -340,22 +342,159 @@ function saveLocal(key,value){
     catch(e){ if(!storageWarned){storageWarned=true;toast("לא ניתן לשמור נתונים בדפדפן");} }
   });
 }
+function userKey(key){ return AUTH.user?.id ? `${key}:${AUTH.user.id}` : key; }
+async function readUserLocal(key,fallback){
+  const scoped=await readLocal(userKey(key),undefined);
+  if(scoped!==undefined)return scoped;
+  if(AUTH.user?.id){
+    const legacy=await readLocal(key,undefined);
+    if(legacy!==undefined){
+      saveLocal(userKey(key),legacy);
+      return legacy;
+    }
+  }
+  return fallback;
+}
+function saveUserLocal(key,value){ saveLocal(userKey(key),value); }
+async function delUserLocal(key){
+  idbDel(userKey(key)).catch(()=>{});
+  try{localStorage.removeItem(userKey(key));}catch(e){}
+}
+
+/* ---------- Supabase progress sync ---------- */
+function recordPayload(value){
+  return value&&typeof value==="object"&&!Array.isArray(value)?value:{};
+}
+function mergeProgressRecord(local={},cloud={}){
+  return {
+    box:Math.max(Number(local.box)||0,Number(cloud.box)||0),
+    seen:Math.max(Number(local.seen)||0,Number(cloud.seen)||0),
+    correct:Math.max(Number(local.correct)||0,Number(cloud.correct)||0),
+    wrong:Math.max(Number(local.wrong)||0,Number(cloud.wrong)||0),
+    due:[Number(local.due)||0,Number(cloud.due)||0].filter(Boolean).sort((a,b)=>a-b)[0]||0,
+    last:Math.max(Number(local.last)||0,Number(cloud.last)||0)
+  };
+}
+function validSessionPayload(value){
+  return value&&Array.isArray(value.queue)&&value.queue.length ? value : null;
+}
+function markCloudDirty({progressId=null,stars=false,session=false,full=false}={}){
+  if(SYNC_PAUSED)return;
+  if(progressId)dirtyProgress.add(progressId);
+  if(stars)starsDirty=true;
+  if(session)sessionDirty=true;
+  if(full)fullSyncDirty=true;
+  scheduleCloudSync();
+}
+function scheduleCloudSync(){
+  if(!AUTH.required||!AUTH.user||!SYNC_READY)return;
+  clearTimeout(syncTimer);
+  syncTimer=setTimeout(()=>pushCloudChanges().catch(()=>toast("סנכרון ענן נכשל")),1400);
+}
+async function pullCloudState(){
+  if(!AUTH.user)return null;
+  const uid=encodeURIComponent(AUTH.user.id);
+  const [pRes,sRes,sessionRes]=await Promise.all([
+    supabaseRest(`study_progress?select=question_id,payload,updated_at&user_id=eq.${uid}`),
+    supabaseRest(`study_stars?select=question_id,updated_at&user_id=eq.${uid}`),
+    supabaseRest(`study_sessions?select=payload,updated_at&user_id=eq.${uid}&limit=1`)
+  ]);
+  if(!pRes.ok||!sRes.ok||!sessionRes.ok)throw new Error("cloud pull failed");
+  return {
+    progress:await pRes.json(),
+    stars:await sRes.json(),
+    sessions:await sessionRes.json()
+  };
+}
+async function mergeCloudState(){
+  if(!AUTH.user)return;
+  SYNC_PAUSED=true;
+  try{
+    const cloud=await pullCloudState();
+    const cloudProgress={};
+    (Array.isArray(cloud.progress)?cloud.progress:[]).forEach(row=>{
+      if(QMAP.has(row.question_id))cloudProgress[row.question_id]=recordPayload(row.payload);
+    });
+    const merged={...PROG};
+    Object.keys(cloudProgress).forEach(id=>{ merged[id]=mergeProgressRecord(merged[id],cloudProgress[id]); });
+    Object.keys(PROG).forEach(id=>{ merged[id]=mergeProgressRecord(PROG[id],cloudProgress[id]); });
+    PROG=merged;
+    const cloudStars=new Set((Array.isArray(cloud.stars)?cloud.stars:[]).map(row=>row.question_id).filter(id=>QMAP.has(id)));
+    STARS=new Set([...STARS,...cloudStars]);
+    const cloudSession=validSessionPayload(cloud.sessions?.[0]?.payload);
+    const cloudSessionMs=cloudSession?Math.max(Number(cloudSession.updatedAt)||0,Date.parse(cloud.sessions?.[0]?.updated_at||"")||0):0;
+    const localSessionMs=session?Number(session.updatedAt||session.startedAt)||0:0;
+    if(cloudSession&&(!session||cloudSessionMs>localSessionMs)){
+      session=cloudSession;
+    }
+    saveUserLocal(PROG_KEY,PROG);
+    saveUserLocal(STAR_KEY,[...STARS]);
+    if(session)saveUserLocal(SESSION_KEY,session);
+  }finally{
+    SYNC_PAUSED=false;
+  }
+  SYNC_READY=true;
+  markCloudDirty({full:true});
+}
+async function pushJsonRows(path,rows,onConflict){
+  if(!rows.length)return;
+  const res=await supabaseRest(`${path}?on_conflict=${onConflict}`,{
+    method:"POST",
+    headers:{"Prefer":"resolution=merge-duplicates,return=minimal"},
+    body:JSON.stringify(rows)
+  });
+  if(!res.ok)throw new Error(`${path} upsert failed`);
+}
+async function deleteUserRows(path){
+  const res=await supabaseRest(`${path}?user_id=eq.${encodeURIComponent(AUTH.user.id)}`,{method:"DELETE"});
+  if(!res.ok)throw new Error(`${path} delete failed`);
+}
+async function pushCloudChanges(){
+  if(!AUTH.user||!SYNC_READY)return;
+  const uid=AUTH.user.id;
+  const progressIds=fullSyncDirty?Object.keys(PROG):[...dirtyProgress];
+  if(fullSyncDirty){
+    await Promise.all([deleteUserRows("study_progress"),deleteUserRows("study_stars"),deleteUserRows("study_sessions")]);
+  }
+  if(progressIds.length){
+    await pushJsonRows("study_progress",progressIds.filter(id=>QMAP.has(id)&&PROG[id]).map(id=>({
+      user_id:uid,question_id:id,payload:PROG[id],updated_at:new Date().toISOString()
+    })),"user_id,question_id");
+  }
+  if(fullSyncDirty||starsDirty){
+    if(!fullSyncDirty)await deleteUserRows("study_stars");
+    await pushJsonRows("study_stars",[...STARS].filter(id=>QMAP.has(id)).map(id=>({
+      user_id:uid,question_id:id,updated_at:new Date().toISOString()
+    })),"user_id,question_id");
+  }
+  if(fullSyncDirty||sessionDirty){
+    await deleteUserRows("study_sessions");
+    if(session&&session.i<session.queue.length){
+      await pushJsonRows("study_sessions",[{user_id:uid,payload:session,updated_at:new Date().toISOString()}],"user_id");
+    }
+  }
+  dirtyProgress.clear(); fullSyncDirty=false; starsDirty=false; sessionDirty=false;
+}
 
 /* ---------- authentication ---------- */
-function storedAuth(){
+function storedSupabaseSession(){
   try{
-    const value=JSON.parse(localStorage.getItem(AUTH_SESSION_KEY)||"null");
-    if(!value?.token||!value.expiresAt||Date.parse(value.expiresAt)<=Date.now())return null;
+    const value=JSON.parse(localStorage.getItem(SUPABASE_SESSION_KEY)||"null");
+    if(!value?.access_token||!value?.refresh_token)return null;
     return value;
   }catch(e){return null;}
 }
-function saveAuth(value){
-  try{localStorage.setItem(AUTH_SESSION_KEY,JSON.stringify(value));}
+function saveSupabaseSession(value){
+  AUTH.session=value;
+  AUTH.token=value?.access_token||"";
+  AUTH.user=value?.user||AUTH.user||null;
+  try{localStorage.setItem(SUPABASE_SESSION_KEY,JSON.stringify(value));}
   catch(e){}
 }
 function clearAuth(){
-  AUTH={required:AUTH.required,user:null,token:""};
-  try{localStorage.removeItem(AUTH_SESSION_KEY);}catch(e){}
+  AUTH={required:AUTH.required,config:AUTH.config,session:null,user:null,token:""};
+  SYNC_READY=false; dirtyProgress=new Set(); fullSyncDirty=false; starsDirty=false; sessionDirty=false;
+  try{localStorage.removeItem(SUPABASE_SESSION_KEY);}catch(e){}
 }
 function authRequiredStored(){
   try{return localStorage.getItem(AUTH_REQUIRED_KEY)==="1";}
@@ -375,6 +514,62 @@ function authHeaders(extra={}){
 function authFetch(path,opts={}){
   return fetch(path,{...opts,headers:authHeaders(opts.headers||{})});
 }
+function dataFetch(path,opts={}){
+  return authFetch(path,opts);
+}
+function supabaseBase(path){
+  return `${AUTH.config.url}${path}`;
+}
+function normalizeSupabaseSession(payload){
+  const src=payload?.session||payload||{};
+  if(!src.access_token||!src.refresh_token)return null;
+  const expiresAt=Number(src.expires_at)||Math.floor(Date.now()/1000)+(Number(src.expires_in)||3600);
+  return {
+    access_token:src.access_token,
+    refresh_token:src.refresh_token,
+    expires_at:expiresAt,
+    token_type:src.token_type||"bearer",
+    user:payload?.user||src.user||AUTH.user||null
+  };
+}
+async function supabaseAuthRequest(path,opts={}){
+  const headers={"apikey":AUTH.config.key,"Content-Type":"application/json",...(opts.headers||{})};
+  if(opts.auth!==false&&AUTH.token)headers.Authorization=`Bearer ${AUTH.token}`;
+  return fetch(supabaseBase(path),{...opts,headers});
+}
+async function supabaseRest(path,opts={}){
+  const headers={
+    "apikey":AUTH.config.key,
+    "Authorization":`Bearer ${AUTH.token}`,
+    "Content-Type":"application/json",
+    ...(opts.headers||{})
+  };
+  return fetch(supabaseBase(`/rest/v1/${path}`),{...opts,headers});
+}
+async function refreshSupabaseSession(){
+  if(!AUTH.config||!AUTH.session?.refresh_token)return false;
+  const res=await supabaseAuthRequest("/auth/v1/token?grant_type=refresh_token",{
+    method:"POST",auth:false,body:JSON.stringify({refresh_token:AUTH.session.refresh_token})
+  });
+  if(!res.ok)return false;
+  const session=normalizeSupabaseSession(await res.json().catch(()=>({})));
+  if(!session)return false;
+  saveSupabaseSession(session);
+  return true;
+}
+async function verifySupabaseSession(){
+  if(!AUTH.config||!AUTH.session)return false;
+  if((Number(AUTH.session.expires_at)||0)-60<=Math.floor(Date.now()/1000)){
+    if(!(await refreshSupabaseSession()))return false;
+  }
+  const res=await supabaseAuthRequest("/auth/v1/user",{method:"GET"});
+  if(!res.ok)return false;
+  const user=await res.json().catch(()=>null);
+  if(!user?.id)return false;
+  AUTH.user=user;
+  saveSupabaseSession({...AUTH.session,user});
+  return true;
+}
 function setAuthChrome(){
   const locked=AUTH.required&&!AUTH.user;
   document.querySelector("nav.bar")?.classList.toggle("hidden",locked);
@@ -387,10 +582,11 @@ function setAuthChrome(){
 async function initAuth(){
   const remembered=authRequiredStored();
   try{
-    const res=await fetch("/api/auth-status",{cache:"no-store",headers:{"Accept":"application/json"}});
+    const res=await fetch("/api/supabase-config",{cache:"no-store",headers:{"Accept":"application/json"}});
     if(res.ok){
       const data=await res.json().catch(()=>({}));
       AUTH.required=!!data.enabled;
+      AUTH.config=AUTH.required?{url:String(data.url||"").replace(/\/+$/,""),key:String(data.key||"")}:null;
       storeAuthRequired(AUTH.required);
     }else{
       AUTH.required=remembered;
@@ -399,20 +595,12 @@ async function initAuth(){
     AUTH.required=remembered;
   }
   if(!AUTH.required){setAuthChrome();return true;}
-  const saved=storedAuth();
+  if(!AUTH.config){setAuthChrome();return false;}
+  const saved=storedSupabaseSession();
   if(!saved){setAuthChrome();return false;}
-  AUTH.token=saved.token;
-  AUTH.user=saved.user||null;
-  try{
-    const res=await authFetch("/api/auth-verify",{method:"POST",cache:"no-store"});
-    if(res.ok){
-      const data=await res.json().catch(()=>({}));
-      AUTH.user=data.user?.username||saved.user||"user";
-      saveAuth({token:AUTH.token,user:AUTH.user,expiresAt:data.expiresAt||saved.expiresAt});
-      setAuthChrome();
-      return true;
-    }
-  }catch(e){}
+  saveSupabaseSession(saved);
+  try{ if(await verifySupabaseSession()){setAuthChrome();return true;} }
+  catch(e){}
   clearAuth();
   setAuthChrome();
   return false;
@@ -428,17 +616,20 @@ function renderLogin(message=""){
   sectionTitle(v,"auth-title","כניסה");
   const card=el("div","card auth-card");
   card.innerHTML=`
-    <div class="qhead"><div><b>כניסה לחשבון</b><div class="muted small">הזן משתמש וסיסמה כדי לפתוח את בנק השאלות.</div></div></div>
+    <div class="qhead"><div><b>כניסה לחשבון</b><div class="muted small">הזן אימייל וסיסמה כדי לפתוח את בנק השאלות ולסנכרן התקדמות.</div></div></div>
     <form class="auth-form" id="auth-form">
       <div class="field">
-        <label for="auth-username">משתמש</label>
-        <input class="input" id="auth-username" name="username" autocomplete="username" required />
+        <label for="auth-email">אימייל</label>
+        <input class="input" id="auth-email" name="email" type="email" autocomplete="username" required />
       </div>
       <div class="field">
         <label for="auth-password">סיסמה</label>
-        <input class="input" id="auth-password" name="password" type="password" autocomplete="current-password" required />
+        <input class="input" id="auth-password" name="password" type="password" autocomplete="current-password" minlength="6" required />
       </div>
-      <button type="submit" class="btn primary">כניסה</button>
+      <div class="grid g2">
+        <button type="submit" class="btn primary" data-auth-action="login">כניסה</button>
+        <button type="submit" class="btn" data-auth-action="signup">הרשמה</button>
+      </div>
       <div class="auth-msg" id="auth-message" role="status" aria-live="polite">${escapeHtml(message)}</div>
     </form>`;
   v.append(card);
@@ -447,15 +638,27 @@ function renderLogin(message=""){
   const msg=$("#auth-message");
   form.onsubmit=async e=>{
     e.preventDefault();
-    const btn=form.querySelector("button");
-    btn.disabled=true; msg.textContent="בודק פרטים...";
+    const action=e.submitter?.dataset.authAction||"login";
+    const btn=e.submitter||form.querySelector("button");
+    form.querySelectorAll("button").forEach(b=>b.disabled=true);
+    msg.textContent=action==="signup"?"יוצר חשבון...":"בודק פרטים...";
     try{
-      const body={username:$("#auth-username").value.trim(),password:$("#auth-password").value};
-      const res=await fetch("/api/auth-login",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)});
+      const email=$("#auth-email").value.trim();
+      const password=$("#auth-password").value;
+      const path=action==="signup"
+        ? `/auth/v1/signup?redirect_to=${encodeURIComponent(location.href.split("#")[0])}`
+        : "/auth/v1/token?grant_type=password";
+      const body={email,password};
+      const res=await supabaseAuthRequest(path,{method:"POST",auth:false,body:JSON.stringify(body)});
       const data=await res.json().catch(()=>({}));
-      if(!res.ok)throw new Error(data.error||"הכניסה נכשלה");
-      AUTH={required:true,user:data.user?.username||body.username,token:data.token};
-      saveAuth({token:data.token,user:AUTH.user,expiresAt:data.expiresAt});
+      if(!res.ok)throw new Error(data.msg||data.error_description||data.error||"הפעולה נכשלה");
+      const session=normalizeSupabaseSession(data);
+      if(!session){
+        msg.textContent="נשלח אימייל לאישור החשבון. אשר את האימייל ואז התחבר.";
+        return;
+      }
+      saveSupabaseSession(session);
+      await verifySupabaseSession();
       storeAuthRequired(true);
       setAuthChrome();
       await loadAppData();
@@ -467,22 +670,25 @@ function renderLogin(message=""){
       $("#auth-password").value="";
       $("#auth-password").focus();
     }finally{
-      btn.disabled=false;
+      form.querySelectorAll("button").forEach(b=>b.disabled=false);
     }
   };
-  $("#auth-username").focus({preventScroll:true});
+  $("#auth-email").focus({preventScroll:true});
 }
-function logout(){
-  clearActiveSession();
+async function logout(){
+  stopTimer();
+  session=null;
+  try{ if(AUTH.token)await supabaseAuthRequest("/auth/v1/logout",{method:"POST"}); }catch(e){}
+  try{navigator.serviceWorker.controller?.postMessage({type:"CLEAR_PROTECTED_CACHE"});}catch(e){}
   clearAuth();
   renderLogin("התנתקת");
 }
 
 /* ---------- progress (Leitner spaced repetition) ---------- */
-async function loadProg(){ PROG=await readLocal(PROG_KEY,{})||{}; }
-function saveProg(){ saveLocal(PROG_KEY,PROG); }
-async function loadStars(){ STARS=new Set(await readLocal(STAR_KEY,[])||[]); }
-function saveStars(){ saveLocal(STAR_KEY,[...STARS]); }
+async function loadProg(){ PROG=await readUserLocal(PROG_KEY,{})||{}; }
+function saveProg(changedId=null){ saveUserLocal(PROG_KEY,PROG); markCloudDirty(changedId?{progressId:changedId}:{full:true}); }
+async function loadStars(){ STARS=new Set(await readUserLocal(STAR_KEY,[])||[]); }
+function saveStars(){ saveUserLocal(STAR_KEY,[...STARS]); markCloudDirty({stars:true}); }
 const BOX_DAYS=[0,1,3,7,16,40];
 function rec(id){ return PROG[id]||(PROG[id]={box:0,seen:0,correct:0,wrong:0,due:0,last:0}); }
 function grade(id,ok){
@@ -490,7 +696,7 @@ function grade(id,ok){
   if(ok){ r.correct++; r.box=Math.min(r.box+1,5); }
   else { r.wrong++; r.box=Math.max(r.box-1,0); }
   r.due = Date.now()+BOX_DAYS[r.box]*864e5;
-  saveProg();
+  saveProg(id);
 }
 const isDue = id => { const r=PROG[id]; return !r || r.seen===0 || (r.due||0)<=Date.now(); };
 const isSeen = id => { const r=PROG[id]; return r && r.seen>0; };
@@ -528,14 +734,15 @@ async function loadAppData(){
   await loadStars();
   try{
     const [q,t,doubts]=await Promise.all([
-      fetch("data/questions.json").then(r=>r.json()),
+      dataFetch("data/questions.json").then(r=>r.json()),
       fetch("data/topics.json").then(r=>r.json()),
-      fetch("docs/answer_key_doubts.json").then(r=>r.ok?r.json():[]).catch(()=>[])
+      dataFetch("docs/answer_key_doubts.json").then(r=>r.ok?r.json():[]).catch(()=>[])
     ]);
     QUESTIONS=q; TOPICS=t.topics||[];
     QMAP=new Map(QUESTIONS.map(q=>[q.id,q]));
     KEY_DOUBTS=Object.fromEntries((Array.isArray(doubts)?doubts:[]).map(d=>[d.id,d]));
     session=await loadSavedSession();
+    await mergeCloudState().catch(()=>toast("לא ניתן לסנכרן התקדמות ענן כרגע"));
     // Explanations are optional + larger; respect reduced-data by loading only on demand.
     if(!REDUCE_DATA) loadExplanations();
   }catch(e){
@@ -548,7 +755,7 @@ async function loadAppData(){
 function loadExplanations(){
   if(Object.keys(EXP).length)return Promise.resolve(EXP);
   if(!EXP_PROMISE){
-    EXP_PROMISE = fetch("data/explanations.json").then(r=>r.ok?r.json():{}).then(e=>{EXP=e||{};return EXP;}).catch(()=>({}));
+    EXP_PROMISE = dataFetch("data/explanations.json").then(r=>r.ok?r.json():{}).then(e=>{EXP=e||{};return EXP;}).catch(()=>({}));
   }
   return EXP_PROMISE;
 }
@@ -607,7 +814,7 @@ document.querySelectorAll("nav.bar button").forEach(b=>b.onclick=()=>{
 /* ---------- session persistence ---------- */
 async function loadSavedSession(){
   try{
-    const s=await readLocal(SESSION_KEY,null);
+    const s=await readUserLocal(SESSION_KEY,null);
     if(!s||!Array.isArray(s.queue)||!s.queue.length)return null;
     s.queue=s.queue.filter(id=>QMAP.has(id));
     if(!s.queue.length)return null;
@@ -624,11 +831,13 @@ async function loadSavedSession(){
 }
 function saveSession(){
   if(!session||session.i>=session.queue.length){clearSavedSession();return;}
-  saveLocal(SESSION_KEY,session);
+  session.updatedAt=Date.now();
+  saveUserLocal(SESSION_KEY,session);
+  markCloudDirty({session:true});
 }
 function clearSavedSession(){
-  idbDel(SESSION_KEY).catch(()=>{});
-  try{localStorage.removeItem(SESSION_KEY);}catch(e){}
+  delUserLocal(SESSION_KEY);
+  markCloudDirty({session:true});
 }
 function clearActiveSession(){ stopTimer(); session=null; clearSavedSession(); }
 
@@ -765,7 +974,7 @@ function startSession(ids,title,doShuffle,opts={}){
   let queue = (doShuffle ? shuffle(ids) : ids.slice()).filter(id=>QMAP.has(id));
   if(!queue.length){toast("אין שאלות זמינות");return;}
   session={queue,i:0,correct:0,wrong:0,title,answered:false,lastAnswer:null,answers:[],
-    mode:opts.mode||"practice",source:opts.source||"",startedAt:Date.now(),durationSec:opts.durationSec||0};
+    mode:opts.mode||"practice",source:opts.source||"",startedAt:Date.now(),updatedAt:Date.now(),durationSec:opts.durationSec||0};
   saveSession();
   go("quiz"); renderQuiz();
 }

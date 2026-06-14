@@ -15,7 +15,9 @@ This pass implements the next roadmap after the WCAG audit.
 - Safari/iPhone Home Screen coach tied to local data durability.
 - Quick timed blocks of 25, 50, or 100 random questions.
 - Service-worker update banner.
-- Optional Netlify username/password login gate at `/api/auth-login`.
+- Optional Supabase email/password login surfaced through Netlify `/api/supabase-config`.
+- Protected Netlify JSON delivery for the question bank, explanations, and key-doubt metadata.
+- Per-user Supabase progress sync for Leitner state, starred questions, and resumable sessions.
 - Optional Netlify AI Tutor endpoint at `/api/ai-tutor`.
 - In-app key-doubt study flags sourced from `docs/answer_key_doubts.json`.
 
@@ -24,13 +26,15 @@ This pass implements the next roadmap after the WCAG audit.
 - Official answer keys remain unchanged.
 - OCR stems remain unchanged.
 - AI Tutor is optional and source-grounded in the local question/explanation payload.
-- No API key, password, or signing secret is committed; Netlify must provide `OPENAI_API_KEY` and login env vars when those features are enabled.
-- Canonical question data stays static; user progress, stars, and sessions are local-only.
-- Password login stores only a signed session token in the browser; raw passwords are never persisted by the app.
+- No API key, password, service-role key, or signing secret is committed; Netlify must provide Supabase public config and `OPENAI_API_KEY` when those features are enabled.
+- Canonical question data stays static and is served through a token-checking Netlify Function when auth is enabled.
+- User progress, stars, and sessions remain local-first and sync only to rows owned by the authenticated Supabase user.
+- Supabase Auth owns password handling; the app stores only the Supabase session in browser storage.
 
 ## Deployment Notes
 
 - GitHub Pages continues to serve the offline PWA without AI.
-- Netlify can serve the same static app plus the login and AI endpoints.
-- Set `APP_AUTH_USERNAME`, `APP_AUTH_PASSWORD_HASH`, and `APP_AUTH_SESSION_SECRET` to require login.
+- Netlify can serve the same static app plus Supabase login, protected JSON, progress sync, and AI endpoints.
+- Set `SUPABASE_URL` and `SUPABASE_PUBLISHABLE_KEY` or `SUPABASE_ANON_KEY` to require login on Netlify.
+- Apply `supabase/migrations/*_study_progress.sql` before expecting cloud progress sync.
 - Every release still requires aligned `package.json`, `manifest.json`, and `sw.js` cache markers.
