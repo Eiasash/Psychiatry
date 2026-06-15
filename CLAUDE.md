@@ -140,7 +140,11 @@ Three must agree or `verify` fails — bump together on every release:
   `unicode-bidi: plaintext`, not forced `dir="rtl"`. Drug names / English clinical terms
   stay in English per Israeli convention.
 - **Branch + PR for all non-trivial work** (`claude/<slug>` → PR → CI green → merge). Never
-  push `main` directly. Codex reviews PRs here (`chatgpt-codex-connector[bot]`).
+  push `main` directly.
+- **Codex review** (`chatgpt-codex-connector[bot]`) is enabled on this repo (app added
+  2026-06-16; before that, `@codex review` was a no-op here). It auto-reviews on PR-open and on
+  an `@codex review` comment, posting findings — or a "no major issues" note — as a PR comment.
+  Reviews are **per-commit**: re-trigger with `@codex review` after pushing new commits.
 - **OCR caveat** (above): never silently "correct" a `vision:true` stem.
 - **Answer keys are post-appeal official** — `c_accept`/`all_accepted` encode multi-accept
   and nullified questions; don't collapse them to a single `c`.

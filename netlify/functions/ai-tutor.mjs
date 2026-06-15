@@ -1,4 +1,4 @@
-import { env, json, JSON_HEADERS, requireSupabaseUser } from "./lib/supabase.mjs";
+import { env, json, JSON_HEADERS, requireSupabaseUser, fetchWithTimeout, isHttpsUrl, rateLimit } from "./lib/supabase.mjs";
 
 const MODE_LABELS = {
   explain: "הסבר קצר ומדויק",
@@ -104,6 +104,10 @@ export default async function handler(req) {
   const auth = await requireSupabaseUser(req, { allowDisabled: false });
   if (!auth.ok) return auth.response;
 
+  // Throttle a single authed client from hammering the shared, billed AI proxy.
+  const rl = rateLimit(`tutor:${auth.user?.id}`, { limit: 30, windowMs: 60000 });
+  if (!rl.ok) return json({ error: "Too many requests" }, 429, { "Retry-After": String(rl.retryAfter) });
+
   // AI tutor routes through the shared Toranot Claude proxy (Anthropic messages API). The
   // proxy authenticates EITHER an x-api-secret OR a Supabase session JWT validated against
   // the same shared Supabase project. We forward the authenticated user's JWT, so no shared
@@ -128,9 +132,12 @@ export default async function handler(req) {
   if (proxySecret) proxyHeaders["x-api-secret"] = proxySecret;
   else if (auth.token) proxyHeaders["Authorization"] = `Bearer ${auth.token}`;
 
+  // Never forward the user's bearer JWT over a non-HTTPS proxy URL (misconfig guard).
+  if (!proxySecret && !isHttpsUrl(proxyUrl)) return json({ error: "AI proxy misconfigured" }, 502);
+
   let response, data;
   try {
-    response = await fetch(proxyUrl, {
+    response = await fetchWithTimeout(proxyUrl, {
       method: "POST",
       headers: proxyHeaders,
       body: JSON.stringify({
@@ -139,7 +146,7 @@ export default async function handler(req) {
         system: SYSTEM_PROMPT,
         messages: [{ role: "user", content: buildPrompt(body) }]
       })
-    });
+    }, 25000);
     data = await response.json().catch(() => ({}));
   } catch (err) {
     return json({ error: `AI proxy request failed: ${err?.message || "network error"}` }, 502);
