@@ -36,15 +36,55 @@ export async function requireSupabaseUser(req, { allowDisabled = false } = {}) {
   const token = bearerToken(req);
   if (!token) return { ok: false, enabled: true, response: json({ error: "Unauthorized" }, 401) };
 
-  const response = await fetch(`${cfg.url}/auth/v1/user`, {
-    headers: {
-      "apikey": cfg.key,
-      "Authorization": `Bearer ${token}`
-    }
-  });
+  let response;
+  try {
+    response = await fetchWithTimeout(`${cfg.url}/auth/v1/user`, {
+      headers: {
+        "apikey": cfg.key,
+        "Authorization": `Bearer ${token}`
+      }
+    }, 6000);
+  } catch {
+    // network error or timeout reaching Supabase auth — clean 503, not a platform hang
+    return { ok: false, enabled: true, response: json({ error: "Auth check failed" }, 503) };
+  }
 
   if (!response.ok) return { ok: false, enabled: true, response: json({ error: "Unauthorized" }, 401) };
   const user = await response.json().catch(() => null);
   if (!user?.id) return { ok: false, enabled: true, response: json({ error: "Unauthorized" }, 401) };
   return { ok: true, enabled: true, user, token };
+}
+
+// fetch with an abort timeout so a hung upstream returns a clean error instead of
+// burning the function's wall-clock until the platform kills it.
+export function fetchWithTimeout(url, options = {}, ms = 9000) {
+  return fetch(url, { ...options, signal: AbortSignal.timeout(ms) });
+}
+
+export function isHttpsUrl(url) {
+  try { return new URL(url).protocol === "https:"; } catch { return false; }
+}
+
+// Best-effort, per-instance sliding-window rate limiter. NOTE: a serverless platform runs
+// many function instances, so this only throttles bursts that hit the same warm instance —
+// it is defense-in-depth against a single authed client hammering the SHARED, billed AI
+// proxy, NOT a global guarantee. The authoritative controls are the upstream proxy limits
+// and the tight per-request token caps.
+const RATE_BUCKETS = new Map(); // key -> number[] of request timestamps (ms)
+export function rateLimit(key, { limit = 30, windowMs = 60000 } = {}) {
+  if (!key) return { ok: true };
+  const now = Date.now();
+  const recent = (RATE_BUCKETS.get(key) || []).filter(t => now - t < windowMs);
+  if (recent.length >= limit) {
+    RATE_BUCKETS.set(key, recent);
+    return { ok: false, retryAfter: Math.max(1, Math.ceil((windowMs - (now - recent[0])) / 1000)) };
+  }
+  recent.push(now);
+  RATE_BUCKETS.set(key, recent);
+  if (RATE_BUCKETS.size > 5000) {
+    for (const [k, v] of RATE_BUCKETS) {
+      if (!v.length || now - v[v.length - 1] > windowMs) RATE_BUCKETS.delete(k);
+    }
+  }
+  return { ok: true };
 }
