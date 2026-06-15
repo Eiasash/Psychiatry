@@ -280,6 +280,17 @@ nav.bar button.on{color:var(--accent2)}
 .home-actions{margin-top:10px}
 .home-actions .btn{min-height:62px}
 .home-progress{margin-top:14px;text-align:center}
+.study-next-card{margin-top:14px;border-color:rgba(34,211,183,.30)}
+.study-next-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:12px}
+.study-next-head b{font-size:15px}
+.study-next-head span{font-size:12.5px;color:var(--muted)}
+.study-next-actions{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.study-next-actions .btn{min-height:58px;padding:10px 12px}
+.topic-stat-row{display:grid;gap:5px;margin:10px 0}
+.topic-stat-row .topic-stat-meta{display:flex;justify-content:space-between;gap:8px;font-size:13px;align-items:flex-start}
+.topic-stat-row .topic-stat-detail{display:flex;gap:8px;flex-wrap:wrap;font-size:12px;color:var(--muted)}
+.review-primer{margin:0 0 14px;padding:12px 13px;border:1px solid rgba(34,211,183,.35);border-radius:12px;background:rgba(34,211,183,.08);font-size:13.8px;line-height:1.72;unicode-bidi:plaintext;overflow-wrap:anywhere}
+.review-primer .ref{margin-top:7px;color:var(--muted);font-size:12.5px}
 .home-section{background:rgba(11,16,32,.12);border-radius:11px}
 .home-catalog{margin-top:16px}
 .catalog-head{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;margin-bottom:10px}
@@ -317,6 +328,7 @@ nav.bar button.on{color:var(--accent2)}
 }
 @media(max-width:560px){
   .home-actions{grid-template-columns:1fr}
+  .study-next-actions{grid-template-columns:1fr}
   .home-progress .g3{grid-template-columns:1fr 1fr}
 }
 @media (prefers-reduced-motion: reduce){
@@ -831,17 +843,90 @@ function saveProg(changedId=null){ saveUserLocal(PROG_KEY,PROG); markCloudDirty(
 async function loadStars(){ STARS=new Set(await readUserLocal(STAR_KEY,[])||[]); }
 function saveStars(){ saveUserLocal(STAR_KEY,[...STARS]); markCloudDirty({stars:true}); }
 const BOX_DAYS=[0,1,3,7,16,40];
-function rec(id){ return PROG[id]||(PROG[id]={box:0,seen:0,correct:0,wrong:0,due:0,last:0}); }
+function rec(id){ return PROG[id]||(PROG[id]={box:0,seen:0,correct:0,wrong:0,due:0,last:0,lastWrong:0}); }
 function grade(id,ok){
-  const r=rec(id); r.seen++; r.last=Date.now();
+  const r=rec(id), now=Date.now(); r.seen++; r.last=now;
   if(ok){ r.correct++; r.box=Math.min(r.box+1,5); }
-  else { r.wrong++; r.box=Math.max(r.box-1,0); }
-  r.due = Date.now()+BOX_DAYS[r.box]*864e5;
+  else { r.wrong++; r.lastWrong=now; r.box=Math.max(r.box-1,0); }
+  r.due = now+BOX_DAYS[r.box]*864e5;
   saveProg(id);
 }
 const isDue = id => { const r=PROG[id]; return !r || r.seen===0 || (r.due||0)<=Date.now(); };
 const isSeen = id => { const r=PROG[id]; return r && r.seen>0; };
 const isWrongPile = id => { const r=PROG[id]; return r && r.wrong>0 && r.box<=1; };
+function progressAttempts(r){ return (r?.correct||0)+(r?.wrong||0); }
+function progressAccuracy(r){ const total=progressAttempts(r); return total?Math.round((r.correct||0)/total*100):null; }
+function dueTodayQuestionIds(){ return QUESTIONS.filter(q=>isSeen(q.id)&&isDue(q.id)).map(q=>q.id); }
+function recentMistakeIds(limit=40){
+  return QUESTIONS.map(q=>({q,r:PROG[q.id]||{}}))
+    .filter(({r})=>(r.wrong||0)>0)
+    .sort((a,b)=>((b.r.lastWrong||b.r.last||0)-(a.r.lastWrong||a.r.last||0))||((b.r.wrong||0)-(a.r.wrong||0)))
+    .slice(0,limit).map(({q})=>q.id);
+}
+function highYieldQuestionIds(limit=80){
+  return QUESTIONS.map(q=>{
+    const r=PROG[q.id]||{};
+    let score=0;
+    if(isSeen(q.id)&&isDue(q.id))score+=60;
+    if(isWrongPile(q.id))score+=45+(r.wrong||0)*4;
+    if(STARS.has(q.id))score+=30;
+    const acc=progressAccuracy(r);
+    if(acc!==null&&acc<70)score+=20+(70-acc);
+    return {id:q.id,score,last:r.last||0};
+  }).filter(row=>row.score>0)
+    .sort((a,b)=>(b.score-a.score)||(b.last-a.last))
+    .slice(0,limit).map(row=>row.id);
+}
+function topicStatsRows(){
+  const rows=new Map();
+  QUESTIONS.forEach(q=>{
+    const r=PROG[q.id]||{};
+    const row=rows.get(q.ti)||{ti:q.ti,topic:TOPICS[q.ti]||"",count:0,seen:0,correct:0,wrong:0,total:0,due:0,starred:0,last:0};
+    row.count++;
+    if(STARS.has(q.id))row.starred++;
+    if(isSeen(q.id)){
+      row.seen++;
+      row.correct+=r.correct||0;
+      row.wrong+=r.wrong||0;
+      row.total+=progressAttempts(r);
+      row.last=Math.max(row.last,r.last||0);
+      if(isDue(q.id))row.due++;
+    }
+    rows.set(q.ti,row);
+  });
+  return [...rows.values()].map(row=>{
+    const accuracy=row.total?Math.round(row.correct/row.total*100):null;
+    const weakScore=(accuracy===null?101:100-accuracy)+(row.due*1.5)+(row.wrong*2);
+    return {...row,accuracy,weakScore};
+  });
+}
+function weakestStudyTopic(){
+  const attempted=topicStatsRows().filter(row=>row.total>0);
+  if(attempted.length)return attempted.sort((a,b)=>(b.weakScore-a.weakScore)||(b.total-a.total))[0];
+  return topicStatsRows().sort((a,b)=>b.count-a.count)[0]||null;
+}
+function weakTopicDrillIds(limit=60){
+  const target=weakestStudyTopic();
+  if(!target)return [];
+  return QUESTIONS.filter(q=>q.ti===target.ti)
+    .map(q=>{
+      const r=PROG[q.id]||{};
+      let score=0;
+      if(isWrongPile(q.id))score+=70;
+      if(isSeen(q.id)&&isDue(q.id))score+=50;
+      if(!isSeen(q.id))score+=20;
+      if(STARS.has(q.id))score+=12;
+      score+=(r.wrong||0)*4;
+      return {id:q.id,score,last:r.last||0};
+    })
+    .sort((a,b)=>(b.score-a.score)||(a.last-b.last))
+    .slice(0,limit).map(row=>row.id);
+}
+function shortDate(ms){
+  if(!ms)return "טרם נלמד";
+  try{return new Intl.DateTimeFormat("he-IL",{day:"2-digit",month:"2-digit"}).format(new Date(ms));}
+  catch(e){return new Date(ms).toLocaleDateString();}
+}
 function toggleStar(id, after){
   if(STARS.has(id))STARS.delete(id);else STARS.add(id);
   saveStars();
@@ -1113,6 +1198,43 @@ function renderHome(){
     </div>`;
   v.append(ring);
 
+  const highYieldIds=highYieldQuestionIds();
+  const weakIds=weakTopicDrillIds();
+  const recentIds=recentMistakeIds();
+  const weakTopic=weakestStudyTopic();
+  const studyNext=el("div","study-next-card card");
+  studyNext.innerHTML=`<div class="study-next-head">
+    <div><b>מה ללמוד עכשיו</b><br><span>${weakTopic&&weakTopic.total?`הנושא החלש כרגע: ${escapeHtml(weakTopic.topic)} · ${weakTopic.accuracy}% · נראה לאחרונה ${shortDate(weakTopic.last)}`:"עוד אין מספיק נתוני דיוק; התחל מחזרה חכמה או שאלות חדשות."}</span></div>
+    <span class="tag acc">${due} היום</span>
+  </div>`;
+  const studyActions=el("div","study-next-actions");
+  const studyBtn=(label,sub,fn,cls="")=>{
+    const b=el("button","btn col "+cls,`<span>${escapeHtml(label)}</span><span class="sub">${escapeHtml(sub)}</span>`);
+    b.setAttribute("aria-label",`${label}: ${sub}`);
+    b.onclick=fn;
+    return b;
+  };
+  studyActions.append(
+    studyBtn("High-yield review",highYieldIds.length?`${highYieldIds.length} טעויות/שמורות/לחזרה`:"אין פריטים דחופים",()=>{
+      const ids=highYieldQuestionIds();
+      if(!ids.length)return toast("אין כרגע טעויות, שמורות או שאלות לחזרה");
+      startSession(ids,"High-yield review",false,{source:"high-yield"});
+    },"primary"),
+    studyBtn("Weak topic drill",weakTopic?`${weakTopic.topic} · ${weakIds.length} שאלות`:"אין נושא חלש",()=>{
+      const ids=weakTopicDrillIds();
+      const topic=weakestStudyTopic();
+      if(!ids.length)return toast("אין מספיק נתוני נושא לתרגול ממוקד");
+      startSession(ids,`Weak topic drill · ${topic?.topic||"נושא חלש"}`,true,{source:"weak-topic"});
+    }),
+    studyBtn("Recent mistakes",recentIds.length?`${recentIds.length} טעויות אחרונות עם הסבר קודם`:"אין טעויות אחרונות",()=>{
+      const ids=recentMistakeIds();
+      if(!ids.length)return toast("אין טעויות אחרונות לחזרה");
+      startSession(ids,"Recent mistakes",false,{source:"recent-mistakes",reviewFirst:true});
+    })
+  );
+  studyNext.append(studyActions);
+  v.append(studyNext);
+
   v.append(el("h2","sec","התחל תרגול"));
   const acts=el("div","home-actions grid g2");
   const mk=(ic,t,sub,fn,cls="")=>{const b=el("button","btn col "+cls,`<span class="ic" aria-hidden="true">${ic}</span><span>${t}</span><span class="sub">${sub}</span>`);b.setAttribute("aria-label",`${t}: ${sub}`);b.onclick=fn;return b;};
@@ -1320,13 +1442,30 @@ function startSession(ids,title,doShuffle,opts={}){
   let queue = (doShuffle ? shuffle(ids) : ids.slice()).filter(id=>QMAP.has(id));
   if(!queue.length){toast("אין שאלות זמינות");return;}
   session={queue,i:0,correct:0,wrong:0,title,answered:false,lastAnswer:null,answers:[],
-    mode:opts.mode||"practice",source:opts.source||"",startedAt:Date.now(),updatedAt:Date.now(),durationSec:opts.durationSec||0};
+    mode:opts.mode||"practice",source:opts.source||"",reviewFirst:!!opts.reviewFirst,startedAt:Date.now(),updatedAt:Date.now(),durationSec:opts.durationSec||0};
   saveSession();
   go("quiz"); renderQuiz();
 }
 function startExam(t){
   const ids=QUESTIONS.filter(q=>q.t===t).map(q=>q.id);
   startSession(ids,"סימולציה · "+yearLabel(t),false,{mode:"exam",source:t,durationSec:ids.length*EXAM_SECONDS_PER_Q});
+}
+function reviewPrimerHtml(q){
+  const exp=EXP[q.id];
+  const body=exp?readableMixedText(exp):'<span class="muted">טוען הסבר מקומי לפני ניסיון חוזר...</span>';
+  const ref=q.ref?`<div class="ref">מקור: <b>${readableMixedText(q.ref)}</b> · Kaplan &amp; Sadock Synopsis</div>`:"";
+  return `<div class="expl-h">הסבר לפני ניסיון חוזר</div>${body}${ref}`;
+}
+function attachReviewPrimer(card,q){
+  if(!session?.reviewFirst||session.answered)return;
+  const primer=el("div","review-primer",reviewPrimerHtml(q));
+  primer.setAttribute("role","note");
+  card.append(primer);
+  if(!EXP[q.id]){
+    loadExplanations().then(()=>{
+      if(primer.isConnected)primer.innerHTML=reviewPrimerHtml(q);
+    });
+  }
 }
 function renderQuiz(){
   const v=$("#view-quiz");
@@ -1347,6 +1486,7 @@ function renderQuiz(){
   card.append(qhead);
   const pb=el("div","progbar",`<i style="width:${pct}%"></i>`);pb.setAttribute("role","progressbar");pb.setAttribute("aria-label","התקדמות בסבב");pb.setAttribute("aria-valuemin","0");pb.setAttribute("aria-valuemax","100");pb.setAttribute("aria-valuenow",String(pct));card.append(pb);
   const qText=el("div","qtext",readableMixedText(q.q));qText.id="current-question";card.append(qText);
+  attachReviewPrimer(card,q);
   const opts=el("div","opts");opts.setAttribute("role","group");opts.setAttribute("aria-labelledby","current-question");
   q.o.forEach((o,k)=>{
     const b=el("button","opt",`<span class="k">${LETTERS[k]}</span><span class="ot">${readableMixedText(o)}</span>`);
@@ -1545,7 +1685,7 @@ function renderSessionEnd(){
     const w=el("button","btn","חזור על הטעויות מהסבב");w.style.marginTop="10px";
     const wrongSet=new Set(done.answers.filter(a=>!a.ok).map(a=>a.id));
     const retryIds=completedQueue.filter(id=>wrongSet.has(id)||((PROG[id]||{}).box<=1));
-    w.onclick=()=>startSession(retryIds.length?retryIds:completedQueue,"חזרה על טעויות");
+    w.onclick=()=>startSession(retryIds.length?retryIds:completedQueue,"חזרה על טעויות",false,{source:"recent-mistakes",reviewFirst:true});
     c.append(w);
   }
   v.append(c);
@@ -1573,7 +1713,7 @@ function renderExamReview(done=lastCompletedSession){
   c.append(list);
   const row=el("div","toolbar");row.style.marginTop="14px";
   const wrongIds=done.answers.filter(a=>!a.ok).map(a=>a.id);
-  const retry=el("button","btn primary","תרגל טעויות");retry.onclick=()=>startSession(wrongIds.length?wrongIds:done.queue,"טעויות מהמבחן");
+  const retry=el("button","btn primary","תרגל טעויות");retry.onclick=()=>startSession(wrongIds.length?wrongIds:done.queue,"טעויות מהמבחן",false,{source:"recent-mistakes",reviewFirst:true});
   const home=el("button","btn","בית");home.onclick=()=>go("home");
   row.append(retry,home);c.append(row);v.append(c);
 }
@@ -1657,24 +1797,30 @@ function renderStats(){
   const seen=QUESTIONS.filter(q=>isSeen(q.id)).length;
   let c=0,s=0;QUESTIONS.forEach(q=>{const r=PROG[q.id];if(r){c+=r.correct;s+=r.correct+r.wrong;}});
   const acc=s?Math.round(c/s*100):0;
+  const dueToday=dueTodayQuestionIds().length;
+  const recent=recentMistakeIds().length;
+  const weakTopic=weakestStudyTopic();
   const head=el("div","card");
   head.innerHTML=`<div class="grid g3">
     <div class="stat"><div class="n">${seen}</div><div class="l">שאלות שנראו</div></div>
     <div class="stat"><div class="n">${s}</div><div class="l">תשובות</div></div>
     <div class="stat"><div class="n">${acc}%</div><div class="l">דיוק</div></div>
-    <div class="stat"><div class="n">${STARS.size}</div><div class="l">שמורות</div></div></div>`;
+    <div class="stat"><div class="n">${dueToday}</div><div class="l">לחזרה היום</div></div>
+    <div class="stat"><div class="n">${recent}</div><div class="l">טעויות אחרונות</div></div>
+    <div class="stat"><div class="n">${STARS.size}</div><div class="l">שמורות</div></div></div>
+    <div class="muted small" style="margin-top:10px">${weakTopic?`נושא חלש מוצע: ${escapeHtml(weakTopic.topic)}${weakTopic.accuracy!==null?` · ${weakTopic.accuracy}%`:""} · נראה לאחרונה ${shortDate(weakTopic.last)}`:"אין עדיין נתוני נושא"}</div>`;
   v.append(head);
   // per-topic accuracy
   v.append(el("h2","sec","דיוק לפי נושא"));
-  const tp={};QUESTIONS.forEach(q=>{const r=PROG[q.id];if(r&&r.seen){(tp[q.ti]=tp[q.ti]||{c:0,t:0});tp[q.ti].c+=r.correct;tp[q.ti].t+=r.correct+r.wrong;}});
   const card=el("div","card");
-  const keys=Object.keys(tp).map(Number).sort((a,b)=>(tp[b].t?tp[b].c/tp[b].t:0)-(tp[a].t?tp[a].c/tp[a].t:0));
-  if(!keys.length)card.innerHTML='<div class="muted">עדיין אין נתונים — התחל לתרגל!</div>';
-  keys.forEach(ti=>{
-    const a=tp[ti].t?Math.round(tp[ti].c/tp[ti].t*100):0;
-    const row=el("div");row.style.margin="9px 0";
-    row.innerHTML=`<div style="display:flex;justify-content:space-between;font-size:13.5px"><span>${escapeHtml(TOPICS[ti]||"")}</span><span class="muted">${a}% · ${tp[ti].t}</span></div>
-      <div class="progbar" style="margin:4px 0 0"><i style="width:${a}%"></i></div>`;
+  const rows=topicStatsRows().filter(row=>row.seen||row.starred).sort((a,b)=>(b.weakScore-a.weakScore)||(b.total-a.total)||(b.count-a.count));
+  if(!rows.length)card.innerHTML='<div class="muted">עדיין אין נתונים — התחל לתרגל!</div>';
+  rows.forEach(rowData=>{
+    const a=rowData.accuracy??0;
+    const row=el("div","topic-stat-row");
+    row.innerHTML=`<div class="topic-stat-meta"><span>${escapeHtml(rowData.topic)}</span><span class="muted">${rowData.accuracy===null?"—":`${rowData.accuracy}%`} · ${rowData.total} תשובות</span></div>
+      <div class="progbar" style="margin:0"><i style="width:${a}%"></i></div>
+      <div class="topic-stat-detail"><span>${rowData.due} לחזרה</span><span>${rowData.seen}/${rowData.count} נראו</span><span>${rowData.starred} שמורות</span><span>נראה לאחרונה ${shortDate(rowData.last)}</span></div>`;
     card.append(row);
   });
   v.append(card);
@@ -1785,7 +1931,8 @@ function renderAiAnswer(out,data){
   const answer=renderAiMarkdown(data?.answer||"אין תשובה זמינה.");
   const citations=Array.isArray(data?.citations)?data.citations.filter(c=>typeof c==="string"&&c.trim()).slice(0,6):[];
   const citationHtml=citations.length?`<div class="ai-citations"><span>מקורות:</span>${citations.map(c=>`<span>${escapeHtml(c)}</span>`).join("")}</div>`:"";
-  out.innerHTML=`<div class="ai-answer">${answer}${citationHtml}</div>`;
+  const contractHtml='<div class="ai-source-contract" role="note"><b>מסגרת מקור</b><span>תשובת AI מבוססת רק על השאלה, ההסבר המקומי ומראי המקום שנשלחו.</span><span>המפתח הרשמי נשמר ללא שינוי; אין כאן ייעוץ קליני למטופל אמיתי.</span></div>';
+  out.innerHTML=`<div class="ai-answer">${contractHtml}${answer}${citationHtml}</div>`;
 }
 function setAiButtons(root,disabled){
   root?.querySelectorAll("[data-ai-mode]").forEach(b=>{b.disabled=disabled;b.setAttribute("aria-disabled",disabled?"true":"false");});

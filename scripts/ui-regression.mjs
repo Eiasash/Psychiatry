@@ -6,6 +6,7 @@ import vm from "node:vm";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const html = readFileSync(resolve(here, "../index.html"), "utf8");
+const prodSmoke = readFileSync(resolve(here, "prod-smoke.mjs"), "utf8");
 const failures = [];
 
 function expect(pattern, label) {
@@ -14,6 +15,10 @@ function expect(pattern, label) {
 
 function expectMissing(pattern, label) {
   if (pattern.test(html)) failures.push(label);
+}
+
+function expectProdSmoke(pattern, label) {
+  if (!pattern.test(prodSmoke)) failures.push(label);
 }
 
 expect(/function renderAiMarkdown\(/, "AI Tutor answer Markdown renderer is missing");
@@ -83,6 +88,14 @@ expect(/home-catalog card/, "home practice entry points should be grouped in a c
 expect(/home-actions/, "home primary practice actions need a dedicated compact group");
 expect(/home-progress card/, "home progress summary needs its own compact card");
 expect(/home-section/, "secondary home filters should be collapsible sections");
+expect(/study-next-card/, "home needs an actionable study-next card");
+expect(/function highYieldQuestionIds\(/, "high-yield review selector is missing");
+expect(/function weakTopicDrillIds\(/, "weak-topic drill selector is missing");
+expect(/function recentMistakeIds\(/, "recent mistakes selector is missing");
+expect(/function topicStatsRows\(/, "topic stats helper is missing");
+expect(/lastWrong/, "progress records should preserve recent mistake timestamps");
+expect(/reviewFirst/, "recent-mistake retry sessions should support explanation-first review");
+expect(/review-primer/, "explanation-first retry mode needs a visible review primer");
 expect(/ai-drill-card card/, "AI syllabus drill card is missing");
 expect(/function aiQuestionHtml\(/, "AI syllabus question renderer is missing");
 expect(/async function generateAiQuestion\(/, "AI syllabus question generator is missing");
@@ -99,6 +112,11 @@ expect(/dir="ltr">Kaplan &amp; Sadock/, "mixed Hebrew/English source names need 
 expectMissing(/v\.append\(el\("div","banner",`בנק עם/, "old dense home banner is still present");
 expectMissing(/v\.append\(aiQuestionHtml\(tps\)\)/, "AI syllabus card HTML is appended as text instead of rendered DOM");
 expect(/el\("div","qfoot quiz-sticky-actions"\)/, "quiz feedback next action should use a sticky mobile action row");
+expectProdSmoke(/function smokeFetch\(/, "production smoke needs reusable status-aware fetch checks");
+expectProdSmoke(/protected-asset/, "production smoke should verify protected JSON delivery without a token");
+expectProdSmoke(/GITHUB_PAGES_URL/, "production smoke should verify the static GitHub Pages mirror");
+expectProdSmoke(/\/api\/ai-tutor/, "production smoke should verify AI Tutor unauthenticated degradation");
+expectProdSmoke(/\/api\/ai-question/, "production smoke should verify AI question unauthenticated degradation");
 
 function extractFunction(name) {
   const start = html.indexOf(`function ${name}(`);
