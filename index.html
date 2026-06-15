@@ -6,7 +6,7 @@
 <meta name="theme-color" content="#0b1020" />
 <meta name="description" content="בנק שאלות שלב א' בפסיכיאטריה — מבחני המועצה המדעית / הר&quot;י, 2020–2025. תרגול MCQ עם חזרה מרווחת והסברים בעברית." />
 <meta name="robots" content="index,follow" />
-<link rel="canonical" href="https://eiasash.github.io/Psychiatry/" />
+<link rel="canonical" href="https://psychiatry-szmc.netlify.app/" />
 <link rel="manifest" href="manifest.json" />
 <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png" />
 <link rel="apple-touch-icon" href="icons/icon-192.png" />
@@ -14,12 +14,12 @@
 <meta property="og:locale" content="he_IL" />
 <meta property="og:title" content="שלב א' פסיכיאטריה — בנק שאלות" />
 <meta property="og:description" content="900 שאלות מבחן אמיתיות, מפתחות רשמיים לאחר ערעור, הסברים בעברית וחזרה מרווחת." />
-<meta property="og:url" content="https://eiasash.github.io/Psychiatry/" />
-<meta property="og:image" content="https://eiasash.github.io/Psychiatry/icons/icon-512.png" />
+<meta property="og:url" content="https://psychiatry-szmc.netlify.app/" />
+<meta property="og:image" content="https://psychiatry-szmc.netlify.app/icons/icon-512.png" />
 <meta name="twitter:card" content="summary" />
 <meta name="twitter:title" content="שלב א' פסיכיאטריה — בנק שאלות" />
 <meta name="twitter:description" content="900 שאלות מבחן אמיתיות עם הסברים בעברית וחזרה מרווחת." />
-<meta name="twitter:image" content="https://eiasash.github.io/Psychiatry/icons/icon-512.png" />
+<meta name="twitter:image" content="https://psychiatry-szmc.netlify.app/icons/icon-512.png" />
 <title>שלב א' פסיכיאטריה — בנק שאלות</title>
 <style>
 :root{
@@ -265,6 +265,9 @@ nav.bar button.on{color:var(--accent2)}
 .update-banner small{display:block;color:var(--muted);font-size:12px}
 .update-banner .btn{width:auto;min-height:44px;padding:8px 14px}
 .home-brief{background:linear-gradient(180deg,var(--card),var(--bg2));border:1px solid var(--line);border-radius:14px;padding:14px 16px;margin-bottom:14px}
+.canonical-host-note{border-color:rgba(251,191,36,.45);margin-bottom:14px}
+.canonical-host-note b{color:var(--warn)}
+.canonical-host-note .toolbar{margin-top:10px}
 .brief-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
 .brief-head strong{font-size:16px;color:var(--txt);line-height:1.55}
 .eyebrow{font-size:11px;font-weight:800;color:var(--accent2);border:1px solid rgba(34,211,183,.45);border-radius:999px;padding:2px 9px;white-space:nowrap}
@@ -345,7 +348,7 @@ nav.bar button.on{color:var(--accent2)}
   <button type="button" data-nav="stats" aria-label="נתונים"><span class="ni" aria-hidden="true">📊</span>נתונים</button>
 </nav>
 <div class="toast" id="toast" role="status" aria-live="polite" aria-atomic="true"></div>
-<div class="update-banner hidden" id="update-banner" role="alert" aria-live="assertive" aria-atomic="true">
+<div class="update-banner hidden" id="update-banner" role="alert" aria-live="assertive" aria-atomic="true" hidden>
   <span id="update-copy"><b>גרסה חדשה זמינה</b><small>רענון קצר יטען את התיקונים האחרונים וימנע תצוגה ישנה מהמטמון.</small></span>
   <span class="toolbar">
     <button type="button" class="btn" id="dismiss-update">מאוחר יותר</button>
@@ -699,10 +702,9 @@ function setAuthChrome(){
 }
 async function initAuth(){
   const remembered=authRequiredStored();
-  // Static-only hosts (GitHub Pages) have no Netlify Functions, so auth is impossible
-  // there — it's the public/offline build. Skip the /api probe (avoids a 404 log) and
-  // never gate the bank. Auth + cross-device sync activate only on the Netlify deploy.
-  if(/(^|\.)github\.io$/.test(location.hostname)){
+  // Static-only hosts have no Netlify Functions, so auth is impossible there.
+  // Skip the /api probe to avoid noisy 404s and keep the public/offline bank open.
+  if(!shouldProbeAuthConfig()){
     AUTH.required=false;
     storeAuthRequired(false);
     setAuthChrome();
@@ -806,7 +808,7 @@ async function logout(){
   stopTimer();
   session=null;
   try{ if(AUTH.token)await supabaseAuthRequest("/auth/v1/logout",{method:"POST"}); }catch(e){}
-  try{navigator.serviceWorker.controller?.postMessage({type:"CLEAR_PROTECTED_CACHE"});}catch(e){}
+  clearProtectedAppCache();
   clearAuth();
   renderLogin("התנתקת");
 }
@@ -873,7 +875,7 @@ async function loadAppData(){
     // Explanations are optional + larger; respect reduced-data by loading only on demand.
     if(!REDUCE_DATA) loadExplanations();
   }catch(e){
-    $("#view-home").innerHTML='<div class="card" role="alert">שגיאה בטעינת השאלות. נסה לרענן.</div>';
+    renderStartupError(e);
     return;
   }
   $("#view-home").setAttribute("aria-labelledby","home-title");
@@ -885,6 +887,29 @@ function loadExplanations(){
     EXP_PROMISE = dataFetch("data/explanations.json").then(r=>r.ok?r.json():{}).then(e=>{EXP=e||{};return EXP;}).catch(()=>({}));
   }
   return EXP_PROMISE;
+}
+function clearProtectedAppCache(){
+  try{navigator.serviceWorker.controller?.postMessage({type:"CLEAR_PROTECTED_CACHE"});}catch(e){}
+}
+function renderStartupError(error){
+  const v=$("#view-home");
+  v.innerHTML="";
+  const card=el("div","card");
+  card.setAttribute("role","alert");
+  card.setAttribute("aria-live","assertive");
+  card.innerHTML=`<b>לא ניתן לטעון את בנק השאלות</b>
+    <div class="muted small">בדוק חיבור, התחברות או מטמון ישן. ההתקדמות המקומית לא נמחקת.</div>`;
+  const row=el("div","toolbar");
+  row.style.marginTop="12px";
+  const retry=el("button","btn primary","נסה שוב");
+  retry.onclick=()=>{v.innerHTML='<div class="card" role="status" aria-live="polite">טוען שאלות...</div>';loadAppData();};
+  const refresh=el("button","btn","רענן דף");
+  refresh.onclick=()=>location.reload();
+  const clear=el("button","btn warn","נקה מטמון ורענן");
+  clear.onclick=()=>{clearProtectedAppCache();location.reload();};
+  row.append(retry,refresh,clear);
+  card.append(row);
+  v.append(card);
 }
 
 /* ---------- helpers ---------- */
@@ -915,6 +940,14 @@ function shouldShowInstallCoach(){
   const standalone=window.matchMedia?.("(display-mode: standalone)")?.matches || navigator.standalone;
   try{return isApple&&!standalone&&localStorage.getItem(INSTALL_COACH_KEY)!=="1";}
   catch(e){return isApple&&!standalone;}
+}
+function shouldProbeAuthConfig(){
+  const h=location.hostname;
+  const staticLocal=(h==="localhost"||h==="127.0.0.1"||h==="::1")&&location.port==="8123";
+  return !(/(^|\.)github\.io$/.test(h)||staticLocal);
+}
+function isMirrorHost(){
+  return location.hostname.endsWith("github.io");
 }
 
 /* ---------- navigation ---------- */
@@ -1000,6 +1033,18 @@ function renderHome(){
       ${doubts?`<span>⚑ ${doubts} שאלות כוללות דגל לימודי לגבי המפתח הרשמי.</span>`:""}
     </div>`);
   v.append(brief);
+
+  if(isMirrorHost()){
+    const mirror=el("div","canonical-host-note card",`
+      <b>גרסת GitHub Pages ציבורית</b>
+      <div class="muted small">התחברות, סנכרון ו-AI זמינים בכתובת הקנונית של Netlify.</div>`);
+    const row=el("div","toolbar");
+    const open=el("a","btn primary","פתח את Netlify");
+    open.href=AI_QUESTION_APP_URL;
+    row.append(open);
+    mirror.append(row);
+    v.append(mirror);
+  }
 
   if(session){
     const q=qById(session.queue[session.i]);
