@@ -32,8 +32,11 @@ expect(/אל תשתמש בטבלאות Markdown/, "AI tutor prompt should forbid
 expect(/עד 4 כותרות קצרות/, "AI tutor prompt should constrain section count");
 expect(/עד 6 נקודות/, "AI tutor prompt should constrain bullet count");
 expect(/max_tokens:\s*520/, "AI tutor should use a tighter token budget for mobile answers");
+expect(/function scrubUnsupportedSourceLocators\(/, "AI tutor sanitizer should scrub unsupported page/source locators");
+expect(/function protectOfficialKeyLanguage\(/, "AI tutor sanitizer should protect official-key language");
+expect(/המפתח הרשמי נשמר ללא שינוי/, "AI tutor prompt or sanitizer should preserve the official answer key");
 
-const sanitizerSource = `${extractFunction("compact")}\n${extractFunction("sanitizeAiAnswer")}`;
+const sanitizerSource = `${extractFunction("compact")}\n${extractFunction("scrubUnsupportedSourceLocators")}\n${extractFunction("protectOfficialKeyLanguage")}\n${extractFunction("sanitizeAiAnswer")}`;
 if (sanitizerSource) {
   try {
     const context = {};
@@ -52,6 +55,17 @@ if (sanitizerSource) {
     }
     if (!/Sertraline/.test(sanitized) || !/נקודת מפתח/.test(sanitized)) {
       failures.push("AI tutor sanitizer drops useful model content");
+    }
+    const sourceScrubbed = vm.runInContext(`sanitizeAiAnswer(${JSON.stringify([
+      "## מקור",
+      "לפי Synopsis p. 999 ולפי עמ' 123 זו התשובה.",
+      "המפתח הרשמי תוקן ולכן ד אינה נכונה."
+    ].join("\n"))})`, context);
+    if (/p\.?\s*999|עמ'? 123/.test(sourceScrubbed)) {
+      failures.push("AI tutor sanitizer leaves unsupported page locators visible");
+    }
+    if (!/המפתח הרשמי נשמר ללא שינוי/.test(sourceScrubbed) || /המפתח הרשמי תוקן/.test(sourceScrubbed)) {
+      failures.push("AI tutor sanitizer allows model text to imply official key changes");
     }
   } catch (err) {
     failures.push(`AI tutor sanitizer regression threw: ${err.message}`);

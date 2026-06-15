@@ -17,6 +17,10 @@ function compact(value, max = 2000) {
   return String(value || "").slice(0, max);
 }
 
+function hasUnsupportedLocator(value) {
+  return /\b(?:p|pp|page)\.?\s*\d+(?:[-–]\d+)?\b|עמ(?:'|וד)?\s*\d+(?:[-–]\d+)?/i.test(String(value || ""));
+}
+
 function extractText(data) {
   if (Array.isArray(data?.content)) {
     return data.content.filter(part => part.type === "text").map(part => part.text).join("\n");
@@ -64,7 +68,15 @@ function normalizeQuestion(candidate, request) {
   if (!stem || options.length !== 4 || !Number.isInteger(correctIndex) || correctIndex < 0 || correctIndex > 3 || !explanation) {
     throw new Error("AI response did not include a complete MCQ");
   }
+  const rawCitations = Array.isArray(candidate?.citations) ? candidate.citations.map(c => compact(c, 180).trim()).filter(Boolean) : [];
+  if (!rawCitations.length) {
+    throw new Error("AI response did not include a source citation");
+  }
+  if ([stem, explanation, ...options].some(hasUnsupportedLocator)) {
+    throw new Error("AI response included an unsupported exact source locator/page reference");
+  }
   const citations = sourceScopedCitations(candidate, request);
+  const qualityWarnings = questionQualityWarnings(candidate, request, citations);
   return {
     stem,
     options,
@@ -74,6 +86,7 @@ function normalizeQuestion(candidate, request) {
     source: request.source,
     sourceLabel: request.sourceLabel,
     citations,
+    qualityWarnings,
     sourceContract: {
       source: request.source,
       sourceLabel: request.sourceLabel,
@@ -82,6 +95,30 @@ function normalizeQuestion(candidate, request) {
     },
     generated: true
   };
+}
+
+function questionQualityWarnings(candidate, request, citations) {
+  const warnings = [];
+  const sourceLabel = compact(request.sourceLabel, 180).trim();
+  const raw = Array.isArray(candidate?.citations)
+    ? candidate.citations.map(c => compact(c, 180).trim()).filter(Boolean)
+    : [];
+  if (!raw.length) {
+    warnings.push("המודל לא החזיר מקור מפורש; השאלה נשארת מסומנת כתרגול AI בלבד.");
+  }
+  if (raw.some(c => sourceLabel && !(c === sourceLabel || c.includes(sourceLabel)))) {
+    warnings.push("חלק מציוני המקור של המודל לא תאמו למקור הסילבוס שנבחר וסוננו.");
+  }
+  if (raw.some(hasUnsupportedLocator)) {
+    warnings.push("ציוני עמוד מדויקים של המודל סוננו כדי למנוע מראה מקום מומצא.");
+  }
+  if (!citations.length) {
+    warnings.push("לא נשאר ציון מקור מאומת לאחר סינון.");
+  }
+  if (/(?:מבחן אמיתי|שאלה אמיתית|real exam)/i.test(`${candidate?.stem || ""}\n${candidate?.explanation || ""}`)) {
+    warnings.push("נוסח המודל רמז שמדובר בשאלה אמיתית; יש להתייחס אליה כתרגול AI בלבד.");
+  }
+  return [...new Set(warnings)].slice(0, 4);
 }
 
 function buildPrompt(body) {
