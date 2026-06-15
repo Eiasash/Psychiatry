@@ -934,8 +934,11 @@ function normText(s){return String(s||"").normalize("NFKC").replace(/[\u0591-\u0
 function qById(id){return QMAP.get(id);}
 function escapeHtml(s){return String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));}
 function escapeRegExp(s){return String(s).replace(/[.*+?^${}()|[\]\\]/g,"\\$&");}
+function stripPdfTailArtifacts(s){
+  return String(s||"").replace(/\s*יש לבחור בתשובה אחת בלבד עבור כל שאלה(?:\s*עמוד\s*\d+|\s*עמוד\d+)?\s*$/i,"").trim();
+}
 function readableMixedText(s){
-  return escapeHtml(String(s||"")
+  return escapeHtml(stripPdfTailArtifacts(s)
     .replace(/([\u0590-\u05ff])([A-Za-z0-9])/g,"$1 $2")
     .replace(/([A-Za-z0-9])([\u0590-\u05ff])/g,"$1 $2")
     .replace(/\s+([,.;:?!])/g,"$1")
