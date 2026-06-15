@@ -4,12 +4,12 @@ Scope: tracked JSON fixtures only. This report quotes the current fixture text s
 
 ## Counts
 
-`node scripts/data-quality-audit.mjs --json` currently reports 455 non-blocking anomalies:
+After the source-backed PDF-tail cleanup, `node scripts/data-quality-audit.mjs --json` reports 348 non-blocking anomalies:
 
 | type | count | action |
 |---|---:|---|
 | `spacing-hebrew-english` | 342 | Covered in-app by display-only spacing normalization. Data edits still require source verification. |
-| `pdf-tail-artifact` | 107 | Candidate for source-backed cleanup; most are copied option tails like "יש לבחור בתשובה אחת בלבד..." plus page markers. |
+| `pdf-tail-artifact` | 0 | Resolved in `docs/PDF_TAIL_CLEANUP_2026-06-15.md`; repeated exam instruction tails were removed from option fixtures and obsolete explanation notes. |
 | `weak-ref` | 3 | Needs source/reference repair before relying on source metadata. |
 | `ocr-needs-source-review` | 3 | Keep OCR warning visible; verify against the original 2025 source before changing stems, answers, or references. |
 
@@ -25,14 +25,14 @@ Spacing examples:
 | `psych-2020-q038` | option 1 | `הקטנתCaudate Nuclei` |
 | `psych-2020-q091` | option 2 | `זריקה תוך שרירית של0111 מ" ג ויטמיןB12 אחת ליום למשך שבוע ובהמשך טיפול אחזקתי חודשי` |
 
-PDF tail examples:
+Resolved PDF tail examples:
 
 | id | field | current fixture quote |
 |---|---|---|
-| `psych-2020-q004` | option 4 | `Obsessive Compulsive Personality Disorder יש לבחור בתשובה אחת בלבד עבור כל שאלה עמוד2` |
-| `psych-2020-q008` | option 4 | `תחושת דיסוציאציה יש לבחור בתשובה אחת בלבד עבור כל שאלה עמוד3` |
-| `psych-2020-q016` | option 4 | `חומצה איקוזופנטנוית(EPA) יש לבחור בתשובה אחת בלבד עבור כל שאלה עמוד5` |
-| `psych-2020-q064` | option 4 | `כזרז לתגובה אנטי-דיכאונית בטיפול ב- SSRI's יש לבחור בתשובה אחת בלבד עבור כל שאלה עמוד07` |
+| `psych-2020-q004` | option 4 | `Obsessive Compulsive Personality Disorder` |
+| `psych-2020-q008` | option 4 | `תחושת דיסוציאציה` |
+| `psych-2020-q016` | option 4 | `חומצה איקוזופנטנוית(EPA)` |
+| `psych-2020-q064` | option 4 | `כזרז לתגובה אנטי-דיכאונית בטיפול ב- SSRI's` |
 
 Weak/OCR source examples:
 
@@ -49,6 +49,6 @@ This PR fixes the user-visible readability issue without changing source data: r
 The next canonical data cleanup should be a separate source-backed PR:
 
 1. Quote the source PDF or authoritative fixture for each edited item.
-2. Remove PDF tail artifacts only when the option text boundary is source-confirmed.
-3. Repair the three weak references from source material.
+2. Repair the three weak references from source material.
+3. Review OCR-marked 2025 stems against the original 2025 source before changing stems, answers, or references.
 4. Keep official answer keys unchanged unless the source explicitly supports a key correction.

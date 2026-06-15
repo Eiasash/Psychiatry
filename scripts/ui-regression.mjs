@@ -131,6 +131,9 @@ if (mixedTextSource.trim()) {
     const trimmedTail = vm.runInContext(`readableMixedText(${JSON.stringify("Obsessive Compulsive Personality Disorder יש לבחור בתשובה אחת בלבד עבור כל שאלה עמוד2")})`, context);
     if (trimmedTail.includes("יש לבחור") || trimmedTail.includes("עמוד2")) failures.push("mixed text helper does not suppress copied PDF footer tails");
     if (!trimmedTail.includes("Obsessive Compulsive Personality Disorder")) failures.push("mixed text helper removed canonical option text while suppressing PDF tail");
+    const trimmedPageNumberTail = vm.runInContext(`readableMixedText(${JSON.stringify("Cariprazine יש לבחור בתשובה אחת בלבד עבור כל שאלה 2")})`, context);
+    if (trimmedPageNumberTail.includes("יש לבחור") || trimmedPageNumberTail.endsWith(" 2")) failures.push("mixed text helper does not suppress copied PDF footer tails without the page label");
+    if (!trimmedPageNumberTail.includes("Cariprazine")) failures.push("mixed text helper removed canonical option text while suppressing unlabeled PDF tail");
     const highlighted = vm.runInContext(`highlightReadable(${JSON.stringify("נמצאBHCG חיובי")}, ${JSON.stringify("BHCG")})`, context);
     if (!highlighted.includes("<mark class=\"hl\">BHCG</mark>")) failures.push("mixed text highlighter does not preserve search highlighting");
   } catch (err) {
