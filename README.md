@@ -62,6 +62,16 @@ Supabase login is enabled only when these Netlify environment variables are set:
 
 Apply the SQL migration in `supabase/migrations/` to create the per-user progress tables and row-level-security policies. Enable email/password signups in Supabase Auth, then manage users from the Supabase dashboard.
 
+This repo ships a `supabase/config.toml` so the Supabase CLI recognizes the project. To link it to the shared backend (project ref `krmlzwwelqvlfslwltol`), run once locally:
+
+```bash
+supabase login                                   # one-time, stores an access token
+supabase link --project-ref krmlzwwelqvlfslwltol # writes supabase/.temp/project-ref (gitignored)
+supabase migration list                          # confirm local vs remote migration history
+```
+
+The `study_progress` / `study_stars` / `study_sessions` tables already exist on the shared project, so the migration is idempotent (`create table if not exists`).
+
 When Supabase env vars are enabled, the app shows the login screen before loading the question bank. Netlify redirects direct requests for `data/questions.json`, `data/explanations.json`, and `docs/answer_key_doubts.json` through `/api/protected-asset`, which validates the Supabase access token before returning JSON. Do not commit raw service keys or secrets.
 
 ## Verification
