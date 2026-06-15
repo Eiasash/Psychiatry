@@ -4,14 +4,14 @@ Scope: tracked JSON fixtures only. This report quotes the current fixture text s
 
 ## Counts
 
-After the source-backed PDF-tail cleanup, `node scripts/data-quality-audit.mjs --json` reports 348 non-blocking anomalies:
+After the source-backed OCR/reference cleanup, `node scripts/data-quality-audit.mjs --json` reports 341 non-blocking anomalies:
 
 | type | count | action |
 |---|---:|---|
-| `spacing-hebrew-english` | 342 | Covered in-app by display-only spacing normalization. Data edits still require source verification. |
+| `spacing-hebrew-english` | 341 | Covered in-app by display-only spacing normalization. Data edits still require source verification. |
 | `pdf-tail-artifact` | 0 | Resolved in `docs/PDF_TAIL_CLEANUP_2026-06-15.md`; repeated exam instruction tails were removed from option fixtures and obsolete explanation notes. |
-| `weak-ref` | 3 | Needs source/reference repair before relying on source metadata. |
-| `ocr-needs-source-review` | 3 | Keep OCR warning visible; verify against the original 2025 source before changing stems, answers, or references. |
+| `weak-ref` | 0 | Resolved in `docs/OCR_REF_REPAIR_2026-06-15.md`; official-key blanks are explicit and numeric answer-key tails were removed. |
+| `ocr-needs-source-review` | 0 | Resolved in `docs/OCR_REF_REPAIR_2026-06-15.md` for the source-backed OCR repairs. |
 
 ## Fixture Quotes
 
@@ -34,13 +34,13 @@ Resolved PDF tail examples:
 | `psych-2020-q016` | option 4 | `חומצה איקוזופנטנוית(EPA)` |
 | `psych-2020-q064` | option 4 | `כזרז לתגובה אנטי-דיכאונית בטיפול ב- SSRI's` |
 
-Weak/OCR source examples:
+Resolved weak/OCR source examples:
 
 | id | field | current fixture quote |
 |---|---|---|
-| `psych-2025-06-q016` | ref | empty string |
-| `psych-2025-06-q056` | question | `בן 40 מתלונן על תנועות לא רצוניות בידיו ובפנים, שהתפתחות לאחרונה. מהתחיסמפטומים הקוגניטיביים הבאים מתאים לאבחנה?` |
-| `psych-2025-06-q100` | ref | starts with `177 101 377 102 470 472 103...` |
+| `psych-2025-06-q016` | ref | `מפתח רשמי 2025: ללא מראה מקום` |
+| `psych-2025-06-q056` | question | `בן 40 מתלונן על תנועות לא רצוניות בידיים ובצוואר, שהתפתחו לאחרונה. מה מהסימפטומים הקוגניטיביים הבאים מתאים לאבחנה?` |
+| `psych-2025-06-q100` | ref | `Kaplan & Sadock Synopsis, p. 177` |
 
 ## Decision
 
@@ -49,6 +49,5 @@ This PR fixes the user-visible readability issue without changing source data: r
 The next canonical data cleanup should be a separate source-backed PR:
 
 1. Quote the source PDF or authoritative fixture for each edited item.
-2. Repair the three weak references from source material.
-3. Review OCR-marked 2025 stems against the original 2025 source before changing stems, answers, or references.
-4. Keep official answer keys unchanged unless the source explicitly supports a key correction.
+2. Work through the remaining Hebrew/English spacing anomalies only where source verification is available, because the app already normalizes spacing at display time.
+3. Keep official answer keys unchanged unless the source explicitly supports a key correction.
