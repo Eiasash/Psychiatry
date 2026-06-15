@@ -33,7 +33,8 @@ if (jsonRun.status !== 0) {
     if (report.byType?.["pdf-tail-artifact"]) failures.push("canonical fixtures should not contain copied PDF tail artifacts");
     if (!/function hasPdfTailArtifact\(/.test(auditSource)) failures.push("audit should keep copied PDF tail detection implemented");
     if (!/יש לבחור בתשובה אחת בלבד עבור כל שאלה/.test(auditSource)) failures.push("audit should keep the copied PDF instruction detector");
-    if (!report.byType?.["weak-ref"]) failures.push("audit should keep weak source-reference classification");
+    if (report.byType?.["weak-ref"]) failures.push("canonical fixtures should not contain weak source-reference metadata");
+    if (!/function hasWeakRef\(/.test(auditSource)) failures.push("audit should keep weak source-reference classification implemented");
     if (report.anomalies?.some(issue => issue.type === "glued-hebrew-english")) failures.push("old glued-hebrew-english type should be replaced by spacing-hebrew-english");
   } catch (err) {
     failures.push(`--json output is not parseable JSON: ${err.message}`);
