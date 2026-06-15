@@ -4,11 +4,11 @@ Scope: tracked JSON fixtures only. This report quotes the current fixture text s
 
 ## Counts
 
-After the 2020 source-backed spacing cleanup, `node scripts/data-quality-audit.mjs --json` reports 304 non-blocking anomalies:
+After the 2021 source-backed question/option spacing cleanup, `node scripts/data-quality-audit.mjs --json` reports 257 non-blocking anomalies:
 
 | type | count | action |
 |---|---:|---|
-| `spacing-hebrew-english` | 304 | Covered in-app by display-only spacing normalization. Data edits still require source verification. The 2020 sitting is resolved in `docs/SOURCE_BACKED_SPACING_2020_2026-06-15.md`. |
+| `spacing-hebrew-english` | 257 | Covered in-app by display-only spacing normalization. Data edits still require source verification. The 2020 sitting is resolved in `docs/SOURCE_BACKED_SPACING_2020_2026-06-15.md`; 2021 question/option text is resolved in `docs/SOURCE_BACKED_SPACING_2021_2026-06-15.md`. |
 | `pdf-tail-artifact` | 0 | Resolved in `docs/PDF_TAIL_CLEANUP_2026-06-15.md`; repeated exam instruction tails were removed from option fixtures and obsolete explanation notes. |
 | `weak-ref` | 0 | Resolved in `docs/OCR_REF_REPAIR_2026-06-15.md`; official-key blanks are explicit and numeric answer-key tails were removed. |
 | `ocr-needs-source-review` | 0 | Resolved in `docs/OCR_REF_REPAIR_2026-06-15.md` for the source-backed OCR repairs. |
@@ -19,17 +19,18 @@ Spacing examples:
 
 | id | field | current fixture quote |
 |---|---|---|
-| `psych-2021-q001` | question | `בן45, נשוי ואב ל- 4, הופנה על- ,ידי רופא משפחה לטיפול פסיכיאטרי בשל אינסומניה קשה .על רקע התפרצויות זעם והתלהמות, בעיקר בעבודה עקב עמידותו, מטופל בשילוב שלDoxepine, Lamotrigine, Trazodone, Escitalopram` |
-| `psych-2021-q004` | question | `מהי ההשפעה שלOmega 3 ?` |
-| `psych-2021-q007` | question | `הפרעת אישיות פרנואידית מתאפיינת על- פיDSM5 על- ,ידי כל הבאים פרט ל:` |
-| `psych-2021-q024` | question | `לאיזו קבוצה שייךAnandamide ?` |
-| `psych-2021-q037` | option 2 | `שינויים בגלT באק"ג` |
+| `psych-2021-q071` | explanation | `הבוחן את הצורך בהמשך האשפoz.` |
+| `psych-2022-q001` | question | `מהו המינון האקוויוולנטי שלRisperidone` |
+| `psych-2022-q002` | question | `איזה מבין התכשירים האנטיהיסטמיניים משמש כטיפול בעיכוב אורגזמה הנובע מטיפול בSSRI's ?` |
+| `psych-2022-q003` | question | `איזה קריטריון מבדיל ביןADHD ?לאפיזודה מאנית/היפומאנית` |
+| `psych-2022-q005` | question | `איזה מהתכשירים הבאים לא פועל כDopamine-agonist ?` |
 
 Resolved source-backed spacing batch:
 
 | source note | sitting | edited audit findings | result |
 |---|---|---:|---|
 | `docs/SOURCE_BACKED_SPACING_2020_2026-06-15.md` | `2020` | 37 | 2020 `spacing-hebrew-english` findings reduced to 0. |
+| `docs/SOURCE_BACKED_SPACING_2021_2026-06-15.md` | `2021-Jun` | 47 | 2021 question/option `spacing-hebrew-english` findings reduced to 0; one explanation-only finding remains. |
 
 Resolved PDF tail examples:
 
@@ -50,10 +51,10 @@ Resolved weak/OCR source examples:
 
 ## Decision
 
-Display-time spacing normalization remains active for all unverified items. The first canonical data batch now resolves the 2020 sitting only, with source quotes in `docs/SOURCE_BACKED_SPACING_2020_2026-06-15.md`.
+Display-time spacing normalization remains active for all unverified items. The canonical source-backed data batches now resolve the 2020 sitting and the 2021 official question/option text, with source quotes in `docs/SOURCE_BACKED_SPACING_2020_2026-06-15.md` and `docs/SOURCE_BACKED_SPACING_2021_2026-06-15.md`.
 
 The next canonical data cleanup should continue as a separate source-backed PR:
 
 1. Quote the source PDF or authoritative fixture for each edited item.
-2. Work through the remaining 304 Hebrew/English spacing anomalies only where source verification is available, because the app already normalizes spacing at display time.
+2. Work through the remaining 257 Hebrew/English spacing anomalies only where source verification is available, because the app already normalizes spacing at display time.
 3. Keep official answer keys unchanged unless the source explicitly supports a key correction.
