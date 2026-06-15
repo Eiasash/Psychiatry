@@ -40,6 +40,12 @@ if (jsonRun.status !== 0) {
     if (remaining2020Spacing.length) {
       failures.push(`2020 source-backed spacing cleanup should remain complete; found ${remaining2020Spacing.length} remaining 2020 spacing issues`);
     }
+    const remaining2021QuestionOptionSpacing = report.anomalies?.filter(issue =>
+      issue.type === "spacing-hebrew-english" && issue.sitting === "2021-Jun" && issue.field !== "explanation"
+    ) || [];
+    if (remaining2021QuestionOptionSpacing.length) {
+      failures.push(`2021 source-backed question/option spacing cleanup should remain complete; found ${remaining2021QuestionOptionSpacing.length} remaining 2021 question/option spacing issues`);
+    }
   } catch (err) {
     failures.push(`--json output is not parseable JSON: ${err.message}`);
   }
