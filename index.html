@@ -935,7 +935,7 @@ function qById(id){return QMAP.get(id);}
 function escapeHtml(s){return String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));}
 function escapeRegExp(s){return String(s).replace(/[.*+?^${}()|[\]\\]/g,"\\$&");}
 function stripPdfTailArtifacts(s){
-  return String(s||"").replace(/\s*יש לבחור בתשובה אחת בלבד עבור כל שאלה(?:\s*עמוד\s*\d+|\s*עמוד\d+)?\s*$/i,"").trim();
+  return String(s||"").replace(/\s*יש לבחור בתשובה אחת בלבד עבור כל שאלה(?:\s*עמוד)?\s*\d+\s*$/i,"").trim();
 }
 function readableMixedText(s){
   return escapeHtml(stripPdfTailArtifacts(s)

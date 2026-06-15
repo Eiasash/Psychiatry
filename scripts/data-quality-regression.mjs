@@ -1,10 +1,12 @@
 #!/usr/bin/env node
 import { spawnSync } from "node:child_process";
+import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { dirname, resolve } from "node:path";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const root = resolve(here, "..");
+const auditSource = readFileSync(resolve(root, "scripts/data-quality-audit.mjs"), "utf8");
 const failures = [];
 
 function runAudit(...args) {
@@ -28,7 +30,9 @@ if (jsonRun.status !== 0) {
       if (!(key in sample)) failures.push(`anomaly rows should include ${key}`);
     }
     if (!report.byType?.["spacing-hebrew-english"]) failures.push("audit should classify mixed Hebrew/English spacing separately");
-    if (!report.byType?.["pdf-tail-artifact"]) failures.push("audit should classify copied PDF tail artifacts separately");
+    if (report.byType?.["pdf-tail-artifact"]) failures.push("canonical fixtures should not contain copied PDF tail artifacts");
+    if (!/function hasPdfTailArtifact\(/.test(auditSource)) failures.push("audit should keep copied PDF tail detection implemented");
+    if (!/יש לבחור בתשובה אחת בלבד עבור כל שאלה/.test(auditSource)) failures.push("audit should keep the copied PDF instruction detector");
     if (!report.byType?.["weak-ref"]) failures.push("audit should keep weak source-reference classification");
     if (report.anomalies?.some(issue => issue.type === "glued-hebrew-english")) failures.push("old glued-hebrew-english type should be replaced by spacing-hebrew-english");
   } catch (err) {
@@ -43,7 +47,7 @@ if (markdownRun.status !== 0) {
   const md = markdownRun.stdout;
   if (!md.includes("# Data Quality Audit")) failures.push("--markdown should render a report title");
   if (!md.includes("## spacing-hebrew-english")) failures.push("--markdown should group spacing issues");
-  if (!md.includes("## pdf-tail-artifact")) failures.push("--markdown should group PDF tail artifacts");
+  if (md.includes("## pdf-tail-artifact")) failures.push("--markdown should not list resolved PDF tail artifacts");
   if (!md.includes("| id | field | sitting | snippet |")) failures.push("--markdown should include a triage table");
 }
 
