@@ -36,6 +36,10 @@ if (jsonRun.status !== 0) {
     if (report.byType?.["weak-ref"]) failures.push("canonical fixtures should not contain weak source-reference metadata");
     if (!/function hasWeakRef\(/.test(auditSource)) failures.push("audit should keep weak source-reference classification implemented");
     if (report.anomalies?.some(issue => issue.type === "glued-hebrew-english")) failures.push("old glued-hebrew-english type should be replaced by spacing-hebrew-english");
+    const remaining2020Spacing = report.anomalies?.filter(issue => issue.type === "spacing-hebrew-english" && issue.sitting === "2020") || [];
+    if (remaining2020Spacing.length) {
+      failures.push(`2020 source-backed spacing cleanup should remain complete; found ${remaining2020Spacing.length} remaining 2020 spacing issues`);
+    }
   } catch (err) {
     failures.push(`--json output is not parseable JSON: ${err.message}`);
   }
