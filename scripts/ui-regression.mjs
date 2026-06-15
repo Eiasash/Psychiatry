@@ -70,11 +70,16 @@ expect(/function renderStartupError\(/, "startup data failures need a recovery r
 expect(/CLEAR_PROTECTED_CACHE/, "startup recovery should be able to clear protected cached data");
 expect(/location\.reload\(\)/, "startup recovery should offer a reload path");
 expect(/home-catalog card/, "home practice entry points should be grouped in a catalog card");
+expect(/home-actions/, "home primary practice actions need a dedicated compact group");
+expect(/home-progress card/, "home progress summary needs its own compact card");
+expect(/home-section/, "secondary home filters should be collapsible sections");
 expect(/ai-drill-card card/, "AI syllabus drill card is missing");
 expect(/function aiQuestionHtml\(/, "AI syllabus question renderer is missing");
 expect(/async function generateAiQuestion\(/, "AI syllabus question generator is missing");
 expect(/function aiSourceContractHtml\(/, "AI generated questions need visible source-contract metadata");
 expect(/aiSourceContractHtml\(q\)/, "AI generated question renderer should show the source contract");
+expect(/function aiQualityWarningsHtml\(/, "AI generated question renderer should expose quality warnings");
+expect(/aiQualityWarningsHtml\(q\.qualityWarnings\)/, "AI generated question card should render quality warnings");
 expect(/\/api\/ai-question/, "AI syllabus question endpoint is not wired into the UI");
 expect(/const AI_QUESTION_APP_URL = "https:\/\/psychiatry-szmc\.netlify\.app\/"/, "AI syllabus drill needs a canonical Netlify app URL");
 expect(/function aiQuestionAvailable\(/, "AI syllabus drill needs an availability check");
@@ -83,6 +88,7 @@ expectMissing(/id="ai-open-netlify"[^>]*aria-disabled="true"/, "AI syllabus Netl
 expect(/dir="ltr">Kaplan &amp; Sadock/, "mixed Hebrew/English source names need an LTR boundary");
 expectMissing(/v\.append\(el\("div","banner",`בנק עם/, "old dense home banner is still present");
 expectMissing(/v\.append\(aiQuestionHtml\(tps\)\)/, "AI syllabus card HTML is appended as text instead of rendered DOM");
+expect(/el\("div","qfoot quiz-sticky-actions"\)/, "quiz feedback next action should use a sticky mobile action row");
 
 function extractFunction(name) {
   const start = html.indexOf(`function ${name}(`);

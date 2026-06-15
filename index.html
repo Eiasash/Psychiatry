@@ -154,6 +154,7 @@ h2.sec{font-size:14px;color:var(--muted);font-weight:600;margin:22px 4px 10px;te
 
 .qfoot{display:flex;gap:10px;margin-top:16px}
 .qfoot .btn{flex:1}
+.quiz-sticky-actions{z-index:5}
 
 /* ---- browse / search ---- */
 .search{width:100%;background:var(--card2);border:1px solid var(--line);border-radius:12px;
@@ -212,6 +213,7 @@ h2.sec{font-size:14px;color:var(--muted);font-weight:600;margin:22px 4px 10px;te
   .opt{padding:12px;gap:10px}
   .fb.show{margin-inline:-4px;padding:12px 10px}
   .expl{padding:10px 9px;font-size:13.8px;line-height:1.72}
+  .quiz-sticky-actions{position:sticky;bottom:calc(66px + env(safe-area-inset-bottom));background:linear-gradient(180deg,rgba(23,31,61,0),var(--card) 35%);padding-top:8px}
   .ai-box{margin-inline:-2px;padding:10px;border-left:0;border-right:0;border-radius:10px;box-shadow:inset -2px 0 0 rgba(34,211,183,.55)}
   .ai-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px}
   .ai-actions .btn{width:100%;min-height:44px;padding:8px 10px;font-size:13px}
@@ -275,6 +277,10 @@ nav.bar button.on{color:var(--accent2)}
 .brief-item{background:var(--card2);border:1px solid var(--line);border-radius:10px;padding:9px 10px;font-size:12.5px;color:var(--muted)}
 .brief-item b{display:block;color:var(--txt);font-size:13.5px}
 .brief-notes{display:grid;gap:5px;margin-top:10px;font-size:12.5px;color:var(--warn)}
+.home-actions{margin-top:10px}
+.home-actions .btn{min-height:62px}
+.home-progress{margin-top:14px;text-align:center}
+.home-section{background:rgba(11,16,32,.12);border-radius:11px}
 .home-catalog{margin-top:16px}
 .catalog-head{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;margin-bottom:10px}
 .catalog-head b{font-size:15px}
@@ -299,6 +305,8 @@ nav.bar button.on{color:var(--accent2)}
 .ai-q-feedback b{color:var(--accent2)}
 .ai-source-contract{display:grid;gap:4px;margin:10px 0;padding:9px 10px;border:1px solid rgba(34,211,183,.28);border-radius:10px;background:rgba(11,16,32,.22);font-size:12.5px;color:var(--muted);line-height:1.55}
 .ai-source-contract b{color:var(--accent2)}
+.ai-quality-warnings{display:grid;gap:4px;margin:8px 0;padding:8px 10px;border:1px solid rgba(251,191,36,.35);border-radius:10px;background:rgba(251,191,36,.08);font-size:12px;color:var(--warn);line-height:1.5}
+.ai-quality-warnings b{color:var(--warn)}
 .ai-generated-note{font-size:12px;color:var(--warn);margin-top:9px}
 @media(max-width:720px){
   .brief-head{display:grid}
@@ -306,6 +314,10 @@ nav.bar button.on{color:var(--accent2)}
   .update-banner{display:grid;gap:8px}
   .update-banner .toolbar{justify-content:stretch}
   .update-banner .toolbar .btn{flex:1}
+}
+@media(max-width:560px){
+  .home-actions{grid-template-columns:1fr}
+  .home-progress .g3{grid-template-columns:1fr 1fr}
 }
 @media (prefers-reduced-motion: reduce){
   *,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;scroll-behavior:auto!important;transition-duration:.01ms!important}
@@ -1065,7 +1077,7 @@ function renderHome(){
     row.append(ok);coach.append(row);v.append(coach);
   }
 
-  const ring=el("div","card");
+  const ring=el("div","home-progress card");
   ring.style.textAlign="center";
   ring.innerHTML=`
     <div class="ring" role="progressbar" aria-label="אחוז שאלות שנלמדו" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${pct}">
@@ -1084,7 +1096,7 @@ function renderHome(){
   v.append(ring);
 
   v.append(el("h2","sec","התחל תרגול"));
-  const acts=el("div","grid g2");
+  const acts=el("div","home-actions grid g2");
   const mk=(ic,t,sub,fn,cls="")=>{const b=el("button","btn col "+cls,`<span class="ic" aria-hidden="true">${ic}</span><span>${t}</span><span class="sub">${sub}</span>`);b.setAttribute("aria-label",`${t}: ${sub}`);b.onclick=fn;return b;};
   acts.append(
     mk("🎯","חזרה חכמה",due?`${due} שאלות שהגיע זמנן`:"הכל מעודכן ✓",()=>{
@@ -1115,7 +1127,7 @@ function renderHome(){
   wireAiQuestionCard(v);
 
   const catalog=el("div","home-catalog card",`<div class="catalog-head"><div><b>עוד דרכי תרגול</b><div class="muted small">בלוקים, מועדים ונושאים מקופלים כדי לשמור על מסך הבית קריא.</div></div></div>`);
-  const structured=el("details","catalog-details",`<summary>בלוקים ומועדים</summary>`);
+  const structured=el("details","catalog-details home-section",`<summary>בלוקים ומועדים</summary>`);
   const bc=el("div","chip-grid");
   [25,50,100].forEach(n=>{
     const c=el("button","chip",`${n} שאלות <span class="c">${timerText(n*EXAM_SECONDS_PER_Q)}</span>`);
@@ -1145,7 +1157,7 @@ function renderHome(){
   structured.append(el("div","catalog-sub","לפי מועד"),yc);
   catalog.append(structured);
 
-  const topicDetails=el("details","catalog-details",`<summary>נושאים לפי סילבוס</summary>`);
+  const topicDetails=el("details","catalog-details home-section",`<summary>נושאים לפי סילבוס</summary>`);
   const tc=el("div","chip-grid");
   Object.keys(tps).map(Number).sort((a,b)=>tps[b]-tps[a]).forEach(ti=>{
     const topic=TOPICS[ti]||"";
@@ -1247,6 +1259,7 @@ function renderGeneratedAiQuestion(out,q){
   out.innerHTML=`<div class="ai-question">
     <div class="ai-q-meta"><span class="tag acc">AI</span><span class="tag">${escapeHtml(q.topic||"")}</span><span class="tag" dir="ltr">${escapeHtml(q.sourceLabel||"Syllabus")}</span></div>
     ${aiSourceContractHtml(q)}
+    ${aiQualityWarningsHtml(q.qualityWarnings)}
     <div class="qtext">${escapeHtml(q.stem)}</div>
     <div class="opts">${opts.map((opt,k)=>`<button type="button" class="opt ai-q-option" data-ai-q-option="${k}" aria-label="אפשרות ${LETTERS[k]}: ${escapeHtml(opt)}"><span class="k">${LETTERS[k]}</span><span class="ot">${escapeHtml(opt)}</span></button>`).join("")}</div>
     <div class="ai-q-feedback" role="status" aria-live="polite"></div>
@@ -1261,6 +1274,11 @@ function aiSourceContractHtml(q){
   const scope=contract.scope||"שאלה מקורית לפי מקור הסילבוס שנבחר.";
   const limit=contract.limit||"תרגול AI בלבד; לא חלק מבנק 900 השאלות המאומתות.";
   return `<div class="ai-source-contract" aria-label="מסגרת מקור לשאלת AI"><b>מקור נבחר</b><span dir="ltr">${escapeHtml(label)}</span><span>${escapeHtml(scope)}</span><span>${escapeHtml(limit)}</span></div>`;
+}
+function aiQualityWarningsHtml(warnings){
+  const items=Array.isArray(warnings)?warnings.filter(Boolean).slice(0,3):[];
+  if(!items.length)return "";
+  return `<div class="ai-quality-warnings" role="note"><b>בדיקת איכות</b>${items.map(w=>`<span>${escapeHtml(w)}</span>`).join("")}</div>`;
 }
 function gradeGeneratedAiQuestion(out,k){
   const q=out.__aiQuestion||{};
@@ -1321,7 +1339,7 @@ function renderQuiz(){
   });
   card.append(opts);
   const fb=el("div","fb");fb.id="grading-feedback";fb.setAttribute("role","status");fb.setAttribute("aria-live","polite");fb.setAttribute("aria-atomic","true");fb.tabIndex=-1;card.append(fb);
-  const foot=el("div","qfoot");
+  const foot=el("div","qfoot quiz-sticky-actions");
   if(session.mode==="exam"){
     // STRICT exam: record selection silently, allow navigation + answer changes, grade only on submit.
     const prevA=(session.answers||[]).find(a=>a.index===session.i);

@@ -27,12 +27,15 @@ function extractFunction(name) {
 }
 
 expect(/function sourceScopedCitations\(/, "AI question function needs source-scoped citation normalization");
+expect(/function hasUnsupportedLocator\(/, "AI question function needs invented source locator detection");
+expect(/function questionQualityWarnings\(/, "AI question function needs quality warning generation");
 expect(/sourceContract/, "AI question response should expose an explicit source contract");
+expect(/qualityWarnings/, "AI question response should expose non-blocking quality warnings");
 expect(/Do not invent page numbers/, "AI question prompt must forbid invented page numbers");
 expect(/not part of the verified 900-question bank/, "AI question prompt must distinguish generated practice from verified exam questions");
 expect(/sourceLabel:\s*request\.sourceLabel/, "AI question source contract should preserve the selected syllabus label");
 
-const questionSource = `${extractFunction("compact")}\n${extractFunction("sourceScopedCitations")}\n${extractFunction("normalizeQuestion")}`;
+const questionSource = `${extractFunction("compact")}\n${extractFunction("hasUnsupportedLocator")}\n${extractFunction("sourceScopedCitations")}\n${extractFunction("questionQualityWarnings")}\n${extractFunction("normalizeQuestion")}`;
 if (questionSource.trim()) {
   try {
     const context = {};
@@ -57,6 +60,55 @@ if (questionSource.trim()) {
     }
     if (!normalized.citations.includes("Kaplan & Sadock Synopsis")) {
       failures.push("AI question citations should retain the selected syllabus source");
+    }
+    if (!Array.isArray(normalized.qualityWarnings)) {
+      failures.push("AI question normalized payload lacks a qualityWarnings array");
+    }
+    const weakCitation = vm.runInContext(`normalizeQuestion({
+      stem: "מה נכון?",
+      options: ["א", "ב", "ג", "ד"],
+      correctIndex: 1,
+      explanation: "הסבר מבוסס מקור.",
+      citations: ["מקור לא קשור"]
+    }, {
+      topic: "Psychopharmacology",
+      source: "synopsis",
+      sourceLabel: "Kaplan & Sadock Synopsis"
+    })`, context);
+    if (!weakCitation.qualityWarnings.some(w => /מקור|citation|source/i.test(w))) {
+      failures.push("AI question should warn when model citations drift from the selected source");
+    }
+    try {
+      vm.runInContext(`normalizeQuestion({
+        stem: "מה נכון?",
+        options: ["א", "ב", "ג", "ד"],
+        correctIndex: 1,
+        explanation: "הסבר מבוסס מקור.",
+        citations: []
+      }, {
+        topic: "Psychopharmacology",
+        source: "synopsis",
+        sourceLabel: "Kaplan & Sadock Synopsis"
+      })`, context);
+      failures.push("AI question should reject missing citations");
+    } catch (err) {
+      if (!/citation|source|מקור/i.test(err.message)) failures.push(`AI question missing-citation rejection used unclear error: ${err.message}`);
+    }
+    try {
+      vm.runInContext(`normalizeQuestion({
+        stem: "מה נכון?",
+        options: ["א", "ב", "ג", "ד"],
+        correctIndex: 1,
+        explanation: "הסבר שממציא מיקום מדויק: Synopsis p. 999.",
+        citations: ["Kaplan & Sadock Synopsis"]
+      }, {
+        topic: "Psychopharmacology",
+        source: "synopsis",
+        sourceLabel: "Kaplan & Sadock Synopsis"
+      })`, context);
+      failures.push("AI question should reject invented exact source locators");
+    } catch (err) {
+      if (!/locator|מיקום|page|עמ/i.test(err.message)) failures.push(`AI question invented-locator rejection used unclear error: ${err.message}`);
     }
   } catch (err) {
     failures.push(`AI question normalization regression threw: ${err.message}`);

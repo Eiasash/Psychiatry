@@ -10,8 +10,24 @@ function compact(value, max = 12000) {
   return String(value || "").slice(0, max);
 }
 
+function scrubUnsupportedSourceLocators(answer) {
+  return String(answer || "")
+    .replace(/\b(?:Kaplan\s*&?\s*Sadock|Synopsis|DSM)?\s*(?:p|pp|page)\.?\s*\d+(?:[-–]\d+)?\b/gi, "")
+    .replace(/עמ(?:'|וד)?\s*\d+(?:[-–]\d+)?/g, "")
+    .replace(/[ \t]{2,}/g, " ")
+    .replace(/\n[ \t]+/g, "\n")
+    .trim();
+}
+
+function protectOfficialKeyLanguage(answer) {
+  return String(answer || "")
+    .replace(/המפתח הרשמי\s+(?:תוקן|שונה|עודכן)[^.\n]*/g, "המפתח הרשמי נשמר ללא שינוי")
+    .replace(/official answer key\s+(?:was\s+)?(?:changed|corrected|updated)[^.\n]*/gi, "official answer key is unchanged");
+}
+
 function sanitizeAiAnswer(answer) {
-  const lines = String(answer || "").replace(/\r\n?/g, "\n").split("\n");
+  const safeAnswer = protectOfficialKeyLanguage(scrubUnsupportedSourceLocators(answer));
+  const lines = safeAnswer.replace(/\r\n?/g, "\n").split("\n");
   const out = [];
   let headingCount = 0;
   let bulletCount = 0;
@@ -64,7 +80,7 @@ ${options.map((opt, i) => `${["א", "ב", "ג", "ד"][i]}. ${compact(opt, 1000)}
 דגל מפתח רשמי, אם קיים: ${compact(body.keyDoubt?.issue, 2000)}
 חולשות משתמש לפי התקדמות מקומית: ${compact(weak, 1200)}
 
-ענה בעברית. השתמש רק במידע שסופק כאן. אל תשנה את המפתח הרשמי. אם קיים דגל מפתח, הסבר שזה דגל לימודי ולא תיקון רשמי. אל תיתן ייעוץ רפואי למטופל אמיתי.
+ענה בעברית. השתמש רק במידע שסופק כאן. המפתח הרשמי נשמר ללא שינוי. אם קיים דגל מפתח, הסבר שזה דגל לימודי ולא תיקון רשמי. אל תיתן ייעוץ רפואי למטופל אמיתי.
 מבנה תשובה: עד 4 כותרות קצרות, עד 6 נקודות, משפטים קצרים שמתאימים למסך טלפון. אל תשתמש בטבלאות Markdown או בקווי הפרדה ארוכים.
 `.trim();
 }

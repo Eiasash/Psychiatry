@@ -18,6 +18,10 @@ expect(/@media\(max-width:560px\)\{[\s\S]*?\.ai-table td::before\{[^}]*data-labe
 expect(/\.ai-loading\{[\s\S]*?border:1px solid var\(--line\)/, "AI loading state should be visibly framed");
 expect(/\.ai-error\{[\s\S]*?border:1px solid var\(--bad\)/, "AI error state should be visibly framed");
 expect(/\.update-banner\{[\s\S]*?max-width:720px/, "update banner should have a stable max width");
+expect(/@media\(max-width:560px\)\{[\s\S]*?\.home-actions\{[^}]*grid-template-columns:1fr/, "mobile home primary actions should be single-column");
+expect(/@media\(max-width:560px\)\{[\s\S]*?\.home-progress \.g3\{[^}]*grid-template-columns:1fr 1fr/, "mobile home progress stats should fit in two columns");
+expect(/@media\(max-width:560px\)\{[\s\S]*?\.quiz-sticky-actions\{[^}]*position:sticky/, "mobile quiz next action should stay reachable after feedback");
+expect(/\.ai-quality-warnings/, "AI generated question warnings need visible styling");
 
 if (failures.length) {
   console.error(`Mobile visual contract failed (${failures.length}):`);
