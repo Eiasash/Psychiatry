@@ -26,7 +26,7 @@ This pass implements the next roadmap after the WCAG audit.
 - Official answer keys remain unchanged.
 - OCR stems remain unchanged.
 - AI Tutor is optional and source-grounded in the local question/explanation payload.
-- No API key, password, service-role key, or signing secret is committed; Netlify must provide Supabase public config and `OPENAI_API_KEY` when those features are enabled.
+- No API key, password, service-role key, or signing secret is committed; Netlify must provide Supabase public config (`SUPABASE_URL` + `SUPABASE_PUBLISHABLE_KEY`/`SUPABASE_ANON_KEY`) when login/sync are enabled. The AI Tutor and AI-question endpoints route through the shared Toranot Claude proxy authenticated by the signed-in user's Supabase JWT — **no model API key (OpenAI or otherwise) lives in this repo**.
 - Canonical question data stays static and is served through a token-checking Netlify Function when auth is enabled.
 - User progress, stars, and sessions remain local-first and sync only to rows owned by the authenticated Supabase user.
 - Supabase Auth owns password handling; the app stores only the Supabase session in browser storage.
