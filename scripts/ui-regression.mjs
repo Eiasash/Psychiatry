@@ -19,6 +19,14 @@ function expectMissing(pattern, label) {
 expect(/function renderAiMarkdown\(/, "AI Tutor answer Markdown renderer is missing");
 expect(/function renderAiAnswer\(/, "AI Tutor answer renderer wrapper is missing");
 expect(/renderAiAnswer\(out,\s*data\)/, "AI Tutor response is not rendered through renderAiAnswer");
+expect(/function readableMixedText\(/, "mixed Hebrew/English display helper is missing");
+expect(/function highlightReadable\(/, "browse search should use the mixed-text display helper before highlighting");
+expect(/el\("div","qtext",readableMixedText\(q\.q\)\)/, "quiz question text should be display-normalized without changing source data");
+expect(/<span class="ot">\$\{readableMixedText\(o\)\}<\/span>/, "quiz option text should be display-normalized without changing source data");
+expect(/readableMixedText\(exp\)/, "quiz explanations should be display-normalized without changing source data");
+expect(/readableMixedText\(q\.ref\)/, "quiz source references should be display-normalized without changing source data");
+expect(/highlightReadable\(q\.q,\s*rawTerm\)/, "browse question text should use mixed-text highlighting");
+expect(/highlightReadable\(o,\s*rawTerm\)/, "browse option text should use mixed-text highlighting");
 expect(/class="qcount" dir="ltr"/, "quiz counter needs an LTR boundary inside the RTL toolbar");
 expect(/\.ai-box\{[^}]*background:var\(--card2\)/s, "AI Tutor panel needs a neutral card background");
 expect(/\.ai-loading/, "AI Tutor loading state needs explicit styling");
@@ -104,8 +112,26 @@ function extractFunction(name) {
   return "";
 }
 
-const rendererSource = ["escapeHtml", "aiInlineMarkdown", "aiTableCells", "aiTableDivider", "renderAiTable", "renderAiMarkdown", "renderAiAnswer"].map(extractFunction).join("\n");
+const rendererSource = ["escapeHtml", "readableMixedText", "aiInlineMarkdown", "aiTableCells", "aiTableDivider", "renderAiTable", "renderAiMarkdown", "renderAiAnswer"].map(extractFunction).join("\n");
+const mixedTextSource = ["escapeHtml", "escapeRegExp", "readableMixedText", "highlightReadable"].map(extractFunction).join("\n");
 const aiCardSource = ["escapeHtml", "weakestTopicIndex", "aiQuestionAvailable", "aiQuestionHtml"].map(extractFunction).join("\n");
+if (mixedTextSource.trim()) {
+  try {
+    const context = {};
+    vm.createContext(context);
+    vm.runInContext(mixedTextSource, context);
+    const spaced = vm.runInContext(`readableMixedText(${JSON.stringify("שלObsessive נמצאBHCG חיובי 20מג Disorders,על DSM<5")})`, context);
+    if (!spaced.includes("של Obsessive")) failures.push("mixed text helper does not separate Hebrew before English");
+    if (!spaced.includes("נמצא BHCG")) failures.push("mixed text helper does not separate Hebrew before Latin abbreviations");
+    if (!spaced.includes("20 מג")) failures.push("mixed text helper does not separate numbers before Hebrew units");
+    if (!spaced.includes("Disorders, על")) failures.push("mixed text helper does not separate punctuation-adjacent mixed text");
+    if (!spaced.includes("DSM&lt;5")) failures.push("mixed text helper does not preserve HTML escaping");
+    const highlighted = vm.runInContext(`highlightReadable(${JSON.stringify("נמצאBHCG חיובי")}, ${JSON.stringify("BHCG")})`, context);
+    if (!highlighted.includes("<mark class=\"hl\">BHCG</mark>")) failures.push("mixed text highlighter does not preserve search highlighting");
+  } catch (err) {
+    failures.push(`Mixed text helper regression threw: ${err.message}`);
+  }
+}
 if (aiCardSource.trim()) {
   try {
     const context = {

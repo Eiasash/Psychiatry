@@ -1,6 +1,6 @@
 {
   "name": "psychiatry-shlav-aleph",
-  "version": "1.6.2",
+  "version": "1.6.3",
   "private": true,
   "description": "Israeli Psychiatry Shlav Aleph board-prep PWA",
   "scripts": {
@@ -10,9 +10,10 @@
     "audit:sw": "node scripts/sw-regression.mjs",
     "audit:ai": "node scripts/ai-tutor-regression.mjs && node scripts/ai-question-regression.mjs",
     "audit:data": "node scripts/data-quality-audit.mjs",
+    "audit:data:regression": "node scripts/data-quality-regression.mjs",
     "verify:prod": "node scripts/prod-smoke.mjs",
     "visual:mobile": "node scripts/mobile-visual-regression.mjs",
-    "check:syntax": "node scripts/check-index-script.mjs && node --check scripts/verify.mjs && node --check scripts/a11y-audit.mjs && node --check scripts/ui-regression.mjs && node --check scripts/sw-regression.mjs && node --check scripts/ai-tutor-regression.mjs && node --check scripts/ai-question-regression.mjs && node --check scripts/mobile-visual-regression.mjs && node --check scripts/data-quality-audit.mjs && node --check scripts/prod-smoke.mjs && node --check netlify/functions/lib/supabase.mjs && node --check netlify/functions/supabase-config.mjs && node --check netlify/functions/protected-asset.mjs && node --check netlify/functions/ai-tutor.mjs && node --check netlify/functions/ai-question.mjs",
-    "verify": "npm run check:syntax && node scripts/verify.mjs && npm run audit:a11y && npm run audit:ui && npm run audit:sw && npm run audit:ai && npm run audit:data"
+    "check:syntax": "node scripts/check-index-script.mjs && node --check scripts/verify.mjs && node --check scripts/a11y-audit.mjs && node --check scripts/ui-regression.mjs && node --check scripts/sw-regression.mjs && node --check scripts/ai-tutor-regression.mjs && node --check scripts/ai-question-regression.mjs && node --check scripts/mobile-visual-regression.mjs && node --check scripts/data-quality-audit.mjs && node --check scripts/data-quality-regression.mjs && node --check scripts/prod-smoke.mjs && node --check netlify/functions/lib/supabase.mjs && node --check netlify/functions/supabase-config.mjs && node --check netlify/functions/protected-asset.mjs && node --check netlify/functions/ai-tutor.mjs && node --check netlify/functions/ai-question.mjs",
+    "verify": "npm run check:syntax && node scripts/verify.mjs && npm run audit:a11y && npm run audit:ui && npm run audit:sw && npm run audit:ai && npm run audit:data && npm run audit:data:regression"
   }
 }
