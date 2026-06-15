@@ -140,7 +140,13 @@ Three must agree or `verify` fails — bump together on every release:
   `unicode-bidi: plaintext`, not forced `dir="rtl"`. Drug names / English clinical terms
   stay in English per Israeli convention.
 - **Branch + PR for all non-trivial work** (`claude/<slug>` → PR → CI green → merge). Never
-  push `main` directly. Codex reviews PRs here (`chatgpt-codex-connector[bot]`).
+  push `main` directly.
+- **Codex review is NOT yet enabled on this repo.** The Codex GitHub App
+  (`chatgpt-codex-connector[bot]`) reviews PRs on the sibling repos but has **never** reviewed
+  one here (0 reviews on #20–#25; `@codex review` is a no-op). To turn it on, install/grant the
+  Codex app access to `Eiasash/Psychiatry` at github.com/settings/installations, then trigger
+  with an `@codex review` PR comment. Until then, treat CI-green + a fresh-eye/audit pass as the
+  review bar — don't "wait for Codex" here expecting it to arrive.
 - **OCR caveat** (above): never silently "correct" a `vision:true` stem.
 - **Answer keys are post-appeal official** — `c_accept`/`all_accepted` encode multi-accept
   and nullified questions; don't collapse them to a single `c`.
