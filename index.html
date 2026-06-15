@@ -934,8 +934,23 @@ function normText(s){return String(s||"").normalize("NFKC").replace(/[\u0591-\u0
 function qById(id){return QMAP.get(id);}
 function escapeHtml(s){return String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));}
 function escapeRegExp(s){return String(s).replace(/[.*+?^${}()|[\]\\]/g,"\\$&");}
+function readableMixedText(s){
+  return escapeHtml(String(s||"")
+    .replace(/([\u0590-\u05ff])([A-Za-z0-9])/g,"$1 $2")
+    .replace(/([A-Za-z0-9])([\u0590-\u05ff])/g,"$1 $2")
+    .replace(/\s+([,.;:?!])/g,"$1")
+    .replace(/([,;:?!])(?=[\u0590-\u05ffA-Za-z])/g,"$1 ")
+    .replace(/(^|[^\d])\.(?=[\u0590-\u05ffA-Za-z])/g,"$1. "));
+}
 function highlight(s,term){
   const safe=escapeHtml(s);
+  const raw=term.trim();
+  if(!raw)return safe;
+  const needle=escapeRegExp(escapeHtml(raw));
+  return safe.replace(new RegExp(needle,"gi"),m=>`<mark class="hl">${m}</mark>`);
+}
+function highlightReadable(s,term){
+  const safe=readableMixedText(s);
   const raw=term.trim();
   if(!raw)return safe;
   const needle=escapeRegExp(escapeHtml(raw));
@@ -1257,13 +1272,13 @@ function renderGeneratedAiQuestion(out,q){
   out.dataset.correctIndex=String(correct);
   const citations=Array.isArray(q.citations)?q.citations.filter(Boolean).slice(0,4):[];
   out.innerHTML=`<div class="ai-question">
-    <div class="ai-q-meta"><span class="tag acc">AI</span><span class="tag">${escapeHtml(q.topic||"")}</span><span class="tag" dir="ltr">${escapeHtml(q.sourceLabel||"Syllabus")}</span></div>
+    <div class="ai-q-meta"><span class="tag acc">AI</span><span class="tag">${readableMixedText(q.topic||"")}</span><span class="tag" dir="ltr">${escapeHtml(q.sourceLabel||"Syllabus")}</span></div>
     ${aiSourceContractHtml(q)}
     ${aiQualityWarningsHtml(q.qualityWarnings)}
-    <div class="qtext">${escapeHtml(q.stem)}</div>
-    <div class="opts">${opts.map((opt,k)=>`<button type="button" class="opt ai-q-option" data-ai-q-option="${k}" aria-label="אפשרות ${LETTERS[k]}: ${escapeHtml(opt)}"><span class="k">${LETTERS[k]}</span><span class="ot">${escapeHtml(opt)}</span></button>`).join("")}</div>
+    <div class="qtext">${readableMixedText(q.stem)}</div>
+    <div class="opts">${opts.map((opt,k)=>`<button type="button" class="opt ai-q-option" data-ai-q-option="${k}" aria-label="אפשרות ${LETTERS[k]}: ${escapeHtml(opt)}"><span class="k">${LETTERS[k]}</span><span class="ot">${readableMixedText(opt)}</span></button>`).join("")}</div>
     <div class="ai-q-feedback" role="status" aria-live="polite"></div>
-    ${citations.length?`<div class="ai-citations"><span>מקורות:</span>${citations.map(c=>`<span>${escapeHtml(c)}</span>`).join("")}</div>`:""}
+    ${citations.length?`<div class="ai-citations"><span>מקורות:</span>${citations.map(c=>`<span>${readableMixedText(c)}</span>`).join("")}</div>`:""}
     <div class="ai-generated-note">שאלה זו נוצרה לתרגול בלבד ואינה חלק מהמפתח הרשמי.</div>
   </div>`;
   out.querySelectorAll("[data-ai-q-option]").forEach(b=>b.onclick=()=>gradeGeneratedAiQuestion(out,Number(b.dataset.aiQOption)));
@@ -1273,12 +1288,12 @@ function aiSourceContractHtml(q){
   const label=contract.sourceLabel||q?.sourceLabel||"Syllabus";
   const scope=contract.scope||"שאלה מקורית לפי מקור הסילבוס שנבחר.";
   const limit=contract.limit||"תרגול AI בלבד; לא חלק מבנק 900 השאלות המאומתות.";
-  return `<div class="ai-source-contract" aria-label="מסגרת מקור לשאלת AI"><b>מקור נבחר</b><span dir="ltr">${escapeHtml(label)}</span><span>${escapeHtml(scope)}</span><span>${escapeHtml(limit)}</span></div>`;
+  return `<div class="ai-source-contract" aria-label="מסגרת מקור לשאלת AI"><b>מקור נבחר</b><span dir="ltr">${escapeHtml(label)}</span><span>${readableMixedText(scope)}</span><span>${readableMixedText(limit)}</span></div>`;
 }
 function aiQualityWarningsHtml(warnings){
   const items=Array.isArray(warnings)?warnings.filter(Boolean).slice(0,3):[];
   if(!items.length)return "";
-  return `<div class="ai-quality-warnings" role="note"><b>בדיקת איכות</b>${items.map(w=>`<span>${escapeHtml(w)}</span>`).join("")}</div>`;
+  return `<div class="ai-quality-warnings" role="note"><b>בדיקת איכות</b>${items.map(w=>`<span>${readableMixedText(w)}</span>`).join("")}</div>`;
 }
 function gradeGeneratedAiQuestion(out,k){
   const q=out.__aiQuestion||{};
@@ -1328,10 +1343,10 @@ function renderQuiz(){
   qhead.querySelector(".toolbar").prepend(starButton(q.id,()=>renderQuiz()));
   card.append(qhead);
   const pb=el("div","progbar",`<i style="width:${pct}%"></i>`);pb.setAttribute("role","progressbar");pb.setAttribute("aria-label","התקדמות בסבב");pb.setAttribute("aria-valuemin","0");pb.setAttribute("aria-valuemax","100");pb.setAttribute("aria-valuenow",String(pct));card.append(pb);
-  const qText=el("div","qtext",escapeHtml(q.q));qText.id="current-question";card.append(qText);
+  const qText=el("div","qtext",readableMixedText(q.q));qText.id="current-question";card.append(qText);
   const opts=el("div","opts");opts.setAttribute("role","group");opts.setAttribute("aria-labelledby","current-question");
   q.o.forEach((o,k)=>{
-    const b=el("button","opt",`<span class="k">${LETTERS[k]}</span><span class="ot">${escapeHtml(o)}</span>`);
+    const b=el("button","opt",`<span class="k">${LETTERS[k]}</span><span class="ot">${readableMixedText(o)}</span>`);
     b.setAttribute("aria-label",`אפשרות ${LETTERS[k]}: ${o}`);
     b.setAttribute("aria-keyshortcuts",String(k+1));
     b.onclick=()=>answer(q,k,opts,fb,card);
@@ -1432,20 +1447,20 @@ function showAnswer(q,k,opts,fb,card,record){
   if(q.all_accepted) h+=' <span class="note">— כל התשובות התקבלו (שאלה שבוטלה לאחר ערעור)</span>';
   else if(accept.length>1) h+=` <span class="note">— מתקבלות גם: ${accept.map(i=>LETTERS[i]).join(", ")}</span>`;
   const exp=EXP[q.id];
-  if(exp) h+=`<div class="expl"><div class="expl-h">הסבר</div>${escapeHtml(exp)}</div>`;
+  if(exp) h+=`<div class="expl"><div class="expl-h">הסבר</div>${readableMixedText(exp)}</div>`;
   else if(REDUCE_DATA) h+=`<div class="expl"><div class="expl-h">הסבר</div><button type="button" class="btn" data-load-exp="${q.id}">טען הסבר</button></div>`;
   else h+=`<div class="expl" data-exp-slot="${q.id}"><div class="expl-h">הסבר</div><span class="muted">טוען הסבר...</span></div>`;
-  if(q.ref) h+=`<div class="ref">מקור: <b>${escapeHtml(q.ref)}</b> · Kaplan &amp; Sadock Synopsis</div>`;
+  if(q.ref) h+=`<div class="ref">מקור: <b>${readableMixedText(q.ref)}</b> · Kaplan &amp; Sadock Synopsis</div>`;
   if(q.vision) h+='<div class="note">⚠ נוסח השאלה תומלל אוטומטית (מועד 2025 פגום במקור) — התשובות, המפתח וההסבר מהימנים; ודא ניסוח מול ה-PDF</div>';
   const keyDoubt=KEY_DOUBTS[q.id];
-  if(keyDoubt) h+=`<div class="note">⚑ דגל לימודי לגבי המפתח הרשמי: ${escapeHtml(keyDoubt.issue)} המפתח הרשמי נשמר ללא שינוי.</div>`;
+  if(keyDoubt) h+=`<div class="note">⚑ דגל לימודי לגבי המפתח הרשמי: ${readableMixedText(keyDoubt.issue)} המפתח הרשמי נשמר ללא שינוי.</div>`;
   h+=aiTutorHtml();
   fb.innerHTML=h;
   const expSlot=fb.querySelector("[data-exp-slot]");
   if(expSlot){
     loadExplanations().then(()=>{
       const expNow=EXP[q.id]||"אין הסבר זמין לשאלה זו.";
-      if(expSlot.isConnected) expSlot.innerHTML=`<div class="expl-h">הסבר</div>${escapeHtml(expNow)}`;
+      if(expSlot.isConnected) expSlot.innerHTML=`<div class="expl-h">הסבר</div>${readableMixedText(expNow)}`;
     });
   }
   const loadBtn=fb.querySelector("[data-load-exp]");
@@ -1455,7 +1470,7 @@ function showAnswer(q,k,opts,fb,card,record){
       loadBtn.textContent="טוען הסבר...";
       await loadExplanations();
       const expNow=EXP[q.id]||"אין הסבר זמין לשאלה זו.";
-      loadBtn.closest(".expl").innerHTML=`<div class="expl-h">הסבר</div>${escapeHtml(expNow)}`;
+      loadBtn.closest(".expl").innerHTML=`<div class="expl-h">הסבר</div>${readableMixedText(expNow)}`;
     };
   }
   wireAiButtons(fb,q,k);
@@ -1546,9 +1561,9 @@ function renderExamReview(done=lastCompletedSession){
     const a=answers.get(id);
     const accept=acceptedIndices(q);
     const row=el("div","review-row "+(a&&a.ok?"ok":"no"));
-    const chosen=a?.skipped?"דולג":(Number.isInteger(a?.k)?`${LETTERS[a.k]}. ${escapeHtml(q.o[a.k])}`:"לא נענה");
+    const chosen=a?.skipped?"דולג":(Number.isInteger(a?.k)?`${LETTERS[a.k]}. ${readableMixedText(q.o[a.k])}`:"לא נענה");
     row.innerHTML=`<div class="qhead"><b>${idx+1}. ${escapeHtml(yearLabel(q.t))}</b><span>${a&&a.ok?"נכון":"דורש חזרה"}</span></div>
-      <div class="qq">${escapeHtml(q.q)}</div>
+      <div class="qq">${readableMixedText(q.q)}</div>
       <div class="meta"><span>נבחר: ${chosen}</span><span>מתקבל: ${accept.map(i=>LETTERS[i]).join(", ")}</span>${KEY_DOUBTS[id]?'<span style="color:var(--warn)">דגל מפתח</span>':""}</div>`;
     list.append(row);
   });
@@ -1621,13 +1636,13 @@ function drawList(){
   res.slice(start,start+PAGE_SIZE).forEach(q=>{
     const it=el("div","qitem");
     const head=el("div","qhead");
-    head.append(el("div","qq",highlight(q.q,rawTerm)),starButton(q.id,()=>drawList()));
+    head.append(el("div","qq",highlightReadable(q.q,rawTerm)),starButton(q.id,()=>drawList()));
     it.append(head);
     const accept=acceptedIndices(q);
-    q.o.forEach((o,k)=>it.append(el("div","oo"+(accept.includes(k)?" c":""),`${LETTERS[k]}. ${highlight(o,rawTerm)}`)));
+    q.o.forEach((o,k)=>it.append(el("div","oo"+(accept.includes(k)?" c":""),`${LETTERS[k]}. ${highlightReadable(o,rawTerm)}`)));
     const ex=EXP[q.id];
-    if(ex)it.append(el("div","expl",`<div class="expl-h">הסבר</div>${escapeHtml(ex)}`));
-    it.append(el("div","meta",`<span>${escapeHtml(yearLabel(q.t))}</span><span>${escapeHtml(topicName(q))}</span>${q.ref?`<span>${highlight(q.ref,rawTerm)}</span>`:""}${q.all_accepted?`<span style="color:var(--warn)">בוטלה בערעור</span>`:""}${accept.length>1&&!q.all_accepted?`<span style="color:var(--warn)">ריבוי תשובות</span>`:""}${q.vision?`<span style="color:var(--warn)">OCR</span>`:""}${KEY_DOUBTS[q.id]?`<span style="color:var(--warn)">דגל מפתח</span>`:""}`));
+    if(ex)it.append(el("div","expl",`<div class="expl-h">הסבר</div>${readableMixedText(ex)}`));
+    it.append(el("div","meta",`<span>${escapeHtml(yearLabel(q.t))}</span><span>${escapeHtml(topicName(q))}</span>${q.ref?`<span>${highlightReadable(q.ref,rawTerm)}</span>`:""}${q.all_accepted?`<span style="color:var(--warn)">בוטלה בערעור</span>`:""}${accept.length>1&&!q.all_accepted?`<span style="color:var(--warn)">ריבוי תשובות</span>`:""}${q.vision?`<span style="color:var(--warn)">OCR</span>`:""}${KEY_DOUBTS[q.id]?`<span style="color:var(--warn)">דגל מפתח</span>`:""}`));
     list.append(it);
   });
 }
@@ -1689,7 +1704,7 @@ function wireAiButtons(root,q,k){
   root.querySelectorAll("[data-ai-mode]").forEach(b=>b.onclick=()=>askAi(b.dataset.aiMode,q,k,root.querySelector(".ai-output"),b));
 }
 function aiInlineMarkdown(s){
-  return escapeHtml(s)
+  return readableMixedText(s)
     .replace(/`([^`]+)`/g,"<code>$1</code>")
     .replace(/\*\*([^*]+)\*\*/g,"<strong>$1</strong>");
 }
