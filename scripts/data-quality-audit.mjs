@@ -26,7 +26,7 @@ function hasGluedHebrewEnglish(text) {
 }
 
 function hasPdfTailArtifact(text) {
-  return /יש לבחור בתשובה אחת בלבד עבור כל שאלה|עמוד\s*\d+|עמוד\d+/i.test(String(text || ""));
+  return /יש לבחור בתשובה אחת בלבד עבור כל שאלה|עמוד\s*\d+|עמוד\d+|בחינת שלב א['׳]\s*פסיכיאטריה\s*\d/i.test(String(text || ""));
 }
 
 function hasLongNumericRefBlob(ref) {

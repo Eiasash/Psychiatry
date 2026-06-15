@@ -58,3 +58,12 @@ The next canonical data cleanup should continue as a separate source-backed PR:
 1. Quote the source PDF or authoritative fixture for each edited item.
 2. Work through the remaining 257 Hebrew/English spacing anomalies only where source verification is available, because the app already normalizes spacing at display time.
 3. Keep official answer keys unchanged unless the source explicitly supports a key correction.
+
+## Correction (2026-06-15, all-in audit PR)
+
+The `pdf-tail-artifact: 0` row above was a **detector false-negative**, not a clean state:
+`hasPdfTailArtifact()` did not match the `בחינת שלב א' פסיכיאטריה<date> <page>` footer, so 24
+live tails in the 2024-May 4th options went unreported while the regression gate asserted 0.
+The detector is now widened and those 24 tails removed (deterministic footer strip). A separately
+surviving **2020 reversed-digit artifact (25 questions)** is newly documented and deferred to the
+source-backed campaign. Full detail + id lists: `docs/AUDIT_2026-06-15_allin.md`.

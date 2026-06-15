@@ -23,7 +23,10 @@ function bearerToken(req) {
   return match ? match[1].trim() : "";
 }
 
-export async function requireSupabaseUser(req, { allowDisabled = true } = {}) {
+// Fail closed by default: a caller must explicitly opt into the Supabase-disabled
+// passthrough (allowDisabled:true). Protected endpoints rely on the default, so a new
+// endpoint that forgets to pass an option still rejects when Supabase env is unset.
+export async function requireSupabaseUser(req, { allowDisabled = false } = {}) {
   const cfg = supabaseConfig();
   if (!cfg.enabled) {
     if (allowDisabled) return { ok: true, enabled: false, user: null };
