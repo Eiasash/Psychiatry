@@ -400,7 +400,7 @@ const AI_SYLLABUS_SOURCES = [
   {value:"psychopharm",label:"Psychopharmacology syllabus",hint:"תרופות, מנגנונים ותופעות לוואי"},
   {value:"ethics",label:"Law, ethics and board syllabus",hint:"חוק, אתיקה ומבנה הבחינה"}
 ];
-let QUESTIONS = [], TOPICS = [], SYLLABUS = null, AI_LAST = null, PROG = {}, EXP = {}, KEY_DOUBTS = {}, QMAP = new Map();
+let QUESTIONS = [], TOPICS = [], SYLLABUS = null, PRACTICE = [], AI_LAST = null, PROG = {}, EXP = {}, KEY_DOUBTS = {}, QMAP = new Map();
 let STARS = new Set();
 let EXP_PROMISE = null;
 let DB_PROMISE = null;
@@ -959,13 +959,14 @@ async function loadAppData(){
   await loadProg();
   await loadStars();
   try{
-    const [q,t,doubts,syl]=await Promise.all([
+    const [q,t,doubts,syl,prac]=await Promise.all([
       dataFetch("data/questions.json").then(r=>r.json()),
       fetch("data/topics.json").then(r=>r.json()),
       dataFetch("docs/answer_key_doubts.json").then(r=>r.ok?r.json():[]).catch(()=>[]),
-      fetch("data/syllabus.json").then(r=>r.ok?r.json():null).catch(()=>null)
+      fetch("data/syllabus.json").then(r=>r.ok?r.json():null).catch(()=>null),
+      fetch("data/practice_questions.json").then(r=>r.ok?r.json():[]).catch(()=>[])
     ]);
-    QUESTIONS=q; TOPICS=t.topics||[]; SYLLABUS=syl;
+    QUESTIONS=q; TOPICS=t.topics||[]; SYLLABUS=syl; PRACTICE=Array.isArray(prac)?prac:[];
     QMAP=new Map(QUESTIONS.map(q=>[q.id,q]));
     KEY_DOUBTS=Object.fromEntries((Array.isArray(doubts)?doubts:[]).map(d=>[d.id,d]));
     session=await loadSavedSession();
@@ -1341,18 +1342,33 @@ function aiChapterOptions(){
 function aiQuestionHtml(tps){
   const defaultTi=weakestTopicIndex(tps);
   const available=aiQuestionAvailable();
+  const poolCount=(typeof PRACTICE!=="undefined"&&Array.isArray(PRACTICE))?PRACTICE.length:0;
+  const hasPool=poolCount>0;
+  const enabled=available||hasPool;
   const topicOptions=TOPICS.map((topic,ti)=>`<option value="${ti}"${ti===defaultTi?" selected":""}>${escapeHtml(topic)} (${tps[ti]||0})</option>`).join("");
   const sourceOptions=AI_SYLLABUS_SOURCES.map(s=>`<option value="${escapeHtml(s.value)}">${escapeHtml(s.label)} · ${escapeHtml(s.hint)}</option>`).join("");
-  const actionHtml=available?'<button type="button" class="btn primary" id="ai-generate">צור שאלה</button>':`<a class="btn primary" id="ai-open-netlify" href="${AI_QUESTION_APP_URL}">פתח ב-Netlify</a>`;
+  const genBtn=available?'<button type="button" class="btn primary" id="ai-generate">צור שאלה</button>':"";
+  const poolBtn=hasPool?`<button type="button" class="btn${available?"":" primary"}" id="ai-pool">שאלה מהמאגר (${poolCount})</button>`:"";
+  const netlifyBtn=(!available&&!hasPool)?`<a class="btn primary" id="ai-open-netlify" href="${AI_QUESTION_APP_URL}">פתח ב-Netlify</a>`:"";
+  const actionHtml=genBtn+poolBtn+netlifyBtn;
+  const subtitle=available
+    ?"תרגול נוסף שמסומן כ-AI ואינו משנה את בנק 900 השאלות המאומתות."
+    :hasPool
+    ?`מאגר תרגול מוכן (${poolCount} שאלות AI מבוססות Synopsis) זמין גם ללא חיבור; מסומן כ-AI ואינו משנה את בנק 900 השאלות המאומתות.`
+    :"זמין באפליקציית Netlify המחוברת לחשבון, כדי להפעיל את פונקציות ה-AI.";
+  const headTag=available?"חדש":hasPool?"מאגר":"Netlify";
+  const emptyMsg=enabled
+    ?(available?"":`<span class="muted small">בחר נושא ולחץ "שאלה מהמאגר" כדי לתרגל — עובד גם ללא חיבור.</span>`)
+    :`<span class="muted small">הבנק המאומת ממשיך לעבוד כאן. יצירת שאלות AI דורשת את הפריסה המאובטחת: <span dir="ltr">${AI_QUESTION_APP_URL}</span></span>`;
   return `<div class="ai-drill-card card">
     <div class="ai-drill-head">
-      <div><b>שאלת AI לפי הסילבוס</b><br><span>${available?"תרגול נוסף שמסומן כ-AI ואינו משנה את בנק 900 השאלות המאומתות.":"זמין באפליקציית Netlify המחוברת לחשבון, כדי להפעיל את פונקציות ה-AI."}</span></div>
-      <span class="tag acc">${available?"חדש":"Netlify"}</span>
+      <div><b>שאלת AI לפי הסילבוס</b><br><span>${subtitle}</span></div>
+      <span class="tag acc">${headTag}</span>
     </div>
     <div class="ai-drill-controls">
-      <label class="field"><span>נושא</span><select class="input" id="ai-topic"${available?"":" disabled"}>${topicOptions}</select></label>
+      <label class="field"><span>נושא</span><select class="input" id="ai-topic"${enabled?"":" disabled"}>${topicOptions}</select></label>
       <label class="field"><span>מקור סילבוס</span><select class="input" id="ai-source"${available?"":" disabled"}>${sourceOptions}</select></label>
-      <label class="field"><span>פרק סילבוס</span><select class="input" id="ai-chapter"${available?"":" disabled"}><option value="">— כל הסילבוס —</option>${aiChapterOptions()}</select></label>
+      <label class="field"><span>פרק סילבוס</span><select class="input" id="ai-chapter"${enabled?"":" disabled"}><option value="">— כל הסילבוס —</option>${aiChapterOptions()}</select></label>
       <label class="field"><span>רמה</span><select class="input" id="ai-level"${available?"":" disabled"}>
         <option value="board">שלב א'</option>
         <option value="hard">קשה</option>
@@ -1360,7 +1376,7 @@ function aiQuestionHtml(tps){
       </select></label>
       ${actionHtml}
     </div>
-    <div class="ai-drill-output" role="status" aria-live="polite" aria-atomic="true">${available?"":`<span class="muted small">הבנק המאומת ממשיך לעבוד כאן. יצירת שאלות AI דורשת את הפריסה המאובטחת: <span dir="ltr">${AI_QUESTION_APP_URL}</span></span>`}</div>
+    <div class="ai-drill-output" role="status" aria-live="polite" aria-atomic="true">${emptyMsg}</div>
   </div>`;
 }
 function wireAiQuestionCard(root){
@@ -1368,9 +1384,49 @@ function wireAiQuestionCard(root){
   if(!card)return;
   const btn=card.querySelector("#ai-generate");
   if(btn)btn.onclick=()=>generateAiQuestion(card);
-  // Restore the last generated question so it survives a view/tab switch (and mobile reload).
+  const poolBtn=card.querySelector("#ai-pool");
+  if(poolBtn)poolBtn.onclick=()=>drawPracticeQuestion(card);
+  // Restore the last generated/drawn question so it survives a view/tab switch (and mobile reload).
   if(!AI_LAST){ try{const r=localStorage.getItem("psy_ai_last"); if(r)AI_LAST=JSON.parse(r);}catch(e){} }
-  if(btn&&AI_LAST){ const out=card.querySelector(".ai-drill-output"); if(out)renderGeneratedAiQuestion(out,AI_LAST); }
+  if((btn||poolBtn)&&AI_LAST){ const out=card.querySelector(".ai-drill-output"); if(out)renderGeneratedAiQuestion(out,AI_LAST); }
+}
+// Draw a pre-generated practice question from the offline pool (data/practice_questions.json).
+// Reuses the AI-question render/grade path, so practice questions stay isolated from the
+// verified 900-question bank's progress/Leitner state and inherit the AI labeling.
+function drawPracticeQuestion(card){
+  const out=card.querySelector(".ai-drill-output");
+  if(!Array.isArray(PRACTICE)||!PRACTICE.length){ if(out)out.textContent="מאגר התרגול אינו זמין כרגע."; return; }
+  const topicSel=card.querySelector("#ai-topic");
+  const topicIndex=topicSel?Number(topicSel.value):NaN;
+  const chapterSel=card.querySelector("#ai-chapter");
+  const chapter=chapterSel?chapterSel.value:"";
+  let note="";
+  // Narrow by chapter first, then topic, then fall back to the whole pool — always serve a question.
+  let pool=PRACTICE;
+  if(chapter){ const byCh=pool.filter(p=>p.chapter===chapter); if(byCh.length)pool=byCh; else note="אין שאלות מאגר לפרק זה — נבחרה שאלה קרובה."; }
+  if(Number.isInteger(topicIndex)){
+    const byTopic=pool.filter(p=>Number(p.ti)===topicIndex);
+    if(byTopic.length)pool=byTopic;
+    else if(!note)note="אין שאלות מאגר לנושא זה — נבחרה שאלה קרובה.";
+  }
+  if(!pool.length)pool=PRACTICE;
+  const q=pool[Math.floor(Math.random()*pool.length)];
+  const label=q.ref||"Kaplan & Sadock Synopsis";
+  renderGeneratedAiQuestion(out,{
+    stem:q.q,
+    options:Array.isArray(q.o)?q.o:[],
+    correctIndex:Number(q.c),
+    explanation:q.explanation||"",
+    topic:(typeof TOPICS!=="undefined"&&TOPICS[q.ti])?TOPICS[q.ti]:(q.chapter||""),
+    sourceLabel:label,
+    citations:[label],
+    sourceContract:{
+      sourceLabel:label,
+      scope:q.chapter?`פרק סילבוס: ${q.chapter}`:"שאלת תרגול מבוססת Synopsis.",
+      limit:"מאגר תרגול AI; לא חלק מבנק 900 השאלות המאומתות."
+    },
+    qualityWarnings:note?[note]:[]
+  });
 }
 async function generateAiQuestion(card){
   const out=card.querySelector(".ai-drill-output");

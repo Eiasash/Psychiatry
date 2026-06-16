@@ -1,11 +1,12 @@
 /* Psychiatry Shlav Aleph — service worker (offline cache) */
-const CACHE = "psych-shlava-v1.6.13";
+const CACHE = "psych-shlava-v1.6.14";
 const ASSETS = [
   "./",
   "./index.html",
   "./manifest.json",
   "./data/topics.json",
   "./data/syllabus.json",
+  "./data/practice_questions.json",
   "./icons/icon-192.png",
   "./icons/icon-512.png"
 ];
