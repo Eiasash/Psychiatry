@@ -400,7 +400,7 @@ const AI_SYLLABUS_SOURCES = [
   {value:"psychopharm",label:"Psychopharmacology syllabus",hint:"תרופות, מנגנונים ותופעות לוואי"},
   {value:"ethics",label:"Law, ethics and board syllabus",hint:"חוק, אתיקה ומבנה הבחינה"}
 ];
-let QUESTIONS = [], TOPICS = [], SYLLABUS = null, PROG = {}, EXP = {}, KEY_DOUBTS = {}, QMAP = new Map();
+let QUESTIONS = [], TOPICS = [], SYLLABUS = null, AI_LAST = null, PROG = {}, EXP = {}, KEY_DOUBTS = {}, QMAP = new Map();
 let STARS = new Set();
 let EXP_PROMISE = null;
 let DB_PROMISE = null;
@@ -1368,6 +1368,9 @@ function wireAiQuestionCard(root){
   if(!card)return;
   const btn=card.querySelector("#ai-generate");
   if(btn)btn.onclick=()=>generateAiQuestion(card);
+  // Restore the last generated question so it survives a view/tab switch (and mobile reload).
+  if(!AI_LAST){ try{const r=localStorage.getItem("psy_ai_last"); if(r)AI_LAST=JSON.parse(r);}catch(e){} }
+  if(btn&&AI_LAST){ const out=card.querySelector(".ai-drill-output"); if(out)renderGeneratedAiQuestion(out,AI_LAST); }
 }
 async function generateAiQuestion(card){
   const out=card.querySelector(".ai-drill-output");
@@ -1404,6 +1407,8 @@ function renderGeneratedAiQuestion(out,q){
     out.textContent="המודל החזיר שאלה לא תקינה. נסה שוב.";
     return;
   }
+  AI_LAST=q;
+  try{localStorage.setItem("psy_ai_last",JSON.stringify(q));}catch(e){}
   out.__aiQuestion=q;
   out.dataset.correctIndex=String(correct);
   const citations=Array.isArray(q.citations)?q.citations.filter(Boolean).slice(0,4):[];
