@@ -400,7 +400,12 @@ const AI_SYLLABUS_SOURCES = [
   {value:"psychopharm",label:"Psychopharmacology syllabus",hint:"תרופות, מנגנונים ותופעות לוואי"},
   {value:"ethics",label:"Law, ethics and board syllabus",hint:"חוק, אתיקה ומבנה הבחינה"}
 ];
-let QUESTIONS = [], TOPICS = [], SYLLABUS = null, PRACTICE = [], AI_LAST = null, PROG = {}, EXP = {}, KEY_DOUBTS = {}, QMAP = new Map();
+let QUESTIONS = [], TOPICS = [], SYLLABUS = null, PRACTICE = [], AI_LAST = null, PROG = {}, EXP = {}, KEY_DOUBTS = {}, QMAP = new Map(), AIMAP = new Map();
+// AI practice questions are kept in a separate pool (data/practice_questions.json) and a
+// separate lookup map. They are browsable/drillable alongside the verified 900-bank but are
+// NEVER added to QUESTIONS/QMAP, so they never enter the official progress/Leitner/stats
+// (all of which iterate QUESTIONS). isAiId() is the single guard used everywhere.
+const isAiId = id => typeof id === "string" && id.startsWith("ai-");
 let STARS = new Set();
 let EXP_PROMISE = null;
 let DB_PROMISE = null;
@@ -845,6 +850,7 @@ function saveStars(){ saveUserLocal(STAR_KEY,[...STARS]); markCloudDirty({stars:
 const BOX_DAYS=[0,1,3,7,16,40];
 function rec(id){ return PROG[id]||(PROG[id]={box:0,seen:0,correct:0,wrong:0,due:0,last:0,lastWrong:0}); }
 function grade(id,ok){
+  if(isAiId(id))return; // AI practice questions never enter the official progress/Leitner/cloud sync
   const r=rec(id), now=Date.now(); r.seen++; r.last=now;
   if(ok){ r.correct++; r.box=Math.min(r.box+1,5); }
   else { r.wrong++; r.lastWrong=now; r.box=Math.max(r.box-1,0); }
@@ -971,6 +977,9 @@ async function loadAppData(){
     ]);
     QUESTIONS=q; TOPICS=t.topics||[]; SYLLABUS=syl; PRACTICE=Array.isArray(prac)?prac:[];
     QMAP=new Map(QUESTIONS.map(q=>[q.id,q]));
+    // Tag the AI pool with a synthetic sitting + flag, then index it separately from the bank.
+    PRACTICE.forEach(p=>{ p.t="AI"; p.ai_generated=true; });
+    AIMAP=new Map(PRACTICE.map(p=>[p.id,p]));
     KEY_DOUBTS=Object.fromEntries((Array.isArray(doubts)?doubts:[]).map(d=>[d.id,d]));
     session=await loadSavedSession();
     await mergeCloudState().catch(()=>toast("לא ניתן לסנכרן התקדמות ענן כרגע"));
@@ -1037,11 +1046,11 @@ function renderStartupError(error){
 /* ---------- helpers ---------- */
 const byYear = ()=>{const m={};QUESTIONS.forEach(q=>m[q.t]=(m[q.t]||0)+1);return m;};
 const byTopic= ()=>{const m={};QUESTIONS.forEach(q=>m[q.ti]=(m[q.ti]||0)+1);return m;};
-function yearLabel(t){return t.replace("-Jun"," · יוני").replace("-Sep"," · ספטמבר").replace("-May"," · מאי");}
+function yearLabel(t){if(t==="AI"||!t)return "AI · Synopsis";return t.replace("-Jun"," · יוני").replace("-Sep"," · ספטמבר").replace("-May"," · מאי");}
 function toast(msg){const t=$("#toast");t.textContent=msg;t.classList.add("show");setTimeout(()=>t.classList.remove("show"),1600);}
 function acceptedIndices(q){ return q.all_accepted ? [0,1,2,3] : (q.c_accept&&q.c_accept.length?q.c_accept:[q.c]); }
 function normText(s){return String(s||"").normalize("NFKC").replace(/[\u0591-\u05C7]/g,"").toLowerCase();}
-function qById(id){return QMAP.get(id);}
+function qById(id){return QMAP.get(id)||AIMAP.get(id);}
 function escapeHtml(s){return String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));}
 function escapeRegExp(s){return String(s).replace(/[.*+?^${}()|[\]\\]/g,"\\$&");}
 function stripPdfTailArtifacts(s){
@@ -1372,8 +1381,9 @@ function aiQuestionHtml(tps){
   const sourceOptions=AI_SYLLABUS_SOURCES.map(s=>`<option value="${escapeHtml(s.value)}">${escapeHtml(s.label)} · ${escapeHtml(s.hint)}</option>`).join("");
   const genBtn=available?'<button type="button" class="btn primary" id="ai-generate">צור שאלה</button>':"";
   const poolBtn=hasPool?`<button type="button" class="btn${available?"":" primary"}" id="ai-pool">שאלה מהמאגר (${poolCount})</button>`:"";
+  const drillBtn=hasPool?`<button type="button" class="btn" id="ai-drill">תרגל סבב מהמאגר</button>`:"";
   const netlifyBtn=(!available&&!hasPool)?`<a class="btn primary" id="ai-open-netlify" href="${AI_QUESTION_APP_URL}">פתח ב-Netlify</a>`:"";
-  const actionHtml=genBtn+poolBtn+netlifyBtn;
+  const actionHtml=genBtn+poolBtn+drillBtn+netlifyBtn;
   const subtitle=available
     ?"תרגול נוסף שמסומן כ-AI ואינו משנה את בנק 900 השאלות המאומתות."
     :hasPool
@@ -1409,6 +1419,8 @@ function wireAiQuestionCard(root){
   if(btn)btn.onclick=()=>generateAiQuestion(card);
   const poolBtn=card.querySelector("#ai-pool");
   if(poolBtn)poolBtn.onclick=()=>drawPracticeQuestion(card);
+  const drillBtn=card.querySelector("#ai-drill");
+  if(drillBtn)drillBtn.onclick=()=>startAiSession(card);
   // Restore the last generated/drawn question so it survives a view/tab switch (and mobile reload).
   if(!AI_LAST){ try{const r=localStorage.getItem("psy_ai_last"); if(r)AI_LAST=JSON.parse(r);}catch(e){} }
   if((btn||poolBtn)&&AI_LAST){ const out=card.querySelector(".ai-drill-output"); if(out)renderGeneratedAiQuestion(out,AI_LAST); }
@@ -1450,6 +1462,22 @@ function drawPracticeQuestion(card){
     },
     qualityWarnings:note?[note]:[]
   });
+}
+// Start a full practice round over the AI pool, scoped by the card's topic/chapter selectors.
+// Runs as a normal quiz session, but AI ids never enter PROG (grade() guards on isAiId), so
+// these rounds are ephemeral and never touch the verified-bank progress/Leitner/stats.
+function startAiSession(card){
+  if(!Array.isArray(PRACTICE)||!PRACTICE.length){toast("מאגר התרגול אינו זמין");return;}
+  const topicSel=card&&card.querySelector("#ai-topic");
+  const topicIndex=topicSel?Number(topicSel.value):NaN;
+  const chapterSel=card&&card.querySelector("#ai-chapter");
+  const chapter=chapterSel?chapterSel.value:"";
+  let pool=PRACTICE, scope="כל המאגר";
+  if(chapter){ const byCh=pool.filter(p=>p.chapter===chapter); if(byCh.length){pool=byCh;scope=chapter;} }
+  if(Number.isInteger(topicIndex)){ const byT=pool.filter(p=>Number(p.ti)===topicIndex); if(byT.length){pool=byT;scope=TOPICS[topicIndex]||scope;} }
+  const ids=pool.map(p=>p.id);
+  if(!ids.length){toast("אין שאלות מאגר לסינון זה");return;}
+  startSession(ids,`תרגול AI · ${scope}`,true,{mode:"practice",source:"ai-pool"});
 }
 async function generateAiQuestion(card){
   const out=card.querySelector(".ai-drill-output");
@@ -1534,7 +1562,7 @@ function gradeGeneratedAiQuestion(out,k){
 function shuffle(a){a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
 function startSession(ids,title,doShuffle,opts={}){
   if(!ids.length){toast("אין שאלות");return;}
-  let queue = (doShuffle ? shuffle(ids) : ids.slice()).filter(id=>QMAP.has(id));
+  let queue = (doShuffle ? shuffle(ids) : ids.slice()).filter(id=>QMAP.has(id)||AIMAP.has(id));
   if(!queue.length){toast("אין שאלות זמינות");return;}
   session={queue,i:0,correct:0,wrong:0,title,answered:false,lastAnswer:null,answers:[],
     mode:opts.mode||"practice",source:opts.source||"",reviewFirst:!!opts.reviewFirst,startedAt:Date.now(),updatedAt:Date.now(),durationSec:opts.durationSec||0};
@@ -1575,9 +1603,9 @@ function renderQuiz(){
   const timer=session.mode==="exam"?`<span class="timer" id="timer">${timerText(timeLeft())}</span>`:"";
   const doubt=KEY_DOUBTS[q.id]?'<span class="tag" style="color:var(--warn);border-color:var(--warn)">דגל מפתח</span>':"";
   const qhead=el("div","qhead",
-    `<div class="qmeta"><span class="tag">${escapeHtml(session.title)}</span><span class="tag">${escapeHtml(yearLabel(q.t))}</span><span class="tag acc">${escapeHtml(topicName(q))}</span>${q.vision?'<span class="tag" style="color:var(--warn);border-color:var(--warn)" title="תמלול אוטומטי מהמקור — ודא מול ה-PDF">OCR</span>':""}${doubt}</div>
+    `<div class="qmeta"><span class="tag">${escapeHtml(session.title)}</span><span class="tag"${q.ai_generated?' style="color:var(--warn);border-color:var(--warn)" title="שאלת תרגול שנוצרה על-ידי AI ומבוססת על Synopsis — אינה חלק מבנק 900 השאלות הרשמי ואינה נספרת בנתונים"':''}>${escapeHtml(yearLabel(q.t))}</span><span class="tag acc">${escapeHtml(topicName(q))}</span>${q.vision?'<span class="tag" style="color:var(--warn);border-color:var(--warn)" title="תמלול אוטומטי מהמקור — ודא מול ה-PDF">OCR</span>':""}${doubt}</div>
      <div class="toolbar">${timer}<span class="qcount" dir="ltr">${session.i+1} / ${session.queue.length}</span></div>`);
-  qhead.querySelector(".toolbar").prepend(starButton(q.id,()=>renderQuiz()));
+  if(!q.ai_generated)qhead.querySelector(".toolbar").prepend(starButton(q.id,()=>renderQuiz()));
   card.append(qhead);
   const pb=el("div","progbar",`<i style="width:${pct}%"></i>`);pb.setAttribute("role","progressbar");pb.setAttribute("aria-label","התקדמות בסבב");pb.setAttribute("aria-valuemin","0");pb.setAttribute("aria-valuemax","100");pb.setAttribute("aria-valuenow",String(pct));card.append(pb);
   const qText=el("div","qtext",readableMixedText(q.q));qText.id="current-question";card.append(qText);
@@ -1684,8 +1712,9 @@ function showAnswer(q,k,opts,fb,card,record){
   let h = ok?"✅ נכון!":"❌ לא נכון";
   if(q.all_accepted) h+=' <span class="note">— כל התשובות התקבלו (שאלה שבוטלה לאחר ערעור)</span>';
   else if(accept.length>1) h+=` <span class="note">— מתקבלות גם: ${accept.map(i=>LETTERS[i]).join(", ")}</span>`;
-  const exp=EXP[q.id];
+  const exp=q.ai_generated?(q.explanation||""):EXP[q.id];
   if(exp) h+=`<div class="expl"><div class="expl-h">הסבר</div>${readableMixedText(exp)}</div>`;
+  else if(q.ai_generated) {/* AI item without a stored explanation: nothing to lazy-load */}
   else if(REDUCE_DATA) h+=`<div class="expl"><div class="expl-h">הסבר</div><button type="button" class="btn" data-load-exp="${q.id}">טען הסבר</button></div>`;
   else h+=`<div class="expl" data-exp-slot="${q.id}"><div class="expl-h">הסבר</div><span class="muted">טוען הסבר...</span></div>`;
   if(q.ref) h+=`<div class="ref">מקור: <b>${readableMixedText(q.ref)}</b> · Kaplan &amp; Sadock Synopsis</div>`;
@@ -1824,7 +1853,7 @@ function renderBrowse(){
   v.append(s);
   const fc=el("div","chips");fc.style.margin="12px 0";
   [
-    ["all","הכל"],["ocr","OCR"],["keyDoubt","דגל מפתח"],["allAccepted","בוטלו"],["multi","ריבוי תשובות"],["weak","חלשות"],["star","שמורות"]
+    ["all","הכל"],["real","מקורי"],["ai","AI"],["ocr","OCR"],["keyDoubt","דגל מפתח"],["allAccepted","בוטלו"],["multi","ריבוי תשובות"],["weak","חלשות"],["star","שמורות"]
   ].forEach(([id,label])=>{
     const b=el("button","chip"+(browseState.filter===id?" on":""),label);
     b.setAttribute("aria-pressed",browseState.filter===id?"true":"false");
@@ -1836,7 +1865,7 @@ function renderBrowse(){
   const tc=el("div","chips");tc.style.margin="12px 0";
   const all=el("button","chip"+(browseState.ti<0?" on":""),"כל הנושאים");all.setAttribute("aria-pressed",browseState.ti<0?"true":"false");all.onclick=()=>{browseState.ti=-1;browseState.page=0;renderBrowse();};
   tc.append(all);
-  const tps=byTopic();
+  const tps={};browseCorpus().forEach(q=>tps[q.ti]=(tps[q.ti]||0)+1);
   Object.keys(tps).map(Number).sort((a,b)=>tps[b]-tps[a]).forEach(ti=>{
     const topic=TOPICS[ti]||"";
     const c=el("button","chip"+(browseState.ti===ti?" on":""),`${escapeHtml(topic)} <span class="c">${tps[ti]}</span>`);
@@ -1847,6 +1876,13 @@ function renderBrowse(){
   v.append(tc);
   const list=el("div");list.id="blist";v.append(list);
   drawList();
+}
+// Browse corpus: unified by default; the "real"/"ai" chips narrow by provenance.
+// Other chips (ocr/keyDoubt/...) are bank-only subsets and naturally exclude AI via browsePass.
+function browseCorpus(){
+  if(browseState.filter==="ai")return PRACTICE;
+  if(browseState.filter==="real")return QUESTIONS;
+  return QUESTIONS.concat(PRACTICE);
 }
 function browsePass(q){
   if(browseState.ti>=0&&q.ti!==browseState.ti)return false;
@@ -1864,7 +1900,7 @@ function browsePass(q){
 function drawList(){
   const list=$("#blist");if(!list)return;
   const rawTerm=browseState.q.trim();
-  let res=QUESTIONS.filter(browsePass);
+  let res=browseCorpus().filter(browsePass);
   const pages=Math.max(1,Math.ceil(res.length/PAGE_SIZE));
   browseState.page=Math.max(0,Math.min(browseState.page,pages-1));
   const start=browseState.page*PAGE_SIZE;
@@ -1874,13 +1910,17 @@ function drawList(){
   res.slice(start,start+PAGE_SIZE).forEach(q=>{
     const it=el("div","qitem");
     const head=el("div","qhead");
-    head.append(el("div","qq",highlightReadable(q.q,rawTerm)),starButton(q.id,()=>drawList()));
+    head.append(el("div","qq",highlightReadable(q.q,rawTerm)));
+    if(!q.ai_generated)head.append(starButton(q.id,()=>drawList())); // starring is a verified-bank feature
     it.append(head);
     const accept=acceptedIndices(q);
     q.o.forEach((o,k)=>it.append(el("div","oo"+(accept.includes(k)?" c":""),`${LETTERS[k]}. ${highlightReadable(o,rawTerm)}`)));
-    const ex=EXP[q.id];
+    const ex=q.ai_generated?q.explanation:EXP[q.id];
     if(ex)it.append(el("div","expl",`<div class="expl-h">הסבר</div>${readableMixedText(ex)}`));
-    it.append(el("div","meta",`<span>${escapeHtml(yearLabel(q.t))}</span><span>${escapeHtml(topicName(q))}</span>${q.ref?`<span>${highlightReadable(q.ref,rawTerm)}</span>`:""}${q.all_accepted?`<span style="color:var(--warn)">בוטלה בערעור</span>`:""}${accept.length>1&&!q.all_accepted?`<span style="color:var(--warn)">ריבוי תשובות</span>`:""}${q.vision?`<span style="color:var(--warn)">OCR</span>`:""}${KEY_DOUBTS[q.id]?`<span style="color:var(--warn)">דגל מפתח</span>`:""}`));
+    const provLabel=q.ai_generated
+      ?`<span style="color:var(--warn);font-weight:600" title="שאלת תרגול שנוצרה על-ידי AI ומבוססת על Synopsis — אינה חלק מבנק 900 השאלות הרשמי ואינה נספרת בנתונים">AI · תרגול</span>`
+      :`<span>${escapeHtml(yearLabel(q.t))}</span>`;
+    it.append(el("div","meta",`${provLabel}<span>${escapeHtml(topicName(q))}</span>${q.ref?`<span>${highlightReadable(q.ref,rawTerm)}</span>`:""}${q.all_accepted?`<span style="color:var(--warn)">בוטלה בערעור</span>`:""}${accept.length>1&&!q.all_accepted?`<span style="color:var(--warn)">ריבוי תשובות</span>`:""}${q.vision?`<span style="color:var(--warn)">OCR</span>`:""}${KEY_DOUBTS[q.id]?`<span style="color:var(--warn)">דגל מפתח</span>`:""}`));
     list.append(it);
   });
 }
