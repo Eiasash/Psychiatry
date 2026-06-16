@@ -1,6 +1,6 @@
 {
   "name": "psychiatry-shlav-aleph",
-  "version": "1.6.16",
+  "version": "1.6.18",
   "private": true,
   "description": "Israeli Psychiatry Shlav Aleph board-prep PWA",
   "scripts": {
