@@ -959,9 +959,12 @@ async function loadAppData(){
   await loadProg();
   await loadStars();
   try{
+    // Guard the protected-asset reads: a stale token can return 401 with a JSON error
+    // envelope that r.json() would happily parse, leaving QUESTIONS={error:...} and
+    // throwing later on .map(). Mirror the already-guarded answer_key_doubts line.
     const [q,t,doubts,syl,prac]=await Promise.all([
-      dataFetch("data/questions.json").then(r=>r.json()),
-      fetch("data/topics.json").then(r=>r.json()),
+      dataFetch("data/questions.json").then(r=>r.ok?r.json():Promise.reject(dataLoadError(r,"בנק השאלות"))),
+      fetch("data/topics.json").then(r=>r.ok?r.json():Promise.reject(dataLoadError(r,"רשימת הנושאים"))),
       dataFetch("docs/answer_key_doubts.json").then(r=>r.ok?r.json():[]).catch(()=>[]),
       fetch("data/syllabus.json").then(r=>r.ok?r.json():null).catch(()=>null),
       fetch("data/practice_questions.json").then(r=>r.ok?r.json():[]).catch(()=>[])
@@ -974,11 +977,31 @@ async function loadAppData(){
     // Explanations are optional + larger; respect reduced-data by loading only on demand.
     if(!REDUCE_DATA) loadExplanations();
   }catch(e){
+    // A 401 on a protected asset means the stored token went stale between
+    // session-restore and data-load. Clear the dead session and route back to
+    // the existing login screen instead of the generic dead-end error card.
+    if(e&&e.authExpired){
+      clearAuth();
+      setAuthChrome();
+      renderLogin("פג תוקף ההתחברות. התחבר שוב כדי לפתוח את בנק השאלות.");
+      return;
+    }
     renderStartupError(e);
     return;
   }
   $("#view-home").setAttribute("aria-labelledby","home-title");
   renderHome();
+}
+// Build a load error for a non-OK protected/static asset response. 401 is tagged
+// authExpired so loadAppData can route to the login screen; other codes surface a
+// specific Hebrew message with the HTTP status (matching the askAi/generateAiQuestion style).
+function dataLoadError(res,label){
+  const err=new Error(res.status===401
+    ? `${label}: פג תוקף ההתחברות (401)`
+    : `${label}: לא ניתן לטעון (${res.status})`);
+  if(res.status===401)err.authExpired=true;
+  err.status=res.status;
+  return err;
 }
 function loadExplanations(){
   if(Object.keys(EXP).length)return Promise.resolve(EXP);
