@@ -124,6 +124,7 @@ function questionQualityWarnings(candidate, request, citations) {
 function buildPrompt(body) {
   const sourceLabel = SOURCE_LABELS[body.source] || compact(body.sourceLabel, 120) || SOURCE_LABELS.synopsis;
   const level = LEVEL_LABELS[body.level] || LEVEL_LABELS.board;
+  const chapter = compact(body.chapter, 160).trim();
   const weak = Array.isArray(body.progressSummary?.weak)
     ? body.progressSummary.weak.map(t => `${t.topic}: ${t.accuracy}% (${t.seen})`).join("; ")
     : "";
@@ -131,7 +132,7 @@ function buildPrompt(body) {
   return `
 Create exactly one original psychiatry board-style multiple-choice question for study.
 
-Topic: ${compact(body.topic, 160)}
+Topic: ${compact(body.topic, 160)}${chapter ? `\nOfficial IMA Shlav Aleph syllabus chapter (scope the question to this chapter): ${chapter}` : ""}
 Syllabus source scope: ${sourceLabel}
 Difficulty: ${level}
 Known weak areas from this user's local progress: ${compact(weak, 900)}

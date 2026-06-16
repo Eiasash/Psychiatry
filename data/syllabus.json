@@ -1,0 +1,118 @@
+{
+  "source": "IMA Scientific Council (המועצה המדעית, הר\"י) — Psychiatry Residency Syllabus, v1.3 (2015)",
+  "note": "Official curriculum chapter taxonomy (פרקי הלימוד), 6 sections. Used to scope AI-generated practice questions and to cross-walk the bank's 15 topics. Public reference; not exam content.",
+  "sections": [
+    {
+      "he": "מדעי הבסיס הביולוגיים, פסיכולוגיים וסוציאליים",
+      "en": "Biological, Psychological & Social Basic Sciences",
+      "chapters": [
+        { "he": "הראיון הפסיכיאטרי", "en": "The Psychiatric Interview" },
+        { "he": "הבדיקה הפסיכיאטרית", "en": "The Psychiatric Examination" },
+        { "he": "מערכות אבחון וסיווג (DSM/ICD)", "en": "Diagnostic & Classification Systems (DSM-IV / ICD-10)" },
+        { "he": "יחסי רופא-חולה-חברה", "en": "Physician-Patient-Society Relations (sociology, ethics, patient-rights, stigma)" },
+        { "he": "מעגל החיים", "en": "The Life Cycle (developmental theories, bereavement)" },
+        { "he": "תיאוריות אישיות ופסיכופתולוגיה", "en": "Personality Theories & Psychopathology (psychoanalysis, defense mechanisms)" },
+        { "he": "טסטים פסיכודיאגנוסטיים", "en": "Psychodiagnostic Tests (Rorschach, TAT, Bender)" },
+        { "he": "נוירו-פסיכיאטריה ומדעי המוח", "en": "Neuropsychiatry: Cognitive Neuroscience, Neurobehavioral & Neuropsychiatric Syndromes" },
+        { "he": "גנטיקה ופסיכיאטריה", "en": "Genetics & Psychiatry" },
+        { "he": "אפידמיולוגיה בפסיכיאטריה", "en": "Epidemiology in Psychiatry" }
+      ]
+    },
+    {
+      "he": "ההפרעות הפסיכיאטריות השונות",
+      "en": "The Various Psychiatric Disorders",
+      "chapters": [
+        { "he": "דמנציה", "en": "Dementia" },
+        { "he": "דליריום", "en": "Delirium" },
+        { "he": "שימוש לרעה בסמים ואלכוהול", "en": "Substance & Alcohol Use Disorders" },
+        { "he": "סכיזופרניה", "en": "Schizophrenia" },
+        { "he": "הפרעות פסיכוטיות אחרות (סכיזואפקטיבית, דלוזיונלית ועוד)", "en": "Other Psychotic Disorders (schizoaffective, delusional, schizophreniform, brief)" },
+        { "he": "דיכאון מאז'ורי", "en": "Major Depressive Disorder" },
+        { "he": "הפרעה ביפולרית", "en": "Bipolar Disorder" },
+        { "he": "דיסתימיה וציקלותימיה", "en": "Dysthymia & Cyclothymia" },
+        { "he": "הפרעות חרדה ו-OCD", "en": "Anxiety Disorders & OCD" },
+        { "he": "ASD ו-PTSD", "en": "Acute Stress Disorder & PTSD" },
+        { "he": "הפרעות סומאטופורמיות", "en": "Somatoform Disorders" },
+        { "he": "הפרעה מלאכותית (Factitious)", "en": "Factitious Disorder" },
+        { "he": "הפרעות דיסוציאטיביות", "en": "Dissociative Disorders" },
+        { "he": "מיניות והפרעות בתפקוד המיני", "en": "Sexuality & Sexual Dysfunctions" },
+        { "he": "פאראפיליות ודיספוריה מגדרית", "en": "Paraphilias & Gender Dysphoria" },
+        { "he": "הפרעות אכילה", "en": "Eating Disorders" },
+        { "he": "שינה והפרעות שינה", "en": "Normal Sleep & Sleep Disorders" },
+        { "he": "הפרעות בריסון היצר", "en": "Impulse Control Disorders" },
+        { "he": "הפרעת הסתגלות", "en": "Adjustment Disorder" },
+        { "he": "הפרעות אישיות", "en": "Personality Disorders" },
+        { "he": "רפואה פסיכוסומאטית", "en": "Psychosomatic Medicine" },
+        { "he": "פסיכיאטריית ייעוץ וקישור", "en": "Consultation-Liaison Psychiatry" },
+        { "he": "מצבי חירום פסיכיאטריים", "en": "Psychiatric Emergencies" }
+      ]
+    },
+    {
+      "he": "אוכלוסיות מיוחדות (ילדות, התבגרות וזקנה)",
+      "en": "Special Populations (Childhood, Adolescence & Old Age)",
+      "chapters": [
+        { "he": "פיגור שכלי", "en": "Intellectual Disability" },
+        { "he": "ליקויי למידה התפתחותיים", "en": "Developmental Learning Disorders" },
+        { "he": "הפרעות התפתחות מפושטות (אוטיזם)", "en": "Pervasive Developmental Disorders (autism spectrum)" },
+        { "he": "ADHD", "en": "ADHD" },
+        { "he": "הפרעות התנהגות בילדים ונוער", "en": "Disruptive Behavior Disorders (conduct, ODD)" },
+        { "he": "פסיכיאטריה של הילד והמתבגר", "en": "Child & Adolescent Psychiatry" },
+        { "he": "הפרעות בילדות המוקדמת", "en": "Early-Childhood Disorders (abuse/neglect, feeding, separation anxiety)" },
+        { "he": "פסיכוגריאטריה", "en": "Geriatric Psychiatry" }
+      ]
+    },
+    {
+      "he": "טיפולים בפסיכיאטריה",
+      "en": "Treatments in Psychiatry",
+      "chapters": [
+        { "he": "טיפול פסיכופרמקולוגי וסומטי (כולל ECT)", "en": "Psychopharmacological & Somatic Treatment (incl. ECT)" },
+        { "he": "פסיכותרפיה (דינמית, CBT, משבר, קבוצתי/זוגי/משפחתי)", "en": "Psychotherapy (psychodynamic, CBT, crisis, group/couple/family)" }
+      ]
+    },
+    {
+      "he": "סוגיות אחרות (חוק, שיקום ועוד)",
+      "en": "Other Issues (Law, Rehabilitation & More)",
+      "chapters": [
+        { "he": "שיקום פסיכיאטרי", "en": "Psychiatric Rehabilitation" },
+        { "he": "פסיכיאטריה קהילתית", "en": "Community Psychiatry" },
+        { "he": "פסיכיאטריה משפטית", "en": "Forensic Psychiatry" },
+        { "he": "אתיקה ופסיכיאטריה", "en": "Ethics & Psychiatry" },
+        { "he": "ההיסטוריה של הפסיכיאטריה", "en": "History of Psychiatry" }
+      ]
+    },
+    {
+      "he": "היבטים ישראליים ייחודיים",
+      "en": "Unique Israeli Aspects",
+      "chapters": [
+        { "he": "טראומת השואה", "en": "Holocaust Trauma" },
+        { "he": "החוק לטיפול בחולי נפש", "en": "Treatment of the Mentally Ill Law" },
+        { "he": "חוק זכויות החולה", "en": "Patient's Rights Law" },
+        { "he": "חוק שיקום נכי נפש בקהילה", "en": "Community Rehabilitation of the Mentally Disabled Law" },
+        { "he": "חוקים אחרים (אפוטרופסות, נהיגה, נשק)", "en": "Other Laws (guardianship, driving, firearm)" },
+        { "he": "חובת דיווח למשרד הבריאות", "en": "Mandatory Reporting to the Ministry of Health" },
+        { "he": "היבטים בבית המשפט הפלילי והאזרחי", "en": "Psychiatric Aspects in Criminal & Civil Courts" },
+        { "he": "חוקי נכות (ביטוח לאומי, משרד הביטחון)", "en": "Disability Laws (National Insurance, Ministry of Defense)" },
+        { "he": "השירות בצה\"ל", "en": "Service in the IDF (fitness, dual loyalty)" },
+        { "he": "ארגון שירותי בריאות הנפש בישראל", "en": "Organization of Mental-Health Services in Israel" },
+        { "he": "הגירה ופסיכופתולוגיה", "en": "Immigration & Related Psychopathology" }
+      ]
+    }
+  ],
+  "topicCrosswalk": [
+    { "topicIndex": 0, "topic": "Mood Disorders", "section": "The Various Psychiatric Disorders", "chapters": ["Major Depressive Disorder", "Bipolar Disorder", "Dysthymia & Cyclothymia"] },
+    { "topicIndex": 1, "topic": "Schizophrenia & Psychosis", "section": "The Various Psychiatric Disorders", "chapters": ["Schizophrenia", "Other Psychotic Disorders (schizoaffective, delusional, schizophreniform, brief)"] },
+    { "topicIndex": 2, "topic": "Anxiety, OCD & Trauma", "section": "The Various Psychiatric Disorders", "chapters": ["Anxiety Disorders & OCD", "Acute Stress Disorder & PTSD", "Adjustment Disorder", "Dissociative Disorders"] },
+    { "topicIndex": 3, "topic": "Personality Disorders", "section": "The Various Psychiatric Disorders", "chapters": ["Personality Disorders", "Personality Theories & Psychopathology"] },
+    { "topicIndex": 4, "topic": "Child & Adolescent", "section": "Special Populations", "chapters": ["Child & Adolescent Psychiatry", "Intellectual Disability", "Pervasive Developmental Disorders (autism spectrum)", "ADHD", "Disruptive Behavior Disorders (conduct, ODD)", "Developmental Learning Disorders", "Early-Childhood Disorders"] },
+    { "topicIndex": 5, "topic": "Substance Use", "section": "The Various Psychiatric Disorders", "chapters": ["Substance & Alcohol Use Disorders", "Impulse Control Disorders"] },
+    { "topicIndex": 6, "topic": "Neurocognitive & Geriatric", "section": "The Various Psychiatric Disorders / Special Populations", "chapters": ["Dementia", "Delirium", "Geriatric Psychiatry", "Neuropsychiatry: Cognitive Neuroscience, Neurobehavioral & Neuropsychiatric Syndromes"] },
+    { "topicIndex": 7, "topic": "Psychopharmacology", "section": "Treatments in Psychiatry", "chapters": ["Psychopharmacological & Somatic Treatment (incl. ECT)"] },
+    { "topicIndex": 8, "topic": "Eating Disorders", "section": "The Various Psychiatric Disorders", "chapters": ["Eating Disorders"] },
+    { "topicIndex": 9, "topic": "Sleep & Sexual", "section": "The Various Psychiatric Disorders", "chapters": ["Normal Sleep & Sleep Disorders", "Sexuality & Sexual Dysfunctions", "Paraphilias & Gender Dysphoria"] },
+    { "topicIndex": 10, "topic": "Psychotherapy & Psychodynamics", "section": "Treatments / Basic Sciences", "chapters": ["Psychotherapy (psychodynamic, CBT, crisis, group/couple/family)", "Personality Theories & Psychopathology", "The Life Cycle (developmental theories, bereavement)"] },
+    { "topicIndex": 11, "topic": "Forensic, Law & Ethics", "section": "Other Issues / Unique Israeli Aspects", "chapters": ["Forensic Psychiatry", "Ethics & Psychiatry", "Treatment of the Mentally Ill Law", "Patient's Rights Law", "Psychiatric Aspects in Criminal & Civil Courts", "Mandatory Reporting to the Ministry of Health", "Other Laws (guardianship, driving, firearm)"] },
+    { "topicIndex": 12, "topic": "Neuroscience & Basics", "section": "Biological, Psychological & Social Basic Sciences", "chapters": ["Neuropsychiatry: Cognitive Neuroscience, Neurobehavioral & Neuropsychiatric Syndromes", "Genetics & Psychiatry", "Epidemiology in Psychiatry", "Diagnostic & Classification Systems (DSM-IV / ICD-10)", "The Psychiatric Interview", "The Psychiatric Examination", "Psychodiagnostic Tests (Rorschach, TAT, Bender)"] },
+    { "topicIndex": 13, "topic": "Consultation-Liaison & Somatic", "section": "The Various Psychiatric Disorders", "chapters": ["Consultation-Liaison Psychiatry", "Psychosomatic Medicine", "Somatoform Disorders", "Factitious Disorder", "Psychiatric Emergencies"] },
+    { "topicIndex": 14, "topic": "Other / General", "section": "Other Issues / Unique Israeli Aspects", "chapters": ["Psychiatric Rehabilitation", "Community Psychiatry", "History of Psychiatry", "Holocaust Trauma", "Service in the IDF (fitness, dual loyalty)", "Organization of Mental-Health Services in Israel", "Immigration & Related Psychopathology"] }
+  ]
+}

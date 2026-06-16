@@ -400,7 +400,7 @@ const AI_SYLLABUS_SOURCES = [
   {value:"psychopharm",label:"Psychopharmacology syllabus",hint:"תרופות, מנגנונים ותופעות לוואי"},
   {value:"ethics",label:"Law, ethics and board syllabus",hint:"חוק, אתיקה ומבנה הבחינה"}
 ];
-let QUESTIONS = [], TOPICS = [], PROG = {}, EXP = {}, KEY_DOUBTS = {}, QMAP = new Map();
+let QUESTIONS = [], TOPICS = [], SYLLABUS = null, PROG = {}, EXP = {}, KEY_DOUBTS = {}, QMAP = new Map();
 let STARS = new Set();
 let EXP_PROMISE = null;
 let DB_PROMISE = null;
@@ -959,12 +959,13 @@ async function loadAppData(){
   await loadProg();
   await loadStars();
   try{
-    const [q,t,doubts]=await Promise.all([
+    const [q,t,doubts,syl]=await Promise.all([
       dataFetch("data/questions.json").then(r=>r.json()),
       fetch("data/topics.json").then(r=>r.json()),
-      dataFetch("docs/answer_key_doubts.json").then(r=>r.ok?r.json():[]).catch(()=>[])
+      dataFetch("docs/answer_key_doubts.json").then(r=>r.ok?r.json():[]).catch(()=>[]),
+      fetch("data/syllabus.json").then(r=>r.ok?r.json():null).catch(()=>null)
     ]);
-    QUESTIONS=q; TOPICS=t.topics||[];
+    QUESTIONS=q; TOPICS=t.topics||[]; SYLLABUS=syl;
     QMAP=new Map(QUESTIONS.map(q=>[q.id,q]));
     KEY_DOUBTS=Object.fromEntries((Array.isArray(doubts)?doubts:[]).map(d=>[d.id,d]));
     session=await loadSavedSession();
@@ -1331,6 +1332,12 @@ function aiSourceLabel(value){
 function aiQuestionAvailable(){
   return AUTH.required && !!AUTH.user;
 }
+function aiChapterOptions(){
+  if(typeof SYLLABUS==="undefined"||!SYLLABUS||!Array.isArray(SYLLABUS.sections))return"";
+  return SYLLABUS.sections.map(sec=>`<optgroup label="${escapeHtml(sec.he)}">`+
+    (Array.isArray(sec.chapters)?sec.chapters:[]).map(c=>`<option value="${escapeHtml(c.en)}">${escapeHtml(c.he)}</option>`).join("")+
+    `</optgroup>`).join("");
+}
 function aiQuestionHtml(tps){
   const defaultTi=weakestTopicIndex(tps);
   const available=aiQuestionAvailable();
@@ -1345,6 +1352,7 @@ function aiQuestionHtml(tps){
     <div class="ai-drill-controls">
       <label class="field"><span>נושא</span><select class="input" id="ai-topic"${available?"":" disabled"}>${topicOptions}</select></label>
       <label class="field"><span>מקור סילבוס</span><select class="input" id="ai-source"${available?"":" disabled"}>${sourceOptions}</select></label>
+      <label class="field"><span>פרק סילבוס</span><select class="input" id="ai-chapter"${available?"":" disabled"}><option value="">— כל הסילבוס —</option>${aiChapterOptions()}</select></label>
       <label class="field"><span>רמה</span><select class="input" id="ai-level"${available?"":" disabled"}>
         <option value="board">שלב א'</option>
         <option value="hard">קשה</option>
@@ -1366,6 +1374,8 @@ async function generateAiQuestion(card){
   const topicIndex=Number(card.querySelector("#ai-topic").value);
   const source=card.querySelector("#ai-source").value;
   const level=card.querySelector("#ai-level").value;
+  const chapterSel=card.querySelector("#ai-chapter");
+  const chapter=chapterSel?chapterSel.value:"";
   out.textContent="יוצר שאלת AI...";
   try{
     const res=await authFetch("/api/ai-question",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({
@@ -1373,6 +1383,7 @@ async function generateAiQuestion(card){
       topicIndex,
       source,
       sourceLabel:aiSourceLabel(source),
+      chapter,
       level,
       progressSummary:progressSummary()
     })});
