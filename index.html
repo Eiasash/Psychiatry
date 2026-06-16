@@ -1125,7 +1125,7 @@ async function loadSavedSession(){
   try{
     const s=await readUserLocal(SESSION_KEY,null);
     if(!s||!Array.isArray(s.queue)||!s.queue.length)return null;
-    s.queue=s.queue.filter(id=>QMAP.has(id));
+    s.queue=s.queue.filter(id=>QMAP.has(id)||AIMAP.has(id));
     if(!s.queue.length)return null;
     s.i=Math.max(0,Math.min(Number(s.i)||0,s.queue.length));
     if(s.i>=s.queue.length)return null;
@@ -1133,7 +1133,7 @@ async function loadSavedSession(){
     s.wrong=Number(s.wrong)||0;
     s.title=String(s.title||"תרגול");
     s.mode=s.mode==="exam"?"exam":"practice";
-    s.answers=Array.isArray(s.answers)?s.answers.filter(a=>a&&QMAP.has(a.id)):[];
+    s.answers=Array.isArray(s.answers)?s.answers.filter(a=>a&&(QMAP.has(a.id)||AIMAP.has(a.id))):[];
     if(s.answered && (!s.lastAnswer||s.lastAnswer.id!==s.queue[s.i])){s.answered=false;s.lastAnswer=null;}
     return s;
   }catch(e){return null;}
@@ -1473,7 +1473,10 @@ function startAiSession(card){
   const chapterSel=card&&card.querySelector("#ai-chapter");
   const chapter=chapterSel?chapterSel.value:"";
   let pool=PRACTICE, scope="כל המאגר";
-  if(chapter){ const byCh=pool.filter(p=>p.chapter===chapter); if(byCh.length){pool=byCh;scope=chapter;} }
+  // The CTA promises a chapter-scoped round; if the selected syllabus chapter has no pool
+  // questions (≈11 chapters, e.g. the Israeli mental-health-law chapters Synopsis doesn't cover),
+  // tell the user rather than silently serving unrelated questions.
+  if(chapter){ const byCh=pool.filter(p=>p.chapter===chapter); if(!byCh.length){toast("אין שאלות מאגר לפרק הסילבוס שנבחר");return;} pool=byCh;scope=chapter; }
   if(Number.isInteger(topicIndex)){ const byT=pool.filter(p=>Number(p.ti)===topicIndex); if(byT.length){pool=byT;scope=TOPICS[topicIndex]||scope;} }
   const ids=pool.map(p=>p.id);
   if(!ids.length){toast("אין שאלות מאגר לסינון זה");return;}
@@ -2095,11 +2098,12 @@ async function askAi(mode,q,k,out,triggerBtn=null){
   renderAiLoading(out,mode);
   setAiButtons(root,true);
   try{
-    if(!EXP[q.id])await loadExplanations();
+    if(!q.ai_generated&&!EXP[q.id])await loadExplanations();
+    const groundingExp=q.ai_generated?(q.explanation||""):(EXP[q.id]||"");
     const res=await authFetch("/api/ai-tutor",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({
       mode,selectedIndex:k,selectedLetter:Number.isInteger(k)?LETTERS[k]:null,
       question:{id:q.id,stem:q.q,options:q.o,acceptedIndices:acceptedIndices(q),acceptedLetters:acceptedIndices(q).map(i=>LETTERS[i]),allAccepted:!!q.all_accepted,ref:q.ref||"",topic:topicName(q),sitting:q.t,vision:!!q.vision},
-      explanation:EXP[q.id]||"",keyDoubt:KEY_DOUBTS[q.id]||null,progressSummary:progressSummary()
+      explanation:groundingExp,keyDoubt:KEY_DOUBTS[q.id]||null,progressSummary:progressSummary()
     }),signal:controller.signal});
     if(!res.ok){
       const msg=res.status===401?"יש להתחבר מחדש כדי להשתמש ב-AI Tutor.":[404,405,501].includes(res.status)?"AI Tutor אינו פעיל בפריסה הזו.":`שגיאת AI (${res.status}).`;
