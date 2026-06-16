@@ -134,7 +134,7 @@ function extractFunction(name) {
 
 const rendererSource = ["escapeHtml", "stripPdfTailArtifacts", "readableMixedText", "aiInlineMarkdown", "aiTableCells", "aiTableDivider", "renderAiTable", "renderAiMarkdown", "renderAiAnswer"].map(extractFunction).join("\n");
 const mixedTextSource = ["escapeHtml", "escapeRegExp", "stripPdfTailArtifacts", "readableMixedText", "highlightReadable"].map(extractFunction).join("\n");
-const aiCardSource = ["escapeHtml", "weakestTopicIndex", "aiQuestionAvailable", "aiQuestionHtml"].map(extractFunction).join("\n");
+const aiCardSource = ["escapeHtml", "weakestTopicIndex", "aiQuestionAvailable", "aiChapterOptions", "aiQuestionHtml"].map(extractFunction).join("\n");
 if (mixedTextSource.trim()) {
   try {
     const context = {};
