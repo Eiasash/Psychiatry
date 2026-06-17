@@ -991,6 +991,9 @@ async function loadAppData(){
     KEY_DOUBTS=Object.fromEntries((Array.isArray(doubts)?doubts:[]).map(d=>[d.id,d]));
     session=await loadSavedSession();
     await mergeCloudState().catch(()=>toast("לא ניתן לסנכרן התקדמות ענן כרגע"));
+    // mergeCloudState() may restore an AI drill from the cloud after loadSavedSession ran;
+    // ensure the pool is loaded before the resume CTA is shown so its ai-* ids resolve.
+    if(session&&Array.isArray(session.queue)&&session.queue.some(isAiId))await loadPractice();
     // Explanations are optional + larger; respect reduced-data by loading only on demand.
     if(!REDUCE_DATA) loadExplanations();
   }catch(e){
@@ -1010,7 +1013,7 @@ async function loadAppData(){
   renderHome();
   // Prefetch the AI practice pool in the background (off the critical path). When it lands,
   // refresh the active view if it surfaces the pool (home AI card / unified Browse).
-  loadPractice().then(()=>{ if(nav==="home")renderHome(); else if(nav==="browse")renderBrowse(); });
+  loadPractice().then(()=>{ if(nav==="home"&&!aiGenerating)renderHome(); else if(nav==="browse")renderBrowse(); });
 }
 // Lazily load + index the AI practice pool. Idempotent + promise-cached (like loadExplanations).
 // Kept separate from QUESTIONS/QMAP so the verified bank and its stats stay isolated.
@@ -1151,8 +1154,9 @@ async function loadSavedSession(){
   try{
     const s=await readUserLocal(SESSION_KEY,null);
     if(!s||!Array.isArray(s.queue)||!s.queue.length)return null;
-    // Practice pool is deferred, so AIMAP may be empty here. If this is a saved AI drill,
-    // load the pool first so its ai-* ids survive the filter (preserves AI-session reload).
+    // Practice pool is deferred (AIMAP may be empty here). If this is a saved AI drill, load
+    // the pool first so its ai-* ids survive the filter. The cloud-restore path is covered by
+    // the same guard after mergeCloudState() in loadAppData.
     if(s.queue.some(isAiId))await loadPractice();
     s.queue=s.queue.filter(id=>QMAP.has(id)||AIMAP.has(id));
     if(!s.queue.length)return null;
@@ -1511,6 +1515,7 @@ function startAiSession(card){
   if(!ids.length){toast("אין שאלות מאגר לסינון זה");return;}
   startSession(ids,`תרגול AI · ${scope}`,true,{mode:"practice",source:"ai-pool"});
 }
+let aiGenerating=false; // true while /api/ai-question is in flight — blocks the deferred-pool home re-render from detaching the output node
 async function generateAiQuestion(card){
   const out=card.querySelector(".ai-drill-output");
   const topicIndex=Number(card.querySelector("#ai-topic").value);
@@ -1519,6 +1524,7 @@ async function generateAiQuestion(card){
   const chapterSel=card.querySelector("#ai-chapter");
   const chapter=chapterSel?chapterSel.value:"";
   out.textContent="יוצר שאלת AI...";
+  aiGenerating=true;
   try{
     const res=await authFetch("/api/ai-question",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({
       topic:TOPICS[topicIndex]||"Other / General",
@@ -1537,6 +1543,8 @@ async function generateAiQuestion(card){
     renderGeneratedAiQuestion(out,data.question||data);
   }catch(e){
     out.textContent="יצירת שאלת AI אינה זמינה כרגע. בנק השאלות המאומת ממשיך לעבוד כרגיל.";
+  }finally{
+    aiGenerating=false;
   }
 }
 function renderGeneratedAiQuestion(out,q){
