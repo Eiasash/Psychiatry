@@ -414,6 +414,10 @@ let QUESTIONS = [], TOPICS = [], SYLLABUS = null, PRACTICE = [], AI_LAST = null,
 // NEVER added to QUESTIONS/QMAP, so they never enter the official progress/Leitner/stats
 // (all of which iterate QUESTIONS). isAiId() is the single guard used everywhere.
 const isAiId = id => typeof id === "string" && id.startsWith("ai-");
+// Session-only set of AI questions the user generated this session ("ai-gen-*" ids). Kept in
+// AIMAP (drillable, isolated from the 900-bank like the offline pool) but NEVER persisted to
+// data/practice_questions.json. Cleared on reload.
+let GENERATED = [], aiGenSeq = 0, aiBusy = false;
 let STARS = new Set();
 let EXP_PROMISE = null;
 let DB_PROMISE = null;
@@ -621,7 +625,10 @@ async function pushCloudChanges(){
   }
   if(fullSyncDirty||sessionDirty){
     await deleteUserRows("study_sessions");
-    if(session&&session.i<session.queue.length){
+    // Skip ephemeral (session-generated AI) drills — their ai-gen-* ids exist only in memory,
+    // so uploading them would let another device restore an unresolvable quiz. The delete above
+    // still clears any prior cloud session.
+    if(session&&!session.ephemeral&&session.i<session.queue.length){
       await pushJsonRows("study_sessions",[{user_id:uid,payload:session,updated_at:new Date().toISOString()}],"user_id");
     }
   }
@@ -988,6 +995,7 @@ async function loadAppData(){
     // Tag the AI pool with a synthetic sitting + flag, then index it separately from the bank.
     PRACTICE.forEach(p=>{ p.t="AI"; p.ai_generated=true; });
     AIMAP=new Map(PRACTICE.map(p=>[p.id,p]));
+    GENERATED=[]; aiGenSeq=0; // a data reload rebuilds AIMAP from the pool only — drop stale generated ids
     KEY_DOUBTS=Object.fromEntries((Array.isArray(doubts)?doubts:[]).map(d=>[d.id,d]));
     session=await loadSavedSession();
     await mergeCloudState().catch(()=>toast("לא ניתן לסנכרן התקדמות ענן כרגע"));
@@ -1054,7 +1062,7 @@ function renderStartupError(error){
 /* ---------- helpers ---------- */
 const byYear = ()=>{const m={};QUESTIONS.forEach(q=>m[q.t]=(m[q.t]||0)+1);return m;};
 const byTopic= ()=>{const m={};QUESTIONS.forEach(q=>m[q.ti]=(m[q.ti]||0)+1);return m;};
-function yearLabel(t){if(t==="AI"||!t)return "AI · Synopsis";return t.replace("-Jun"," · יוני").replace("-Sep"," · ספטמבר").replace("-May"," · מאי");}
+function yearLabel(t){if(t==="AI"||!t)return "AI · תרגול";return t.replace("-Jun"," · יוני").replace("-Sep"," · ספטמבר").replace("-May"," · מאי");}
 function toast(msg){const t=$("#toast");t.textContent=msg;t.classList.add("show");setTimeout(()=>t.classList.remove("show"),1600);}
 function acceptedIndices(q){ return q.all_accepted ? [0,1,2,3] : (q.c_accept&&q.c_accept.length?q.c_accept:[q.c]); }
 function normText(s){return String(s||"").normalize("NFKC").replace(/[\u0591-\u05C7]/g,"").toLowerCase();}
@@ -1148,6 +1156,9 @@ async function loadSavedSession(){
 }
 function saveSession(){
   if(!session||session.i>=session.queue.length){clearSavedSession();return;}
+  // Ephemeral drills (session-generated AI questions, whose ai-gen-* ids exist only in memory)
+  // must never persist — a restored local/cloud copy would be an unresolvable quiz after reload.
+  if(session.ephemeral){clearSavedSession();return;}
   session.updatedAt=Date.now();
   saveUserLocal(SESSION_KEY,session);
   markCloudDirty({session:true});
@@ -1385,13 +1396,18 @@ function aiQuestionHtml(tps){
   const poolCount=(typeof PRACTICE!=="undefined"&&Array.isArray(PRACTICE))?PRACTICE.length:0;
   const hasPool=poolCount>0;
   const enabled=available||hasPool;
-  const topicOptions=TOPICS.map((topic,ti)=>`<option value="${ti}"${ti===defaultTi?" selected":""}>${escapeHtml(topic)} (${tps[ti]||0})</option>`).join("");
+  // "all topics" option lets generation/pool span every topic (value is non-numeric so the
+  // pool draw/drill topic filters — which test Number.isInteger — naturally skip filtering).
+  const topicOptions='<option value="all">כל הנושאים (אקראי)</option>'+TOPICS.map((topic,ti)=>`<option value="${ti}"${ti===defaultTi?" selected":""}>${escapeHtml(topic)} (${tps[ti]||0})</option>`).join("");
   const sourceOptions=AI_SYLLABUS_SOURCES.map(s=>`<option value="${escapeHtml(s.value)}">${escapeHtml(s.label)} · ${escapeHtml(s.hint)}</option>`).join("");
+  const genCount=(typeof GENERATED!=="undefined"&&Array.isArray(GENERATED))?GENERATED.length:0;
   const genBtn=available?'<button type="button" class="btn primary" id="ai-generate">צור שאלה</button>':"";
+  const batchBtn=available?'<button type="button" class="btn" id="ai-generate-batch">צור עוד +5</button>':"";
   const poolBtn=hasPool?`<button type="button" class="btn${available?"":" primary"}" id="ai-pool">שאלה מהמאגר (${poolCount})</button>`:"";
   const drillBtn=hasPool?`<button type="button" class="btn" id="ai-drill">תרגל סבב מהמאגר</button>`:"";
+  const genDrillBtn=genCount?`<button type="button" class="btn" id="ai-generated-drill">תרגל שנוצרו (${genCount})</button>`:"";
   const netlifyBtn=(!available&&!hasPool)?`<a class="btn primary" id="ai-open-netlify" href="${AI_QUESTION_APP_URL}">פתח ב-Netlify</a>`:"";
-  const actionHtml=genBtn+poolBtn+drillBtn+netlifyBtn;
+  const actionHtml=genBtn+batchBtn+poolBtn+drillBtn+genDrillBtn+netlifyBtn;
   const subtitle=available
     ?"תרגול נוסף שמסומן כ-AI ואינו משנה את בנק 900 השאלות המאומתות."
     :hasPool
@@ -1425,10 +1441,14 @@ function wireAiQuestionCard(root){
   if(!card)return;
   const btn=card.querySelector("#ai-generate");
   if(btn)btn.onclick=()=>generateAiQuestion(card);
+  const batchBtn=card.querySelector("#ai-generate-batch");
+  if(batchBtn)batchBtn.onclick=()=>generateAiBatch(card,5);
   const poolBtn=card.querySelector("#ai-pool");
   if(poolBtn)poolBtn.onclick=()=>drawPracticeQuestion(card);
   const drillBtn=card.querySelector("#ai-drill");
   if(drillBtn)drillBtn.onclick=()=>startAiSession(card);
+  const genDrillBtn=card.querySelector("#ai-generated-drill");
+  if(genDrillBtn)genDrillBtn.onclick=()=>drillGenerated(card);
   // Restore the last generated/drawn question so it survives a view/tab switch (and mobile reload).
   if(!AI_LAST){ try{const r=localStorage.getItem("psy_ai_last"); if(r)AI_LAST=JSON.parse(r);}catch(e){} }
   if((btn||poolBtn)&&AI_LAST){ const out=card.querySelector(".ai-drill-output"); if(out)renderGeneratedAiQuestion(out,AI_LAST); }
@@ -1490,33 +1510,91 @@ function startAiSession(card){
   if(!ids.length){toast("אין שאלות מאגר לסינון זה");return;}
   startSession(ids,`תרגול AI · ${scope}`,true,{mode:"practice",source:"ai-pool"});
 }
-async function generateAiQuestion(card){
-  const out=card.querySelector(".ai-drill-output");
-  const topicIndex=Number(card.querySelector("#ai-topic").value);
+// One /api/ai-question request. With the "all topics" selection (or a batch), the topic is
+// randomized per call so a batch spans topics. Returns {ok,question,topicIndex} or {ok:false,msg}.
+async function requestAiQuestion(card){
+  const raw=(card.querySelector("#ai-topic")||{}).value||"";
+  let topicIndex = raw==="all" ? Math.floor(Math.random()*TOPICS.length) : Number(raw);
+  if(!Number.isInteger(topicIndex)||topicIndex<0||topicIndex>=TOPICS.length) topicIndex=Math.floor(Math.random()*TOPICS.length);
   const source=card.querySelector("#ai-source").value;
+  const sourceLabel=aiSourceLabel(source);
   const level=card.querySelector("#ai-level").value;
   const chapterSel=card.querySelector("#ai-chapter");
   const chapter=chapterSel?chapterSel.value:"";
-  out.textContent="יוצר שאלת AI...";
   try{
     const res=await authFetch("/api/ai-question",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({
-      topic:TOPICS[topicIndex]||"Other / General",
-      topicIndex,
-      source,
-      sourceLabel:aiSourceLabel(source),
-      chapter,
-      level,
-      progressSummary:progressSummary()
+      topic:TOPICS[topicIndex]||"Other / General", topicIndex, source, sourceLabel, chapter, level, progressSummary:progressSummary()
     })});
     const data=await res.json().catch(()=>({}));
-    if(!res.ok){
-      out.textContent=res.status===401?"יש להתחבר כדי ליצור שאלות AI.":[404,405,501].includes(res.status)?"שאלות AI זמינות בפריסת Netlify המחוברת.":(data.error||`שגיאת AI (${res.status}).`);
-      return;
-    }
-    renderGeneratedAiQuestion(out,data.question||data);
+    if(!res.ok) return {ok:false,status:res.status,msg:res.status===401?"יש להתחבר כדי ליצור שאלות AI.":[404,405,501].includes(res.status)?"שאלות AI זמינות בפריסת Netlify המחוברת.":(data.error||`שגיאת AI (${res.status}).`)};
+    return {ok:true,question:data.question||data,topicIndex,sourceLabel};
   }catch(e){
-    out.textContent="יצירת שאלת AI אינה זמינה כרגע. בנק השאלות המאומת ממשיך לעבוד כרגיל.";
+    return {ok:false,msg:"יצירת שאלת AI אינה זמינה כרגע. בנק השאלות המאומת ממשיך לעבוד כרגיל."};
   }
+}
+// Add a generated question to the session set + AIMAP (drillable, isolated; ai-gen-* → isAiId).
+// ref carries the SELECTED source (not the response's, which may omit it), so a drilled
+// DSM/psychopharm/ethics question shows its true source — and yearLabel("AI") is now
+// source-neutral ("AI · תרגול"), so the quiz header no longer claims Synopsis.
+function recordGenerated(q,topicIndex,sourceLabel){
+  const opts=Array.isArray(q?.options)?q.options.slice(0,4):[];
+  const c=Number.isInteger(q?.correctIndex)?q.correctIndex:-1;
+  if(!q?.stem||opts.length!==4||c<0||c>3)return null;
+  const ti=(Number.isInteger(topicIndex)&&topicIndex>=0&&topicIndex<TOPICS.length)?topicIndex:14;
+  const rec={id:"ai-gen-"+(++aiGenSeq),q:q.stem,o:opts,c,explanation:q.explanation||"",ref:sourceLabel||q.sourceLabel||"Kaplan & Sadock Synopsis",chapter:q.topic||TOPICS[ti]||"",ti,t:"AI",ai_generated:true,generated:true};
+  GENERATED.push(rec); AIMAP.set(rec.id,rec);
+  return rec;
+}
+// Enable/disable the generate buttons during a request to prevent overlapping generations.
+function setAiGenBusy(card,busy){
+  aiBusy=busy;
+  ["#ai-generate","#ai-generate-batch"].forEach(sel=>{const b=card.querySelector(sel);if(b)b.disabled=busy;});
+}
+// Keep the "תרגל שנוצרו (N)" button current after generating, without a full home re-render.
+function refreshGeneratedDrillBtn(card){
+  const controls=card.querySelector(".ai-drill-controls"); if(!controls)return;
+  let b=controls.querySelector("#ai-generated-drill");
+  if(GENERATED.length){
+    if(!b){ b=document.createElement("button"); b.type="button"; b.className="btn"; b.id="ai-generated-drill"; b.onclick=()=>drillGenerated(card); controls.appendChild(b); }
+    b.textContent=`תרגל שנוצרו (${GENERATED.length})`;
+  }else if(b){ b.remove(); }
+}
+async function generateAiQuestion(card){
+  if(aiBusy)return;
+  const out=card.querySelector(".ai-drill-output");
+  out.textContent="יוצר שאלת AI...";
+  setAiGenBusy(card,true);
+  try{
+    const r=await requestAiQuestion(card);
+    if(!r.ok){ out.textContent=r.msg||"שגיאת AI."; return; }
+    recordGenerated(r.question,r.topicIndex,r.sourceLabel);
+    renderGeneratedAiQuestion(out,r.question);
+    refreshGeneratedDrillBtn(card);
+  }finally{ setAiGenBusy(card,false); }
+}
+// Generate a small batch (default 5), accumulating each into the session generated set so the
+// user can drill them. Sequential to respect the proxy rate limit; shows per-item progress.
+async function generateAiBatch(card,n){
+  if(aiBusy)return;
+  const out=card.querySelector(".ai-drill-output");
+  setAiGenBusy(card,true);
+  let made=0,last=null;
+  try{
+    for(let i=0;i<n;i++){
+      out.textContent=`יוצר שאלות AI... (${i+1}/${n})`;
+      const r=await requestAiQuestion(card);
+      if(!r.ok){ if(!made){out.textContent=r.msg||"שגיאת AI.";return;} break; }
+      if(recordGenerated(r.question,r.topicIndex,r.sourceLabel)){ made++; last=r.question; }
+    }
+  }finally{ setAiGenBusy(card,false); }
+  if(last)renderGeneratedAiQuestion(out,last);
+  refreshGeneratedDrillBtn(card);
+  toast(`נוצרו ${made} שאלות · ${GENERATED.length} זמינות לתרגול`);
+}
+// Drill the session-generated questions (ephemeral, scored in-session, never touches the bank).
+function drillGenerated(card){
+  if(!GENERATED.length){toast("עדיין לא נוצרו שאלות");return;}
+  startSession(GENERATED.map(g=>g.id),"תרגול AI · שנוצרו",true,{mode:"practice",source:"ai-generated",ephemeral:true});
 }
 function renderGeneratedAiQuestion(out,q){
   const opts=Array.isArray(q?.options)?q.options.slice(0,4):[];
@@ -1575,8 +1653,13 @@ function startSession(ids,title,doShuffle,opts={}){
   if(!ids.length){toast("אין שאלות");return;}
   let queue = (doShuffle ? shuffle(ids) : ids.slice()).filter(id=>QMAP.has(id)||AIMAP.has(id));
   if(!queue.length){toast("אין שאלות זמינות");return;}
+  // A session is ephemeral if it contains any session-only generated id (ai-gen-*), regardless
+  // of how it was started (drill, retry-mistakes, review). Inferring from the queue — rather than
+  // trusting every caller to pass opts.ephemeral — keeps these out of local+cloud persistence on
+  // ALL paths. Pool ai-* ids reload from file, so they stay persistable.
+  const ephemeral = !!opts.ephemeral || queue.some(id=>typeof id==="string"&&id.startsWith("ai-gen-"));
   session={queue,i:0,correct:0,wrong:0,title,answered:false,lastAnswer:null,answers:[],
-    mode:opts.mode||"practice",source:opts.source||"",reviewFirst:!!opts.reviewFirst,startedAt:Date.now(),updatedAt:Date.now(),durationSec:opts.durationSec||0};
+    mode:opts.mode||"practice",source:opts.source||"",reviewFirst:!!opts.reviewFirst,ephemeral,startedAt:Date.now(),updatedAt:Date.now(),durationSec:opts.durationSec||0};
   saveSession();
   go("quiz"); renderQuiz();
 }
@@ -1587,7 +1670,7 @@ function startExam(t){
 function reviewPrimerHtml(q){
   const exp=EXP[q.id];
   const body=exp?readableMixedText(exp):'<span class="muted">טוען הסבר מקומי לפני ניסיון חוזר...</span>';
-  const ref=q.ref?`<div class="ref">מקור: <b>${readableMixedText(q.ref)}</b> · Kaplan &amp; Sadock Synopsis</div>`:"";
+  const ref=q.ref?`<div class="ref">מקור: <b>${readableMixedText(q.ref)}</b>${q.ai_generated?"":" · Kaplan &amp; Sadock Synopsis"}</div>`:"";
   return `<div class="expl-h">הסבר לפני ניסיון חוזר</div>${body}${ref}`;
 }
 function attachReviewPrimer(card,q){
@@ -1728,7 +1811,7 @@ function showAnswer(q,k,opts,fb,card,record){
   else if(q.ai_generated) {/* AI item without a stored explanation: nothing to lazy-load */}
   else if(REDUCE_DATA) h+=`<div class="expl"><div class="expl-h">הסבר</div><button type="button" class="btn" data-load-exp="${q.id}">טען הסבר</button></div>`;
   else h+=`<div class="expl" data-exp-slot="${q.id}"><div class="expl-h">הסבר</div><span class="muted">טוען הסבר...</span></div>`;
-  if(q.ref) h+=`<div class="ref">מקור: <b>${readableMixedText(q.ref)}</b> · Kaplan &amp; Sadock Synopsis</div>`;
+  if(q.ref) h+=`<div class="ref">מקור: <b>${readableMixedText(q.ref)}</b>${q.ai_generated?"":" · Kaplan &amp; Sadock Synopsis"}</div>`;
   if(q.vision) h+='<div class="note">⚠ נוסח השאלה תומלל אוטומטית (מועד 2025 פגום במקור) — התשובות, המפתח וההסבר מהימנים; ודא ניסוח מול ה-PDF</div>';
   const keyDoubt=KEY_DOUBTS[q.id];
   if(keyDoubt) h+=`<div class="note">⚑ דגל לימודי לגבי המפתח הרשמי: ${readableMixedText(keyDoubt.issue)} המפתח הרשמי נשמר ללא שינוי.</div>`;
