@@ -625,7 +625,10 @@ async function pushCloudChanges(){
   }
   if(fullSyncDirty||sessionDirty){
     await deleteUserRows("study_sessions");
-    if(session&&session.i<session.queue.length){
+    // Skip ephemeral (session-generated AI) drills — their ai-gen-* ids exist only in memory,
+    // so uploading them would let another device restore an unresolvable quiz. The delete above
+    // still clears any prior cloud session.
+    if(session&&!session.ephemeral&&session.i<session.queue.length){
       await pushJsonRows("study_sessions",[{user_id:uid,payload:session,updated_at:new Date().toISOString()}],"user_id");
     }
   }
