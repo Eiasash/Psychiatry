@@ -21,6 +21,9 @@ expect(/\.update-banner\{[\s\S]*?max-width:720px/, "update banner should have a 
 expect(/@media\(max-width:560px\)\{[\s\S]*?\.home-actions\{[^}]*grid-template-columns:1fr/, "mobile home primary actions should be single-column");
 expect(/@media\(max-width:560px\)\{[\s\S]*?\.home-progress \.g3\{[^}]*grid-template-columns:1fr 1fr/, "mobile home progress stats should fit in two columns");
 expect(/@media\(max-width:560px\)\{[\s\S]*?\.quiz-sticky-actions\{[^}]*position:sticky/, "mobile quiz next action should stay reachable after feedback");
+expect(/@media\(max-width:560px\)\{[\s\S]*?\.quiz-sticky-actions\{[^}]*bottom:0/, "mobile sticky quiz actions should anchor to the scroll viewport above the fixed nav");
+expect(/--bottom-nav-h:\s*63px/, "mobile layout should use a measured bottom-nav height token");
+expect(/@media\(max-width:560px\)\{[\s\S]*?\.wrap\{[^}]*height:calc\(100dvh - var\(--bottom-nav-h\) - env\(safe-area-inset-bottom\)\)[^}]*overflow-y:auto/, "mobile content should scroll above the fixed bottom nav instead of underneath it");
 expect(/\.ai-quality-warnings/, "AI generated question warnings need visible styling");
 
 if (failures.length) {
