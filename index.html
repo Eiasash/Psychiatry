@@ -1257,21 +1257,21 @@ function renderHome(){
     return b;
   };
   studyActions.append(
-    studyBtn("High-yield review",highYieldIds.length?`${highYieldIds.length} טעויות/שמורות/לחזרה`:"אין פריטים דחופים",()=>{
+    studyBtn("חזרה ממוקדת",highYieldIds.length?`${highYieldIds.length} טעויות/שמורות/לחזרה`:"אין פריטים דחופים",()=>{
       const ids=highYieldQuestionIds();
       if(!ids.length)return toast("אין כרגע טעויות, שמורות או שאלות לחזרה");
-      startSession(ids,"High-yield review",false,{source:"high-yield"});
+      startSession(ids,"חזרה ממוקדת",false,{source:"high-yield"});
     },"primary"),
-    studyBtn("Weak topic drill",weakTopic?`${weakTopic.topic} · ${weakIds.length} שאלות`:"אין נושא חלש",()=>{
+    studyBtn("תרגול נושא חלש",weakTopic?`${weakTopic.topic} · ${weakIds.length} שאלות`:"אין נושא חלש",()=>{
       const ids=weakTopicDrillIds();
       const topic=weakestStudyTopic();
       if(!ids.length)return toast("אין מספיק נתוני נושא לתרגול ממוקד");
-      startSession(ids,`Weak topic drill · ${topic?.topic||"נושא חלש"}`,true,{source:"weak-topic"});
+      startSession(ids,`תרגול נושא חלש · ${topic?.topic||"נושא חלש"}`,true,{source:"weak-topic"});
     }),
-    studyBtn("Recent mistakes",recentIds.length?`${recentIds.length} טעויות אחרונות עם הסבר קודם`:"אין טעויות אחרונות",()=>{
+    studyBtn("טעויות אחרונות",recentIds.length?`${recentIds.length} טעויות אחרונות עם הסבר קודם`:"אין טעויות אחרונות",()=>{
       const ids=recentMistakeIds();
       if(!ids.length)return toast("אין טעויות אחרונות לחזרה");
-      startSession(ids,"Recent mistakes",false,{source:"recent-mistakes",reviewFirst:true});
+      startSession(ids,"טעויות אחרונות",false,{source:"recent-mistakes",reviewFirst:true});
     })
   );
   studyNext.append(studyActions);

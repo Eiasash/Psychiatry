@@ -44,6 +44,15 @@ An installable, offline-capable **single-file PWA** for drilling the Israeli
   Substance Use, Neurocognitive & Geriatric, Psychopharmacology, Eating, Sleep & Sexual,
   Psychotherapy, Forensic/Law/Ethics, Neuroscience & Basics, Consultation-Liaison, Other).
   `q.ti` is the primary index; `q.tis[]` the multi-tag array.
+- `data/practice_questions.json` — **296 AI-generated practice questions** (Synopsis-grounded,
+  schema `{id:"ai-…", q, o[4], c, explanation, ref, chapter, ti, source:"synopsis", ai_generated:true}`).
+  **Practice-only, never part of the verified 900-bank.** Loaded into a **separate `AIMAP`**
+  (never `QUESTIONS`/`QMAP`); `grade()` guards `isAiId()` so AI answers never enter
+  progress/Leitner/stats/cloud-sync. Surfaced **unified in Browse** (provenance chips
+  `מקורי`/`AI`; AI rows show an amber `AI · תרגול` label, real rows show their exam-year) and
+  **drillable** from the home AI card ("תרגל סבב מהמאגר" — ephemeral, scored in-session only).
+  Loaded eagerly in `loadAppData`'s initial `Promise.all` (a deferred-load attempt was tried and
+  abandoned — PR #34 — the edge-case cost outweighed the marginal, gzip+concurrent-fetch win).
 
 ### `data/questions.json` schema
 
@@ -148,8 +157,17 @@ Three must agree or `verify` fails — bump together on every release:
 - **OCR caveat** (above): never silently "correct" a `vision:true` stem.
 - **Answer keys are post-appeal official** — `c_accept`/`all_accepted` encode multi-accept
   and nullified questions; don't collapse them to a single `c`.
-- AI-generated practice content (`/api/ai-question`) is **practice-only** and must never be
-  merged into the verified 900-question bank.
+- AI-generated practice content (`/api/ai-question` + the `data/practice_questions.json` pool)
+  is **practice-only** and must never be merged into the verified 900-question bank.
+- **Mobile layout has regression coverage**: `scripts/ui-regression.mjs` (in the `verify` gate)
+  guards the bottom-nav/scroll-viewport invariants (`--bottom-nav-h`, `.wrap` scroll viewport,
+  `.quiz-sticky-actions`); `scripts/mobile-visual-regression.mjs` (`npm run visual:mobile`, not
+  in the gate) is the fuller visual check. Re-run after any mobile CSS change.
+- **Post-merge deploy verification** (mandatory before claiming "shipped"): after merge, confirm
+  (1) GitHub `Verify` green on `main`, (2) Pages build + Netlify production deploy ready, and
+  (3) the new version string actually appears live — `curl` the `sw.js` `CACHE` marker + the
+  `manifest.json` version on **both** `eiasash.github.io/Psychiatry/` and
+  `psychiatry-szmc.netlify.app/` (don't trust the merge alone; Pages lags Netlify by a few min).
 
 ## Pipeline / provenance
 
