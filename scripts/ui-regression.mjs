@@ -50,6 +50,8 @@ expect(/\.expl\{[^}]*text-align:right/s, "quiz explanations should keep readable
 expect(/\.ai-box\{[^}]*overflow-wrap:anywhere/s, "AI Tutor panel should prevent mobile overflow");
 expect(/\.wrap\{[^}]*padding:14px 14px calc\(112px \+ env\(safe-area-inset-bottom\)\)/s, "main content needs safe bottom padding above fixed nav");
 expect(/@media\(max-width:560px\)\{[\s\S]*?\.wrap\{[^}]*padding-inline:10px/, "mobile viewport needs tighter horizontal padding");
+expect(/--bottom-nav-h:\s*63px/, "mobile layout should use a measured bottom-nav height token");
+expect(/@media\(max-width:560px\)\{[\s\S]*?\.wrap\{[^}]*height:calc\(100dvh - var\(--bottom-nav-h\) - env\(safe-area-inset-bottom\)\)[^}]*overflow-y:auto/, "mobile content should scroll above the fixed bottom nav instead of underneath it");
 expect(/@media\(max-width:560px\)\{[\s\S]*?\.card\{[^}]*padding:14px/, "mobile cards need reduced padding");
 expect(/@media\(max-width:560px\)\{[\s\S]*?\.fb\.show\{[^}]*margin-inline:-4px/, "mobile feedback should reclaim card width");
 expect(/@media\(max-width:560px\)\{[\s\S]*?\.ai-box\{[^}]*padding:10px/, "mobile AI Tutor panel needs compact padding");
@@ -57,6 +59,7 @@ expect(/@media\(max-width:560px\)\{[\s\S]*?\.ai-box\{[^}]*margin-inline:-2px/, "
 expect(/@media\(max-width:560px\)\{[\s\S]*?\.ai-box\{[^}]*border-left:0/, "mobile AI Tutor panel should reduce nested side borders");
 expect(/@media\(max-width:560px\)\{[\s\S]*?\.ai-output\{[^}]*font-size:14px/, "mobile AI Tutor output needs controlled text sizing");
 expect(/@media\(max-width:560px\)\{[\s\S]*?\.ai-section\{[^}]*padding:10px/, "mobile AI Tutor sections need compact padding");
+expect(/@media\(max-width:560px\)\{[\s\S]*?\.quiz-sticky-actions\{[^}]*bottom:0/, "mobile sticky quiz actions should anchor to the scroll viewport above the fixed nav");
 expect(/AI_TIMEOUT_MS/, "AI Tutor client needs a timeout guard");
 expect(/AbortController/, "AI Tutor client needs abortable requests");
 expect(/renderAiError\(/, "AI Tutor client needs a retryable error renderer");
