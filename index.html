@@ -993,7 +993,14 @@ async function loadAppData(){
     await mergeCloudState().catch(()=>toast("לא ניתן לסנכרן התקדמות ענן כרגע"));
     // mergeCloudState() may restore an AI drill from the cloud after loadSavedSession ran;
     // ensure the pool is loaded before the resume CTA is shown so its ai-* ids resolve.
-    if(session&&Array.isArray(session.queue)&&session.queue.some(isAiId))await loadPractice();
+    if(session&&Array.isArray(session.queue)&&session.queue.some(isAiId)){
+      await loadPractice();
+      // loadPractice() resolves [] on a transient failure, so the pool is not guaranteed.
+      // If the AI ids still can't resolve, drop the session instead of exposing a Continue
+      // button that would advance through "missing" questions and wipe it. The persisted
+      // copy is kept — a later load with the pool available will resume it.
+      if(!session.queue.every(id=>QMAP.has(id)||AIMAP.has(id)))session=null;
+    }
     // Explanations are optional + larger; respect reduced-data by loading only on demand.
     if(!REDUCE_DATA) loadExplanations();
   }catch(e){
