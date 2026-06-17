@@ -992,6 +992,7 @@ async function loadAppData(){
     // Tag the AI pool with a synthetic sitting + flag, then index it separately from the bank.
     PRACTICE.forEach(p=>{ p.t="AI"; p.ai_generated=true; });
     AIMAP=new Map(PRACTICE.map(p=>[p.id,p]));
+    GENERATED=[]; aiGenSeq=0; // a data reload rebuilds AIMAP from the pool only — drop stale generated ids
     KEY_DOUBTS=Object.fromEntries((Array.isArray(doubts)?doubts:[]).map(d=>[d.id,d]));
     session=await loadSavedSession();
     await mergeCloudState().catch(()=>toast("לא ניתן לסנכרן התקדמות ענן כרגע"));
@@ -1152,6 +1153,9 @@ async function loadSavedSession(){
 }
 function saveSession(){
   if(!session||session.i>=session.queue.length){clearSavedSession();return;}
+  // Ephemeral drills (session-generated AI questions, whose ai-gen-* ids exist only in memory)
+  // must never persist — a restored local/cloud copy would be an unresolvable quiz after reload.
+  if(session.ephemeral){clearSavedSession();return;}
   session.updatedAt=Date.now();
   saveUserLocal(SESSION_KEY,session);
   markCloudDirty({session:true});
@@ -1583,7 +1587,7 @@ async function generateAiBatch(card,n){
 // Drill the session-generated questions (ephemeral, scored in-session, never touches the bank).
 function drillGenerated(card){
   if(!GENERATED.length){toast("עדיין לא נוצרו שאלות");return;}
-  startSession(GENERATED.map(g=>g.id),"תרגול AI · שנוצרו",true,{mode:"practice",source:"ai-generated"});
+  startSession(GENERATED.map(g=>g.id),"תרגול AI · שנוצרו",true,{mode:"practice",source:"ai-generated",ephemeral:true});
 }
 function renderGeneratedAiQuestion(out,q){
   const opts=Array.isArray(q?.options)?q.options.slice(0,4):[];
@@ -1643,7 +1647,7 @@ function startSession(ids,title,doShuffle,opts={}){
   let queue = (doShuffle ? shuffle(ids) : ids.slice()).filter(id=>QMAP.has(id)||AIMAP.has(id));
   if(!queue.length){toast("אין שאלות זמינות");return;}
   session={queue,i:0,correct:0,wrong:0,title,answered:false,lastAnswer:null,answers:[],
-    mode:opts.mode||"practice",source:opts.source||"",reviewFirst:!!opts.reviewFirst,startedAt:Date.now(),updatedAt:Date.now(),durationSec:opts.durationSec||0};
+    mode:opts.mode||"practice",source:opts.source||"",reviewFirst:!!opts.reviewFirst,ephemeral:!!opts.ephemeral,startedAt:Date.now(),updatedAt:Date.now(),durationSec:opts.durationSec||0};
   saveSession();
   go("quiz"); renderQuiz();
 }
@@ -1654,7 +1658,7 @@ function startExam(t){
 function reviewPrimerHtml(q){
   const exp=EXP[q.id];
   const body=exp?readableMixedText(exp):'<span class="muted">טוען הסבר מקומי לפני ניסיון חוזר...</span>';
-  const ref=q.ref?`<div class="ref">מקור: <b>${readableMixedText(q.ref)}</b> · Kaplan &amp; Sadock Synopsis</div>`:"";
+  const ref=q.ref?`<div class="ref">מקור: <b>${readableMixedText(q.ref)}</b>${q.ai_generated?"":" · Kaplan &amp; Sadock Synopsis"}</div>`:"";
   return `<div class="expl-h">הסבר לפני ניסיון חוזר</div>${body}${ref}`;
 }
 function attachReviewPrimer(card,q){
@@ -1795,7 +1799,7 @@ function showAnswer(q,k,opts,fb,card,record){
   else if(q.ai_generated) {/* AI item without a stored explanation: nothing to lazy-load */}
   else if(REDUCE_DATA) h+=`<div class="expl"><div class="expl-h">הסבר</div><button type="button" class="btn" data-load-exp="${q.id}">טען הסבר</button></div>`;
   else h+=`<div class="expl" data-exp-slot="${q.id}"><div class="expl-h">הסבר</div><span class="muted">טוען הסבר...</span></div>`;
-  if(q.ref) h+=`<div class="ref">מקור: <b>${readableMixedText(q.ref)}</b> · Kaplan &amp; Sadock Synopsis</div>`;
+  if(q.ref) h+=`<div class="ref">מקור: <b>${readableMixedText(q.ref)}</b>${q.ai_generated?"":" · Kaplan &amp; Sadock Synopsis"}</div>`;
   if(q.vision) h+='<div class="note">⚠ נוסח השאלה תומלל אוטומטית (מועד 2025 פגום במקור) — התשובות, המפתח וההסבר מהימנים; ודא ניסוח מול ה-PDF</div>';
   const keyDoubt=KEY_DOUBTS[q.id];
   if(keyDoubt) h+=`<div class="note">⚑ דגל לימודי לגבי המפתח הרשמי: ${readableMixedText(keyDoubt.issue)} המפתח הרשמי נשמר ללא שינוי.</div>`;
