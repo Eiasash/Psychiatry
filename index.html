@@ -1013,7 +1013,11 @@ async function loadAppData(){
   renderHome();
   // Prefetch the AI practice pool in the background (off the critical path). When it lands,
   // refresh the active view if it surfaces the pool (home AI card / unified Browse).
-  loadPractice().then(()=>{ if(nav==="home"&&!aiGenerating)renderHome(); else if(nav==="browse")renderBrowse(); });
+  loadPractice().then(()=>{
+    if(nav==="home"&&aiGenerating)poolRefreshPending=true; // defer: don't detach an in-flight generation
+    else if(nav==="home")renderHome();
+    else if(nav==="browse")renderBrowse();
+  });
 }
 // Lazily load + index the AI practice pool. Idempotent + promise-cached (like loadExplanations).
 // Kept separate from QUESTIONS/QMAP so the verified bank and its stats stay isolated.
@@ -1021,12 +1025,15 @@ let PRACTICE_PROMISE=null;
 function loadPractice(){
   if(Array.isArray(PRACTICE)&&PRACTICE.length)return Promise.resolve(PRACTICE);
   if(!PRACTICE_PROMISE){
-    PRACTICE_PROMISE=fetch("data/practice_questions.json").then(r=>r.ok?r.json():[]).catch(()=>[]).then(prac=>{
-      PRACTICE=Array.isArray(prac)?prac:[];
-      PRACTICE.forEach(p=>{ p.t="AI"; p.ai_generated=true; }); // synthetic sitting + flag
-      AIMAP=new Map(PRACTICE.map(p=>[p.id,p]));
-      return PRACTICE;
-    });
+    PRACTICE_PROMISE=fetch("data/practice_questions.json")
+      .then(r=>{ if(!r.ok)throw new Error("practice "+r.status); return r.json(); })
+      .then(prac=>{
+        PRACTICE=Array.isArray(prac)?prac:[];
+        PRACTICE.forEach(p=>{ p.t="AI"; p.ai_generated=true; }); // synthetic sitting + flag
+        AIMAP=new Map(PRACTICE.map(p=>[p.id,p]));
+        return PRACTICE;
+      })
+      .catch(()=>{ PRACTICE_PROMISE=null; return []; }); // transient failure → let a later call retry
   }
   return PRACTICE_PROMISE;
 }
@@ -1516,6 +1523,7 @@ function startAiSession(card){
   startSession(ids,`תרגול AI · ${scope}`,true,{mode:"practice",source:"ai-pool"});
 }
 let aiGenerating=false; // true while /api/ai-question is in flight — blocks the deferred-pool home re-render from detaching the output node
+let poolRefreshPending=false; // set when the deferred-pool home refresh was skipped mid-generation; completed in generateAiQuestion's finally
 async function generateAiQuestion(card){
   const out=card.querySelector(".ai-drill-output");
   const topicIndex=Number(card.querySelector("#ai-topic").value);
@@ -1545,6 +1553,9 @@ async function generateAiQuestion(card){
     out.textContent="יצירת שאלת AI אינה זמינה כרגע. בנק השאלות המאומת ממשיך לעבוד כרגיל.";
   }finally{
     aiGenerating=false;
+    // If the pool finished loading while this request was in flight, the home refresh was
+    // skipped — do it now so the pool buttons appear (AI_LAST restore keeps the result shown).
+    if(poolRefreshPending&&nav==="home"){ poolRefreshPending=false; renderHome(); }
   }
 }
 function renderGeneratedAiQuestion(out,q){
