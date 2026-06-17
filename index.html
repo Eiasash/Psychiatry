@@ -976,18 +976,18 @@ async function loadAppData(){
     // Guard the protected-asset reads: a stale token can return 401 with a JSON error
     // envelope that r.json() would happily parse, leaving QUESTIONS={error:...} and
     // throwing later on .map(). Mirror the already-guarded answer_key_doubts line.
-    const [q,t,doubts,syl,prac]=await Promise.all([
+    // Critical path = the verified bank + topics + key-doubts + syllabus. The AI practice
+    // pool (~389KB) and explanations (~865KB) are NOT needed for first paint, so they are
+    // deferred (loadPractice/loadExplanations) to free bandwidth for questions.json on
+    // constrained connections. Both stay precached by sw.js for offline.
+    const [q,t,doubts,syl]=await Promise.all([
       dataFetch("data/questions.json").then(r=>r.ok?r.json():Promise.reject(dataLoadError(r,"בנק השאלות"))),
       fetch("data/topics.json").then(r=>r.ok?r.json():Promise.reject(dataLoadError(r,"רשימת הנושאים"))),
       dataFetch("docs/answer_key_doubts.json").then(r=>r.ok?r.json():[]).catch(()=>[]),
-      fetch("data/syllabus.json").then(r=>r.ok?r.json():null).catch(()=>null),
-      fetch("data/practice_questions.json").then(r=>r.ok?r.json():[]).catch(()=>[])
+      fetch("data/syllabus.json").then(r=>r.ok?r.json():null).catch(()=>null)
     ]);
-    QUESTIONS=q; TOPICS=t.topics||[]; SYLLABUS=syl; PRACTICE=Array.isArray(prac)?prac:[];
+    QUESTIONS=q; TOPICS=t.topics||[]; SYLLABUS=syl;
     QMAP=new Map(QUESTIONS.map(q=>[q.id,q]));
-    // Tag the AI pool with a synthetic sitting + flag, then index it separately from the bank.
-    PRACTICE.forEach(p=>{ p.t="AI"; p.ai_generated=true; });
-    AIMAP=new Map(PRACTICE.map(p=>[p.id,p]));
     KEY_DOUBTS=Object.fromEntries((Array.isArray(doubts)?doubts:[]).map(d=>[d.id,d]));
     session=await loadSavedSession();
     await mergeCloudState().catch(()=>toast("לא ניתן לסנכרן התקדמות ענן כרגע"));
@@ -1008,6 +1008,24 @@ async function loadAppData(){
   }
   $("#view-home").setAttribute("aria-labelledby","home-title");
   renderHome();
+  // Prefetch the AI practice pool in the background (off the critical path). When it lands,
+  // refresh the active view if it surfaces the pool (home AI card / unified Browse).
+  loadPractice().then(()=>{ if(nav==="home")renderHome(); else if(nav==="browse")renderBrowse(); });
+}
+// Lazily load + index the AI practice pool. Idempotent + promise-cached (like loadExplanations).
+// Kept separate from QUESTIONS/QMAP so the verified bank and its stats stay isolated.
+let PRACTICE_PROMISE=null;
+function loadPractice(){
+  if(Array.isArray(PRACTICE)&&PRACTICE.length)return Promise.resolve(PRACTICE);
+  if(!PRACTICE_PROMISE){
+    PRACTICE_PROMISE=fetch("data/practice_questions.json").then(r=>r.ok?r.json():[]).catch(()=>[]).then(prac=>{
+      PRACTICE=Array.isArray(prac)?prac:[];
+      PRACTICE.forEach(p=>{ p.t="AI"; p.ai_generated=true; }); // synthetic sitting + flag
+      AIMAP=new Map(PRACTICE.map(p=>[p.id,p]));
+      return PRACTICE;
+    });
+  }
+  return PRACTICE_PROMISE;
 }
 // Build a load error for a non-OK protected/static asset response. 401 is tagged
 // authExpired so loadAppData can route to the login screen; other codes surface a
@@ -1133,6 +1151,9 @@ async function loadSavedSession(){
   try{
     const s=await readUserLocal(SESSION_KEY,null);
     if(!s||!Array.isArray(s.queue)||!s.queue.length)return null;
+    // Practice pool is deferred, so AIMAP may be empty here. If this is a saved AI drill,
+    // load the pool first so its ai-* ids survive the filter (preserves AI-session reload).
+    if(s.queue.some(isAiId))await loadPractice();
     s.queue=s.queue.filter(id=>QMAP.has(id)||AIMAP.has(id));
     if(!s.queue.length)return null;
     s.i=Math.max(0,Math.min(Number(s.i)||0,s.queue.length));
