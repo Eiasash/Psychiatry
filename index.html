@@ -1062,7 +1062,7 @@ function renderStartupError(error){
 /* ---------- helpers ---------- */
 const byYear = ()=>{const m={};QUESTIONS.forEach(q=>m[q.t]=(m[q.t]||0)+1);return m;};
 const byTopic= ()=>{const m={};QUESTIONS.forEach(q=>m[q.ti]=(m[q.ti]||0)+1);return m;};
-function yearLabel(t){if(t==="AI"||!t)return "AI · Synopsis";return t.replace("-Jun"," · יוני").replace("-Sep"," · ספטמבר").replace("-May"," · מאי");}
+function yearLabel(t){if(t==="AI"||!t)return "AI · תרגול";return t.replace("-Jun"," · יוני").replace("-Sep"," · ספטמבר").replace("-May"," · מאי");}
 function toast(msg){const t=$("#toast");t.textContent=msg;t.classList.add("show");setTimeout(()=>t.classList.remove("show"),1600);}
 function acceptedIndices(q){ return q.all_accepted ? [0,1,2,3] : (q.c_accept&&q.c_accept.length?q.c_accept:[q.c]); }
 function normText(s){return String(s||"").normalize("NFKC").replace(/[\u0591-\u05C7]/g,"").toLowerCase();}
@@ -1517,27 +1517,31 @@ async function requestAiQuestion(card){
   let topicIndex = raw==="all" ? Math.floor(Math.random()*TOPICS.length) : Number(raw);
   if(!Number.isInteger(topicIndex)||topicIndex<0||topicIndex>=TOPICS.length) topicIndex=Math.floor(Math.random()*TOPICS.length);
   const source=card.querySelector("#ai-source").value;
+  const sourceLabel=aiSourceLabel(source);
   const level=card.querySelector("#ai-level").value;
   const chapterSel=card.querySelector("#ai-chapter");
   const chapter=chapterSel?chapterSel.value:"";
   try{
     const res=await authFetch("/api/ai-question",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({
-      topic:TOPICS[topicIndex]||"Other / General", topicIndex, source, sourceLabel:aiSourceLabel(source), chapter, level, progressSummary:progressSummary()
+      topic:TOPICS[topicIndex]||"Other / General", topicIndex, source, sourceLabel, chapter, level, progressSummary:progressSummary()
     })});
     const data=await res.json().catch(()=>({}));
     if(!res.ok) return {ok:false,status:res.status,msg:res.status===401?"יש להתחבר כדי ליצור שאלות AI.":[404,405,501].includes(res.status)?"שאלות AI זמינות בפריסת Netlify המחוברת.":(data.error||`שגיאת AI (${res.status}).`)};
-    return {ok:true,question:data.question||data,topicIndex};
+    return {ok:true,question:data.question||data,topicIndex,sourceLabel};
   }catch(e){
     return {ok:false,msg:"יצירת שאלת AI אינה זמינה כרגע. בנק השאלות המאומת ממשיך לעבוד כרגיל."};
   }
 }
 // Add a generated question to the session set + AIMAP (drillable, isolated; ai-gen-* → isAiId).
-function recordGenerated(q,topicIndex){
+// ref carries the SELECTED source (not the response's, which may omit it), so a drilled
+// DSM/psychopharm/ethics question shows its true source — and yearLabel("AI") is now
+// source-neutral ("AI · תרגול"), so the quiz header no longer claims Synopsis.
+function recordGenerated(q,topicIndex,sourceLabel){
   const opts=Array.isArray(q?.options)?q.options.slice(0,4):[];
   const c=Number.isInteger(q?.correctIndex)?q.correctIndex:-1;
   if(!q?.stem||opts.length!==4||c<0||c>3)return null;
   const ti=(Number.isInteger(topicIndex)&&topicIndex>=0&&topicIndex<TOPICS.length)?topicIndex:14;
-  const rec={id:"ai-gen-"+(++aiGenSeq),q:q.stem,o:opts,c,explanation:q.explanation||"",ref:q.sourceLabel||"Kaplan & Sadock Synopsis",chapter:q.topic||TOPICS[ti]||"",ti,t:"AI",ai_generated:true,generated:true};
+  const rec={id:"ai-gen-"+(++aiGenSeq),q:q.stem,o:opts,c,explanation:q.explanation||"",ref:sourceLabel||q.sourceLabel||"Kaplan & Sadock Synopsis",chapter:q.topic||TOPICS[ti]||"",ti,t:"AI",ai_generated:true,generated:true};
   GENERATED.push(rec); AIMAP.set(rec.id,rec);
   return rec;
 }
@@ -1563,7 +1567,7 @@ async function generateAiQuestion(card){
   try{
     const r=await requestAiQuestion(card);
     if(!r.ok){ out.textContent=r.msg||"שגיאת AI."; return; }
-    recordGenerated(r.question,r.topicIndex);
+    recordGenerated(r.question,r.topicIndex,r.sourceLabel);
     renderGeneratedAiQuestion(out,r.question);
     refreshGeneratedDrillBtn(card);
   }finally{ setAiGenBusy(card,false); }
@@ -1580,7 +1584,7 @@ async function generateAiBatch(card,n){
       out.textContent=`יוצר שאלות AI... (${i+1}/${n})`;
       const r=await requestAiQuestion(card);
       if(!r.ok){ if(!made){out.textContent=r.msg||"שגיאת AI.";return;} break; }
-      if(recordGenerated(r.question,r.topicIndex)){ made++; last=r.question; }
+      if(recordGenerated(r.question,r.topicIndex,r.sourceLabel)){ made++; last=r.question; }
     }
   }finally{ setAiGenBusy(card,false); }
   if(last)renderGeneratedAiQuestion(out,last);
