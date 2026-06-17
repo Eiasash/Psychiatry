@@ -1649,8 +1649,13 @@ function startSession(ids,title,doShuffle,opts={}){
   if(!ids.length){toast("אין שאלות");return;}
   let queue = (doShuffle ? shuffle(ids) : ids.slice()).filter(id=>QMAP.has(id)||AIMAP.has(id));
   if(!queue.length){toast("אין שאלות זמינות");return;}
+  // A session is ephemeral if it contains any session-only generated id (ai-gen-*), regardless
+  // of how it was started (drill, retry-mistakes, review). Inferring from the queue — rather than
+  // trusting every caller to pass opts.ephemeral — keeps these out of local+cloud persistence on
+  // ALL paths. Pool ai-* ids reload from file, so they stay persistable.
+  const ephemeral = !!opts.ephemeral || queue.some(id=>typeof id==="string"&&id.startsWith("ai-gen-"));
   session={queue,i:0,correct:0,wrong:0,title,answered:false,lastAnswer:null,answers:[],
-    mode:opts.mode||"practice",source:opts.source||"",reviewFirst:!!opts.reviewFirst,ephemeral:!!opts.ephemeral,startedAt:Date.now(),updatedAt:Date.now(),durationSec:opts.durationSec||0};
+    mode:opts.mode||"practice",source:opts.source||"",reviewFirst:!!opts.reviewFirst,ephemeral,startedAt:Date.now(),updatedAt:Date.now(),durationSec:opts.durationSec||0};
   saveSession();
   go("quiz"); renderQuiz();
 }
